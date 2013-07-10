@@ -30,13 +30,20 @@
                 commit.labels.push(tag.id);
             }
         }
+        result.chronoCommits = [];
+        for (var id in result.commits) {
+            result.chronoCommits.push(id);
+            result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp;})
+        }
+
         return result;
     },
     drawTable: function (data, elem) {
         var table = $('<table/>');
-        for (var id in data.commits) {
-            var commit = data.commits[id];
-            table.append('<tr><td>' + commit.displayId + '</td><td>' + commit.author.name + '</td><td>' + commit.authorTimestamp + '</td><td>' + commit.message + '</td></tr>');
+        for (var i = 0 ; i < data.chronoCommits.length; i++) {
+            var commit = data.commits[data.chronoCommits[i]];
+            var time = new Date(commit.authorTimestamp);
+            table.append('<tr><td>' + commit.displayId + '</td><td>' + commit.author.name + '</td><td>' + moment(time).format("M/D/YY HH:mm:ss") + '</td><td>' + commit.message + '</td></tr>');
         }
         $(elem).append(table);
     }

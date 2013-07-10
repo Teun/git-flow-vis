@@ -5,12 +5,19 @@
     <script src="Scripts/d3.v3.min.js"></script>
     <script src="Scripts/DummyData.js"></script>
     <script src="Scripts/gitflow-visualize.js"></script>
+    <script src="Scripts/moment.min.js"></script>
     <script>
         $(function () {
             var element = document.getElementById('drawhere');
             GitFlowVisualize.draw(Dummy.Data, element);
         });
     </script>
+    <style>
+        td {text-align:left; vertical-align:top;}
+        table {
+            font-family: Arial;
+        }
+    </style>
     <title></title>
 </head>
 <body>

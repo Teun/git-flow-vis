@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>Moment.js</id>
+    <version>2.1.0</version>
+    <authors>Tim Wood</authors>
+    <owners>Tim Wood</owners>
+    <licenseUrl>https://raw.github.com/timrwood/moment/master/LICENSE</licenseUrl>
+    <projectUrl>http://momentjs.com/</projectUrl>
+    <iconUrl>https://si0.twimg.com/profile_images/2907663153/dc29a7aa56e686932ac4fde6f2353d1f_normal.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A lightweight javascript date library for parsing, manipulating, and formatting dates.</description>
+    <releaseNotes>- Added better week support.
+			- Added ability to set offset with moment#zone.
+			- Added ability to set month or weekday from a string.
+			- Added moment#min and moment#max</releaseNotes>
+    <tags>JavaScript date time browser node.js</tags>
+    <references />
+  </metadata>
+</package>
