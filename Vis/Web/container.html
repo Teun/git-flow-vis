@@ -5,9 +5,15 @@
     <script src="Scripts/d3.v3.min.js"></script>
     <script src="Scripts/DummyData.js"></script>
     <script src="Scripts/gitflow-visualize.js"></script>
+    <script>
+        $(function () {
+            var element = document.getElementById('drawhere');
+            GitFlowVisualize.draw(Dummy.Data, element);
+        });
+    </script>
     <title></title>
 </head>
 <body>
-
+    <div id="drawhere"></div>
 </body>
 </html>
