@@ -12,6 +12,13 @@
                 result.commits[commit.id] = commit;
             }
         }
+        for (var id in result.commits) {
+            var commit = result.commits[id];
+            for (var i = 0; i < commit.parents.length; i++) {
+                var parent = result.commits[commit.parents[i].id];
+                this.setChildToParent(parent, commit.id);
+            }
+        }
         result.branches = data.branches.values;
         for (var i = 0; i < result.branches.length; i++) {
             var branch = result.branches[i];
@@ -35,10 +42,17 @@
             result.chronoCommits.push(id);
             result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp;})
         }
+
+
         this.setColumns(result);
 
         return result;
     },
+    setChildToParent: function (parent, childId) {
+        parent.children = parent.children || [];
+        parent.children.push(childId);
+    },
+
     setColumns: function (data) {
         this.isolateMaster(data);
         this.isolateDevelop(data);
