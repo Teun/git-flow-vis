@@ -122,6 +122,8 @@
                     var firstChild = data.commits[lastCommit.children[0]];
                     column.name = firstChild.id[0] + column.name.substring(1);
                 }
+            } else {
+                // ToDo: unmerged branches should be identified by their branch name
             }
         }
     },
