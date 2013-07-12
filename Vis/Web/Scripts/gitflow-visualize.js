@@ -104,10 +104,26 @@
         }
     },
     separateReleaseFeatureBranches: function (data) {
-        data.columns["c2"].name = "r2";
-        data.columns["c0"].name = "f0";
-        data.columns["c1"].name = "f1";
-        data.columns["c3"].name = "f3";
+        for (var col in data.columns) {
+            var column = data.columns[col];
+            if (col == 'm' || col == 'd') continue;
+            var lastCommit = data.commits[column.commits[0]];
+            if (lastCommit.children) {
+                var masterCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'm'; });
+                var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
+                if (masterCommits.length > 0) {
+                    //release branches are branches that are not master or develop, but their latest commit merges into master
+                    column.name = 'r' + column.name.substring(1);
+                } else if (developCommits.length > 0) {
+                    // feature branches are branches that eventually merge into develop, not master
+                    column.name = 'f' + column.name.substring(1);
+                } else {
+                    // so we have a child, but not m or d: probably two branches merged together
+                    var firstChild = data.commits[lastCommit.children[0]];
+                    column.name = firstChild.id[0] + column.name.substring(1);
+                }
+            }
+        }
     },
     putCommitInColumn: function (commitId, columnName, data) {
         if(!data.columns)data.columns = {};
