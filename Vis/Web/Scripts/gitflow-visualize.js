@@ -56,6 +56,7 @@
     setColumns: function (data) {
         this.isolateMaster(data);
         this.isolateDevelop(data);
+        this.isolateRest(data);
     },
     isolateMaster: function (data) {
         var versionCommitPath = this.findShortestPathAlong(
@@ -78,6 +79,27 @@
             );
         for (var i = 0; i < versionCommitPath.length; i++) {
             this.putCommitInColumn(versionCommitPath[i], 'd', data);
+        }
+    },
+    isolateRest: function (data) {
+        var current = 0;
+        for (var i = 0; i < data.chronoCommits.length; i++) {
+            var commit = data.commits[data.chronoCommits[i]];
+            if (!commit.columns) {
+                var nonMasterDevelopChildren = $.grep(commit.children, function(childId){
+                    var child = data.commits[childId];
+                    if(!child.columns)return true;
+                    return !(child.columns[0] == "m" || child.columns[0] == "d");
+                });
+                if(nonMasterDevelopChildren.length == 0)
+                {
+                    this.putCommitInColumn(commit.id, "c" + current, data);
+                    current++;
+                } else {
+                    var firstChild = data.commits[nonMasterDevelopChildren[0]]
+                    this.putCommitInColumn(commit.id, firstChild.columns[0], data);
+                }
+            }
         }
     },
     putCommitInColumn: function (commitId, columnName, data) {
