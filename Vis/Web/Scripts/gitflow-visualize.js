@@ -57,6 +57,7 @@
         this.isolateMaster(data);
         this.isolateDevelop(data);
         this.isolateRest(data);
+        this.separateReleaseFeatureBranches(data);
     },
     isolateMaster: function (data) {
         var versionCommitPath = this.findShortestPathAlong(
@@ -102,16 +103,22 @@
             }
         }
     },
+    separateReleaseFeatureBranches: function (data) {
+        data.columns["c2"].name = "r2";
+        data.columns["c0"].name = "f0";
+        data.columns["c1"].name = "f1";
+        data.columns["c3"].name = "f3";
+    },
     putCommitInColumn: function (commitId, columnName, data) {
         if(!data.columns)data.columns = {};
         if(!(columnName in data.columns)){
-            data.columns[columnName] = [];
+            data.columns[columnName] = { commits: [], name:columnName };
         }
         var commit = data.commits[commitId];
         if (commit) {
             commit.columns = commit.columns || [];
             commit.columns.push(columnName);
-            data.columns[columnName].push(commitId);
+            data.columns[columnName].commits.push(commitId);
         }
     },
     findShortestPathAlong: function (from, along, data) {
@@ -160,11 +167,21 @@
     showCommaSeparated: function (arr) {
         return $.map(arr, function (i) { return i.displayId;}).join(", ");
     },
+    keysInOrder: function(obj){
+        var keysInOrder = $.map(obj, function (v, k) { return k });
+        keysInOrder.sort(function (k1, k2) {
+            var groupVal = function (k) { return { 'm': 1, 'd': 3, 'f': 4, 'r': 2 }[obj[k].name[0]] || 5 };
+            return groupVal(k1) - groupVal(k2);
+        });
+        return keysInOrder
+    },
     drawColumnsAsCells: function (data, commit) {
         var result = "";
-        for (var col in data.columns) {
+        var keys = this.keysInOrder(data.columns);
+        for (var i = 0; i < keys.length; i++) {
+            var col = keys[i];
             result += "<td>";
-            if (commit.columns && $.inArray(col, commit.columns) > -1) {
+            if ($.inArray(col, commit.columns) > -1) {
                 result += "o";
             }
             result += "</td>";
@@ -173,8 +190,10 @@
     },
     drawColumnsAsHeaders: function (data) {
         var result = "";
-        for (var col in data.columns) {
-            result += "<td>" + col + "</td>";
+        var keys = this.keysInOrder(data.columns);
+        for (var i = 0; i < keys.length; i++) {
+            var col = keys[i];
+            result += "<td>" + data.columns[col].name + "</td>";
         }
         return result;
     }
