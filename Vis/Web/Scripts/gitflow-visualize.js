@@ -258,6 +258,7 @@
           .attr("y1", function (d) { return y(cleanDataset.commits[d.c].orderNr); })
           .attr("y2", function (d) { return y(cleanDataset.commits[d.p].orderNr); });
         arrow.append("line")
+          .attr("class", function (d) { return "branch-type-" + GitFlowVisualize.branchType(d.c, d.p, cleanDataset);})
           .attr("x1", function (d) { return x(cleanDataset.commits[d.c].columns[0]); })
           .attr("x2", function (d) { return x(cleanDataset.commits[d.p].columns[0]); })
           .attr("y1", function (d) { return y(cleanDataset.commits[d.c].orderNr); })
@@ -305,5 +306,15 @@
             .attr("transform", "rotate(-10) ")
             .text(function (d) { return d.displayId; })
 
+    },
+    branchType: function (childId, parentId, data) {
+        var bt = function (id) {
+            var commit = data.commits[id];
+            var columns = commit.columns.map(function (d) { return data.columns[d]; })
+            var isFeature = columns.some(function (d) { return d.name[0] == 'f'; });
+            var isRelease = columns.some(function (d) { return d.name[0] == 'r'; });
+            return isFeature ? "f" : (isRelease?"r": null);
+        }
+        return bt(childId) || bt(parentId) || "default";
     }
 };
