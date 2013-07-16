@@ -2,6 +2,7 @@
     draw: function (data, elem) {
         var cleanDataset = this.cleanup(data);
         this.drawTable(cleanDataset, elem);
+        this.drawGraph(cleanDataset, elem);
     },
     cleanup:function(data){
         var result = {};
@@ -37,10 +38,13 @@
                 commit.labels.push(tag.id);
             }
         }
+        result.labels = result.tags.concat(result.branches);
+
         result.chronoCommits = [];
         for (var id in result.commits) {
             result.chronoCommits.push(id);
-            result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp;})
+            result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp; })
+            for (var i = 0; i < result.chronoCommits.length; i++) {result.commits[result.chronoCommits[i]].orderNr = i;}
         }
 
 
@@ -68,6 +72,14 @@
         for (var i = 0; i < versionCommitPath.length; i++) {
             this.putCommitInColumn(versionCommitPath[i], 'm', data);
         }
+        while (true) {
+            var masterCommits = data.columns['m'].commits;
+            var oldestMaster = masterCommits[masterCommits.length - 1];
+            var evenOlder = data.commits[oldestMaster].parents;
+            if (!evenOlder || evenOlder.length == 0) break;
+            this.putCommitInColumn(evenOlder[0].id, 'm', data);
+        }
+
     },
     isolateDevelop: function (data) {
         var versionCommitPath = this.findShortestPathAlong(
@@ -130,7 +142,7 @@
     putCommitInColumn: function (commitId, columnName, data) {
         if(!data.columns)data.columns = {};
         if(!(columnName in data.columns)){
-            data.columns[columnName] = { commits: [], name:columnName };
+            data.columns[columnName] = { commits: [], name:columnName, id:columnName };
         }
         var commit = data.commits[commitId];
         if (commit) {
@@ -214,5 +226,84 @@
             result += "<td>" + data.columns[col].name + "</td>";
         }
         return result;
+    },
+    drawGraph: function (cleanDataset, elem) {
+        var size = { width: 500, height: 800 };
+        var margin = 10;
+
+        var svg = d3.select(elem).append("svg")
+			.attr("width", size.width + 2*margin)
+			.attr("height", size.height + 2 * margin)
+		  .append("g")
+			.attr("transform", "translate(" + margin + "," + margin + ")");
+
+        var columnsInOrder = this.keysInOrder(cleanDataset.columns);
+        var x = d3.scale.ordinal()
+            .domain(columnsInOrder)
+            .rangePoints([0, Math.min(size.width, 30 * columnsInOrder.length)]);
+        var y = d3.scale.linear()
+            .domain([0, 20])
+            .range([0, size.height]);
+
+        // todo: arrows
+        var arrows = $.map(d3.values(cleanDataset.commits), function (c) { return c.parents.map(function (p) { return { p: p.id, c: c.id }; }) });
+        var arrow = svg.selectAll(".arrow")
+            .data(arrows)
+            .enter().append("g")
+            .attr("class", "arrow");
+        arrow.append("line")
+          .attr("class", "outline")
+          .attr("x1", function (d) { return x(cleanDataset.commits[d.c].columns[0]); })
+          .attr("x2", function (d) { return x(cleanDataset.commits[d.p].columns[0]); })
+          .attr("y1", function (d) { return y(cleanDataset.commits[d.c].orderNr); })
+          .attr("y2", function (d) { return y(cleanDataset.commits[d.p].orderNr); });
+        arrow.append("line")
+          .attr("x1", function (d) { return x(cleanDataset.commits[d.c].columns[0]); })
+          .attr("x2", function (d) { return x(cleanDataset.commits[d.p].columns[0]); })
+          .attr("y1", function (d) { return y(cleanDataset.commits[d.c].orderNr); })
+          .attr("y2", function (d) { return y(cleanDataset.commits[d.p].orderNr); });
+
+
+        var branchLine = svg.selectAll(".branch")
+		  .data(d3.values(cleanDataset.columns))
+    	  .enter().append("g")
+		  .attr("class", "branch");
+        branchLine.append("line")
+          .attr("class", function (d) { return "branch-line " + d.name; })
+          .attr("x1", function (d) { return x(d.id); })
+          .attr("x2", function (d) { return x(d.id); })
+          .attr("y1", 0)
+          .attr("y2", size.height);
+
+
+        var commit = svg.selectAll(".commit")
+		  .data(d3.values(cleanDataset.commits))
+    	  .enter().append("g")
+		  .attr("class", "commit");
+        commit.append("circle")
+            .attr("class", "commit-dot")
+            .attr("r", 5)
+            .attr("cx", function (d) { return x(d.columns[0]); })
+            .attr("cy", function (d) { return y(d.orderNr); })
+        ;
+            
+
+        
+        //labels
+        var label = svg.selectAll(".tag")
+            .data(d3.values(cleanDataset.labels))
+            .enter().append("g")
+            .attr("class", "tag")
+            .attr("transform", function (d) {
+                var commit = cleanDataset.commits[d.latestChangeset];
+                var indexInCommit = $.inArray(d.id, commit.labels);
+                return "translate(" + (x(commit.columns[0]) + 10) + "," + (y(commit.orderNr)+4 + indexInCommit*14) + ")"
+            })
+            .attr("x", 10)
+            .attr("y", 5);
+        label.append("text")
+            .attr("transform", "rotate(-10) ")
+            .text(function (d) { return d.displayId; })
+
     }
 };
