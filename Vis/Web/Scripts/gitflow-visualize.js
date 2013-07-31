@@ -7,7 +7,8 @@
         var data;
 		var options = {
 		masterRef:"refs/heads/master",
-		developRef: "refs/heads/develop"
+		developRef: "refs/heads/develop",
+		featurePrefix: "refs/heads/feature/"
 		};
 		
         var cleanup = function(_data){
@@ -22,6 +23,7 @@
             }
             for (var id in result.commits) {
                 var commit = result.commits[id];
+				if(!commit.children)commit.children = [];
                 for (var i = 0; i < commit.parents.length; i++) {
                     var parent = result.commits[commit.parents[i].id];
                     setChildToParent(parent, commit.id);
@@ -50,9 +52,9 @@
             result.chronoCommits = [];
             for (var id in result.commits) {
                 result.chronoCommits.push(id);
-                for (var i = 0; i < result.chronoCommits.length; i++) {result.commits[result.chronoCommits[i]].orderNr = i;}
             }
             result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp; })
+			for (var i = 0; i < result.chronoCommits.length; i++) {result.commits[result.chronoCommits[i]].orderNr = i;}
 
 
             setColumns(result);
@@ -131,7 +133,7 @@
                 var column = data.columns[col];
                 if (col == 'm' || col == 'd') continue;
                 var lastCommit = data.commits[column.commits[0]];
-                if (lastCommit.children) {
+                if (lastCommit.children.length > 0) {
                     var masterCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'm'; });
                     var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
                     if (masterCommits.length > 0) {
@@ -146,7 +148,11 @@
                         column.name = firstChild.id[0] + column.name.substring(1);
                     }
                 } else {
-                    // ToDo: unmerged branches should be identified by their branch name
+				// unmerged branch: if starts with featurePrefix -> f
+				if(lastCommit.labels.filter(function(l){return l.indexOf(options.featurePrefix) == 0;}).length>0)
+				{
+				column.name = 'f' + column.name.substring(1);
+				}
                 }
             }
         };
@@ -385,6 +391,7 @@
                 var ct = function (id) {
                     var commit = data.commits[id];
                     var columns = commit.columns.map(function (d) { return data.columns[d]; });
+					if(!columns[0])return '?';
                     return columns[0].name[0];
                 }
                 var prioHash = { 'm': 1, 'd': 0, 'r': 2, 'f': 3 };
