@@ -5,6 +5,11 @@
         'use strict';
         var self = {};
         var data;
+		var options = {
+		masterRef:"refs/heads/master",
+		developRef: "refs/heads/develop"
+		};
+		
         var cleanup = function(_data){
             var result = {};
             data = result;
@@ -64,14 +69,17 @@
             combineColumnsOfType('f');
         };
         var isolateMaster = function () {
+			var head = $.grep(data.branches, function (item) { return (item.id == options.masterRef); });
+			if(head.length == 0) return;
             var versionCommitPath = findShortestPathAlong(
-                /*from*/  $.grep(data.branches, function (item) { return (item.id == "refs/heads/master"); })[0].latestChangeset,
+                /*from*/  head[0].latestChangeset,
                 /*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(/refs\/tags\/\d+(\.]d+)*/) }), function(i){return i.latestChangeset;}),
                 data
                 );
             for (var i = 0; i < versionCommitPath.length; i++) {
                 putCommitInColumn(versionCommitPath[i], 'm', data);
             }
+			// add older commits that are the 'first' parents of the oldest master commit
             while (true) {
                 var masterCommits = data.columns['m'].commits;
                 var oldestMaster = masterCommits[masterCommits.length - 1];
@@ -82,8 +90,11 @@
 
         };
         var isolateDevelop = function () {
+			var head = $.grep(data.branches, function (item) { return (item.id == options.developRef); });
+			if(head.length == 0) return;
+			
             var versionCommitPath = findShortestPathAlong(
-                /*from*/  $.grep(data.branches, function (item) { return (item.id == "refs/heads/integration"); })[0].latestChangeset,
+                /*from*/  head[0].latestChangeset,
                 /*along*/ $.grep(data.chronoCommits, function (key) {
                     var m =data.commits[key].message.match(/^Merge pull request.* to integration/);
                     return m != null;
@@ -173,6 +184,7 @@
             }
         };
         var findShortestPathAlong = function (from, along) {
+			if(along.length == 0)return [from];
             var setOfPaths = [];
             setOfPaths.push([from]);
             while (true) {
@@ -205,7 +217,8 @@
             }
 
         }
-        self.draw = function (data, elem) {
+        self.draw = function (data, elem, opt) {
+			options = $.extend(options, opt);
             data = cleanup(data);
             self.drawing.drawTable(elem);
             self.drawing.drawGraph(elem);
@@ -338,6 +351,7 @@
                     .attr("class", "tag")
                     .attr("transform", function (d) {
                         var commit = data.commits[d.latestChangeset];
+						if(!commit)return "(-100, -100)";
                         var indexInCommit = $.inArray(d.id, commit.labels);
                         return "translate(" + (x(commit.columns[0]) + 10) + "," + (y(commit.orderNr)+4 + indexInCommit*14) + ")"
                     })
@@ -382,6 +396,7 @@
 
         
         })();
+
         return self;
     })();
 
