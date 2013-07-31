@@ -3,9 +3,10 @@
 <head>
     <script src="Scripts/jquery-2.0.2.min.js"></script>
     <script src="Scripts/d3.v3.min.js"></script>
+    <script src="Scripts/moment.min.js"></script>
+
     <script src="Scripts/DummyData.js"></script>
     <script src="Scripts/gitflow-visualize.js"></script>
-    <script src="Scripts/moment.min.js"></script>
     <script>
         $(function () {
             var element = document.getElementById('drawhere');
@@ -22,9 +23,20 @@
             stroke:black;
             stroke-width:2px;
         }
+        #commit-panel {
+            display:none;
+        }
+        rect.commit-panel{
+            fill: white;
+            stroke:black;
+            stroke-width:2px;
+        }
+        rect.commit-panel text{
+            stroke:black;
+        }
         line {
             stroke:black;
-            opacity: 0.4;
+            opacity: 0.2;
         }
         line.m {
             stroke:red;
@@ -32,25 +44,32 @@
             opacity: 1;
         }
         line.d {
-            stroke:blueviolet;
+            stroke:forestgreen;
             stroke-width:3px;
             opacity: 1;
         }
-        .arrow line.outline {
+        .arrow path.outline {
             stroke:white;
-            stroke-width:5px;
+            stroke-width:8px;
             opacity: .8;
         }
-        .arrow line {
+        .arrow path {
             stroke: black;
             stroke-width: 3px;
             opacity: 1;
+            fill:none;
         }
-        .arrow line.branch-type-f {
-            stroke: limegreen;
+        .arrow path.branch-type-f {
+            stroke: blueviolet;
         }
-        .arrow line.branch-type-r {
+        .arrow path.branch-type-r {
             stroke: gold;
+        }
+        .arrow path.branch-type-m {
+            stroke: gold;
+        }
+        .arrow path.branch-type-default {
+            stroke-width:1px;
         }
     </style>
     <title></title>
