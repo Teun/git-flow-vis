@@ -71,7 +71,8 @@
             isolateDevelop();
             isolateRest();
             separateReleaseFeatureBranches();
-            //combineColumnsOfType('f');
+            combineColumnsOfType('f');
+            combineColumnsOfType('r');
         };
         var isolateMaster = function () {
 			var head = $.grep(data.branches, function (item) { return (item.id == options.masterRef); });
@@ -175,8 +176,10 @@
                         for (var k = 0; k < column.commits.length; k++) {
                             var commitToMigrate = data.commits[column.commits[k]];
                             commitToMigrate.columns[0] = earlierColumn.id;
+                            earlierColumn.commits.push(commitToMigrate.id);
                         }
                         delete data.columns[column.id];
+                        j = i;//next column
                     }
                 
                 }
