@@ -5,12 +5,15 @@
         'use strict';
         var self = {};
         var data;
-		var options = {
-		masterRef:"refs/heads/master",
-		developRef: "refs/heads/develop",
-		featurePrefix: "refs/heads/feature/"
-		};
-		
+        var options = {
+            masterRef: "refs/heads/master",
+            developRef: "refs/heads/develop",
+            featurePrefix: "refs/heads/feature/",
+            releasePrefix: "refs/heads/r/",
+            hotfixPrefix: "refs/heads/h/",
+            developBrancheHintPrefix: "devhint/",
+        };
+
         var cleanup = function(_data){
             var result = {};
             data = result;
@@ -68,7 +71,7 @@
             isolateDevelop();
             isolateRest();
             separateReleaseFeatureBranches();
-            combineColumnsOfType('f');
+            //combineColumnsOfType('f');
         };
         var isolateMaster = function () {
 			var head = $.grep(data.branches, function (item) { return (item.id == options.masterRef); });
@@ -148,11 +151,14 @@
                         column.name = firstChild.id[0] + column.name.substring(1);
                     }
                 } else {
-				// unmerged branch: if starts with featurePrefix -> f
-				if(lastCommit.labels.filter(function(l){return l.indexOf(options.featurePrefix) == 0;}).length>0)
-				{
-				column.name = 'f' + column.name.substring(1);
-				}
+                    // unmerged branch: if starts with featurePrefix -> f
+                    if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.featurePrefix) == 0; }).length > 0) {
+                        column.name = 'f' + column.name.substring(1);
+                    }
+                    // unmerged branch: if starts with releasePrefix or hotfixPrefix -> r
+                    if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.releasePrefix) == 0 || l.indexOf(options.hotfixPrefix) == 0; }).length > 0) {
+                        column.name = 'r' + column.name.substring(1);
+                    }
                 }
             }
         };
