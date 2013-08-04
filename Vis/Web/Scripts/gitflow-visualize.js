@@ -99,14 +99,7 @@
 			var head = $.grep(data.branches, function (item) { return (item.id == options.developRef); });
 			if(head.length == 0) return;
 			
-            var versionCommitPath = findShortestPathAlong(
-                /*from*/  head[0].latestChangeset,
-                /*along*/ $.grep(data.chronoCommits, function (key) {
-                    var m =data.commits[key].message.match(/^Merge pull request.* to integration/);
-                    return m != null;
-                }),
-                data
-                );
+            var versionCommitPath = findDevelopPathFrom(head[0].latestChangeset);
             for (var i = 0; i < versionCommitPath.length; i++) {
                 putCommitInColumn(versionCommitPath[i], 'd', data);
             }
@@ -231,6 +224,50 @@
                 if (setOfPaths.length == 0) return [];
             }
 
+        }
+        var findDevelopPathFrom = function (from) {
+            var blockedNode = function (c, path) {
+                // no part of m can be d
+                if (c.columns && c.columns[0] == 'm') return true;
+                // in a line, you cannot have more than one child within the lineage
+                var childrenInPath = path.map(function (d) { return data.commits[d];}).filter(function (d) {
+
+                    return d.parents.filter(function (p) {
+                        return p.id === c.id;
+                    }).length > 0;
+                });
+                if (childrenInPath.length != 1) return true;
+                return false;
+            }
+            var closedPaths = [];
+            var setOfPaths = [];
+            setOfPaths.push([from]);
+            while (true) {
+                var prefix = setOfPaths.shift();
+                var tail = data.commits[prefix[prefix.length - 1]];
+                var accessibleParents = tail.parents.filter(function(p){return !blockedNode(data.commits[p.id], prefix);});
+                if(accessibleParents.length == 0)
+                {
+                    closedPaths.push(prefix);
+                }
+                for (var i = 0; i < accessibleParents.length; i++) {
+                    var parent = data.commits[accessibleParents[i].id];
+                    var newPath = prefix.slice(0);
+                    newPath.push(parent.id);
+                    setOfPaths.push(newPath);
+                }
+                if(setOfPaths.length == 0)break;
+            }
+            var sorter = function (nr1, nr2) {
+                // needs old ancestor
+                var tail1 = data.commits[nr1[nr1.length - 1]];
+                var tail2 = data.commits[nr2[nr2.length - 1]];
+                if (tail1.authorTimestamp != tail2.authorTimestamp) {
+                    return tail1.authorTimestamp - tail2.authorTimestamp;
+                }
+                return 0;
+            }
+            return closedPaths.sort(sorter)[0];
         }
         self.draw = function (data, elem, opt) {
 			options = $.extend(options, opt);
