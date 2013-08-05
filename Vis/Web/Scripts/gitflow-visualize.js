@@ -258,16 +258,24 @@
                 }
                 if(setOfPaths.length == 0)break;
             }
-            var sorter = function (nr1, nr2) {
+            function firstBy(e) { var t = function (t, r) { return e(t, r) || n(t, r) }; t.thenBy = function (e) { if (n.thenBy) { n.thenBy(e) } else { n = firstBy(e) } return t }; var n = function () { return 0 }; return t }
+            var oldestTail = function (nr1, nr2) {
                 // needs old ancestor
                 var tail1 = data.commits[nr1[nr1.length - 1]];
                 var tail2 = data.commits[nr2[nr2.length - 1]];
-                if (tail1.authorTimestamp != tail2.authorTimestamp) {
-                    return tail1.authorTimestamp - tail2.authorTimestamp;
-                }
-                return 0;
+                return tail1.authorTimestamp - tail2.authorTimestamp;
             }
-            return closedPaths.sort(sorter)[0];
+            var leastNonMergeCommits = function (nr1, nr2) {
+                function countNonMergeCommits(list) {
+                    var res = list.filter(function (id) { return data.commits[id].parents.length <= 1; }).length
+                    return res;
+                }
+                return countNonMergeCommits(nr1) - countNonMergeCommits(nr2);
+            }
+            return closedPaths.sort(
+                firstBy(oldestTail)
+                .thenBy(leastNonMergeCommits)
+                )[0];
         }
         self.draw = function (data, elem, opt) {
 			options = $.extend(options, opt);
