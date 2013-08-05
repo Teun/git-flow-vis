@@ -191,38 +191,41 @@
                 data.columns[columnName].commits.push(commitId);
             }
         };
-        var findShortestPathAlong = function (from, along) {
-			if(along.length == 0)return [from];
+        var findAllPathsFrom = function (from, blockedNode) {
+            var closedPaths = [];
             var setOfPaths = [];
             setOfPaths.push([from]);
             while (true) {
                 var prefix = setOfPaths.shift();
-                var nextToFind = data.commits[along[0]];
                 var tail = data.commits[prefix[prefix.length - 1]];
-                if (tail.id == nextToFind.id) {
-                    //skip this id
-                    along.shift();
-                    nextToFind = data.commits[along[0]];
+                var accessibleParents = tail.parents.filter(function (p) { return !blockedNode(data.commits[p.id], prefix); });
+                if (accessibleParents.length == 0) {
+                    closedPaths.push(prefix);
                 }
-                for (var i = 0; i < tail.parents.length; i++) {
-                    var parent = data.commits[tail.parents[i].id];
+                for (var i = 0; i < accessibleParents.length; i++) {
+                    var parent = data.commits[accessibleParents[i].id];
                     var newPath = prefix.slice(0);
                     newPath.push(parent.id);
-                    if (parent.id == nextToFind.id) {
-                        setOfPaths = [newPath];
-                        var found = along.shift();
-                        break;
-                    } else if (parent.authorTimestamp > nextToFind.authorTimestamp) {
-                        // followup
-                        setOfPaths.push(newPath);
+                    setOfPaths.push(newPath);
+                }
+                if (setOfPaths.length == 0) break;
+            }
+            return closedPaths;
+        }
+        var findShortestPathAlong = function (from, along) {
+            var blockedBecauseOfAlong = function (commit, prefix) {
+                var waitingForIndex = 0;
+                for (var i = 0; i < prefix.length; i++) {
+                    if (along.length <= waitingForIndex) return false; // always OK if we're not waiting for anything anymore
+                    if (along[waitingForIndex] == prefix[i]) {
+                        waitingForIndex++;
                     }
                 }
-
-                if (along.length == 0) {
-                    return setOfPaths[0];
-                }
-                if (setOfPaths.length == 0) return [];
+                return commit.authorTimestamp < data.commits[waitingForIndex]; // no nodes that are older than the one we're waiting for please
             }
+            var allAlong = findAllPathsFrom(from, blockedBecauseOfAlong);
+            if (allAlong.length == 0) return [];
+            return allAlong.sort(function (v1, v2) { return v1.length - v2.length; })[0];
 
         }
         var findDevelopPathFrom = function (from) {
@@ -239,25 +242,7 @@
                 if (childrenInPath.length != 1) return true;
                 return false;
             }
-            var closedPaths = [];
-            var setOfPaths = [];
-            setOfPaths.push([from]);
-            while (true) {
-                var prefix = setOfPaths.shift();
-                var tail = data.commits[prefix[prefix.length - 1]];
-                var accessibleParents = tail.parents.filter(function(p){return !blockedNode(data.commits[p.id], prefix);});
-                if(accessibleParents.length == 0)
-                {
-                    closedPaths.push(prefix);
-                }
-                for (var i = 0; i < accessibleParents.length; i++) {
-                    var parent = data.commits[accessibleParents[i].id];
-                    var newPath = prefix.slice(0);
-                    newPath.push(parent.id);
-                    setOfPaths.push(newPath);
-                }
-                if(setOfPaths.length == 0)break;
-            }
+            var closedPaths = findAllPathsFrom(from, blockedNode);
             function firstBy(e) { var t = function (t, r) { return e(t, r) || n(t, r) }; t.thenBy = function (e) { if (n.thenBy) { n.thenBy(e) } else { n = firstBy(e) } return t }; var n = function () { return 0 }; return t }
             var oldestTail = function (nr1, nr2) {
                 // needs old ancestor
@@ -285,6 +270,7 @@
         };
         self.drawing = (function(){
             var self = {};
+            var panel;
             self.drawTable = function (elem) {
                 var table = $('<table/>');
                 table.append('<tr>' + drawColumnsAsHeaders() + '<td>sha</td><td>parent</td><td>author</td><td>at</td><td>msg</td></tr>');
@@ -293,6 +279,7 @@
                     var time = new Date(commit.authorTimestamp);
                     table.append('<tr>' + drawColumnsAsCells(commit) + '<td>' + commit.displayId + '</td><td>' + showCommaSeparated(commit.parents) + '</td><td>' + commit.author.name + '</td><td>' + moment(time).format("M/D/YY HH:mm:ss") + '</td><td>' + commit.message + '</td></tr>');
                 }
+                table.css('display', 'none');
                 $(elem).append(table);
             };
 
@@ -420,13 +407,15 @@
                 label.append("text")
                     .attr("transform", "rotate(-10) ")
                     .text(function (d) { return d.displayId; })
-
-                var panel = svg.append("g").attr("id", "commit-panel").attr("x", 0).attr("y", 0);
-                panel.append("rect")
-                    .attr("class", "commit-panel")
-                    .attr("x", 0).attr("y", 0).attr("width", 200).attr("height", 150).attr("rx", 5).attr("ry", 5);
-                panel.append("text").attr("id", "author-name").attr("x", 5).attr("y", 15);
-                panel.append("text").attr("id", "commit-message").attr("x", 5).attr("y", 30).attr("width", 180).attr("height", "auto");
+                
+                if ($('#commit-panel').length == 0) {
+                    panel = svg.append("g").attr("id", "commit-panel").attr("x", 0).attr("y", 0);
+                    panel.append("rect")
+                        .attr("class", "commit-panel")
+                        .attr("x", 0).attr("y", 0).attr("width", 200).attr("height", 150).attr("rx", 5).attr("ry", 5);
+                    panel.append("text").attr("id", "author-name").attr("x", 5).attr("y", 15);
+                    panel.append("text").attr("id", "commit-message").attr("x", 5).attr("y", 30).attr("width", 180).attr("height", "auto");
+                }
 
                 $('.commit').hover(
                     function (evt) {

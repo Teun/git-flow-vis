@@ -10,7 +10,8 @@
     <script>
         $(function () {
             var element = document.getElementById('drawhere');
-            GitFlowVisualize.draw(Dummy.Data, element, {developRef:"refs/heads/integration"});
+            GitFlowVisualize.draw(Dummy.Data[0], element, {developRef:"refs/heads/integration"});
+            //GitFlowVisualize.draw(Dummy.Data[1], element, { developRef: "refs/heads/integration" });
         });
     </script>
     <style>
