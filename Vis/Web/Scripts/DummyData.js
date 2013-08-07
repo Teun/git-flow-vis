@@ -14,7 +14,7 @@
                 { "size": 2, "limit": 25, "isLastPage": true, "values": [{ "id": "cd0c27592dee3dc2c905f6f81eae29ac19c43858", "displayId": "cd0c275", "author": { "name": "Teun Duynstee", "emailAddress": "teun@funda.nl" }, "authorTimestamp": 1373397759000, "message": "hotfix", "parents": [{ "id": "1c5b2a0e3e7171d42a74cb4701f42d7901969819", "displayId": "1c5b2a0" }] }], "start": 0, "filter": null }
 
             ],
-            tags: { "size": 2, "limit": 25, "isLastPage": true, "values": [{ "id": "refs/tags/2.0.0", "displayId": "2.0.0", "latestChangeset": "1c5b2a0e3e7171d42a74cb4701f42d7901969819", "hash": "3f531ee49410eb05954ed6e2fe2153e6ba95c044" }, { "id": "refs/tags/1.0.0", "displayId": "1.0.0", "latestChangeset": "990f15c7f27a509ca62ef9c782c0b9418d7256ec", "hash": "17d7b111fb80981a498a3afe9f32bcf457ae7307" }], "start": 0, "filter": null }
+            tags: { "size": 2, "limit": 25, "isLastPage": true, "values": [{ "id": "refs/tags/2.0.1", "displayId": "2.0.1", "latestChangeset": "cd0c27592dee3dc2c905f6f81eae29ac19c43858", "hash": "3f531ee49410eb05954ed6e2fe2153e6bac09544" }, { "id": "refs/tags/2.0.0", "displayId": "2.0.0", "latestChangeset": "1c5b2a0e3e7171d42a74cb4701f42d7901969819", "hash": "3f531ee49410eb05954ed6e2fe2153e6ba95c044" }, { "id": "refs/tags/1.0.0", "displayId": "1.0.0", "latestChangeset": "990f15c7f27a509ca62ef9c782c0b9418d7256ec", "hash": "17d7b111fb80981a498a3afe9f32bcf457ae7307" }], "start": 0, "filter": null }
         },
     
 	

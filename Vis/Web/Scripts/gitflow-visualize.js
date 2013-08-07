@@ -6,12 +6,21 @@
         var self = {};
         var data;
         var options = {
+            drawTable: false,
+
+            // these are the exact names of the branches that should be drawn as stright lines master and develop
             masterRef: "refs/heads/master",
             developRef: "refs/heads/develop",
+
+            // feature branches are prefixed by
             featurePrefix: "refs/heads/feature/",
             releasePrefix: "refs/heads/r/",
             hotfixPrefix: "refs/heads/h/",
+
+            // any tag starting with this prefix will enhance the chance of the commit being on the develop branch
             developBrancheHintPrefix: "devhint/",
+            // this pattern should match the tags that are given to release commits on master (not to hotfix releases that are not on master)
+            releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
         };
 
         var cleanup = function(_data){
@@ -79,7 +88,7 @@
 			if(head.length == 0) return;
             var versionCommitPath = findShortestPathAlong(
                 /*from*/  head[0].latestChangeset,
-                /*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(/refs\/tags\/\d+(\.]d+)*/) }), function(i){return i.latestChangeset;}),
+                /*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(options.releaseTagPattern) }), function(i){return i.latestChangeset;}),
                 data
                 );
             for (var i = 0; i < versionCommitPath.length; i++) {
@@ -272,15 +281,16 @@
             var self = {};
             var panel;
             self.drawTable = function (elem) {
-                var table = $('<table/>');
-                table.append('<tr>' + drawColumnsAsHeaders() + '<td>sha</td><td>parent</td><td>author</td><td>at</td><td>msg</td></tr>');
-                for (var i = 0 ; i < data.chronoCommits.length; i++) {
-                    var commit = data.commits[data.chronoCommits[i]];
-                    var time = new Date(commit.authorTimestamp);
-                    table.append('<tr>' + drawColumnsAsCells(commit) + '<td>' + commit.displayId + '</td><td>' + showCommaSeparated(commit.parents) + '</td><td>' + commit.author.name + '</td><td>' + moment(time).format("M/D/YY HH:mm:ss") + '</td><td>' + commit.message + '</td></tr>');
+                if (options.drawTable) {
+                    var table = $('<table/>');
+                    table.append('<tr>' + drawColumnsAsHeaders() + '<td>sha</td><td>parent</td><td>author</td><td>at</td><td>msg</td></tr>');
+                    for (var i = 0 ; i < data.chronoCommits.length; i++) {
+                        var commit = data.commits[data.chronoCommits[i]];
+                        var time = new Date(commit.authorTimestamp);
+                        table.append('<tr>' + drawColumnsAsCells(commit) + '<td>' + commit.displayId + '</td><td>' + showCommaSeparated(commit.parents) + '</td><td>' + commit.author.name + '</td><td>' + moment(time).format("M/D/YY HH:mm:ss") + '</td><td>' + commit.message + '</td></tr>');
+                    }
+                    $(elem).append(table);
                 }
-                table.css('display', 'none');
-                $(elem).append(table);
             };
 
             var showCommaSeparated = function (arr) {
