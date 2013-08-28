@@ -36,9 +36,13 @@
             for (var id in result.commits) {
                 var commit = result.commits[id];
 				if(!commit.children)commit.children = [];
-                for (var i = 0; i < commit.parents.length; i++) {
+                for (var i = commit.parents.length-1; i >=0; i--) {
                     var parent = result.commits[commit.parents[i].id];
-                    setChildToParent(parent, commit.id);
+                    if(parent){
+                    	setChildToParent(parent, commit.id);
+                    }else{
+                    	commit.parents.splice(i, 1);
+                    }
                 }
             }
             result.branches = _data.branches.values;
@@ -80,8 +84,8 @@
             isolateDevelop();
             isolateRest();
             separateReleaseFeatureBranches();
-            combineColumnsOfType('f');
-            combineColumnsOfType('r');
+            //combineColumnsOfType('f');
+            //combineColumnsOfType('r');
         };
         var isolateMaster = function () {
 			var head = $.grep(data.branches, function (item) { return (item.id == options.masterRef); });
@@ -327,7 +331,8 @@
                 return result;
             };
             self.drawGraph = function (elem) {
-                var size = { width: 500, height: 800 };
+            	var calcHeight = Math.max(800, data.chronoCommits.length * 14);
+                var size = { width: 500, height: calcHeight };
                 var margin = 10;
 
                 var svg = d3.select(elem).append("svg")
@@ -341,7 +346,7 @@
                     .domain(columnsInOrder)
                     .rangePoints([0, Math.min(size.width, 30 * columnsInOrder.length)]);
                 var y = d3.scale.linear()
-                    .domain([0, 20])
+                    .domain([0, data.chronoCommits.length])
                     .range([0, size.height]);
 
                 var line = d3.svg.line()
