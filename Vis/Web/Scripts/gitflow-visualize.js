@@ -179,6 +179,8 @@
                 for (var j = 0; j < i; j++) {
                     var earlierColumn = columns[j];
                     var lastCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+                    var lastChildOfLastCommitOfFirst = lastCommitOfFirst.children.sort(function (c1, c2) { return data.commits[c1].orderNr - data.commits[c2].orderNr; })[0];
+                    // todo: iets doen met deze last child
                     var firstCommitOfSecond = data.commits[column.commits[0]];
                     if (firstCommitOfSecond.orderNr > lastCommitOfFirst.orderNr) {
                         // combine columns
@@ -353,20 +355,21 @@
                     .range([0, size.height]);
 
                 var line = d3.svg.line()
-                    //.interpolate("basis")
+                    //.interpolate("bundle")
                     .x(function (d) { return x(d.x); })
                     .y(function (d) { return y(d.y); });
                 var connector = function(d) {
                     var childCommit = data.commits[d.c];
                     var parentCommit = data.commits[d.p];
-                    var leftToRight = (x(childCommit.columns[0]) > x(parentCommit.columns[0]));
-                    //var intermediateColumn = leftToRight ? parentCommit.columns[0] : childCommit.columns[0];
-                    var intermediateColumn = parentCommit.columns[0];
-                    var intermediateRow = parentCommit.orderNr - 1;
-                    if (intermediateRow <= childCommit.orderNr) intermediateRow = childCommit.orderNr + 0.5;
+                    var intermediateRow = childCommit.orderNr + 1;
+                    var parentCol = data.columns[parentCommit.columns[0]]
+                    var parentPosInColumn = parentCol.commits.indexOf(parentCommit.id);
+                    if (parentPosInColumn > 0) {
+                        intermediateRow = Math.max(intermediateRow, data.commits[parentCol.commits[parentPosInColumn - 1]].orderNr);
+                    }
                     var points = [
                         { x: childCommit.columns[0], y: childCommit.orderNr },
-                        { x: intermediateColumn, y: intermediateRow},
+                        { x: parentCommit.columns[0], y: intermediateRow },
                         { x: parentCommit.columns[0], y: parentCommit.orderNr }];
                     return line(points);
                 }
@@ -380,6 +383,7 @@
                 arrow.append("path")
                     .attr("d", connector)
                     .attr("class", "outline");
+                
                 arrow.append("path")
                     .attr("d", connector)
                     .attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
