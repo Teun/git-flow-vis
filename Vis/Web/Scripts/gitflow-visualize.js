@@ -36,9 +36,13 @@
             for (var id in result.commits) {
                 var commit = result.commits[id];
 				if(!commit.children)commit.children = [];
-                for (var i = 0; i < commit.parents.length; i++) {
+                for (var i = commit.parents.length-1; i >=0; i--) {
                     var parent = result.commits[commit.parents[i].id];
-                    setChildToParent(parent, commit.id);
+                    if(parent){
+                    	setChildToParent(parent, commit.id);
+                    }else{
+                    	commit.parents.splice(i, 1);
+                    }
                 }
             }
             result.branches = _data.branches.values;
@@ -118,18 +122,21 @@
             for (var i = 0; i < data.chronoCommits.length; i++) {
                 var commit = data.commits[data.chronoCommits[i]];
                 if (!commit.columns) {
-                    var nonMasterDevelopChildren = $.grep(commit.children, function(childId){
+                    var childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent = $.grep(commit.children, function (childId) {
                         var child = data.commits[childId];
-                        if(!child.columns)return true;
-                        return !(child.columns[0] == "m" || child.columns[0] == "d");
+                        var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0] == "d");
+                        if (isOnMasterOrDevelop) return false;
+                        return child.parents[0].id == commit.id;
                     });
-                    if(nonMasterDevelopChildren.length == 0)
+                    if (childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent.length == 0)
                     {
+                        // if this commit has a child that is master or develop, but it is not on a column yet, we start a new column
                         putCommitInColumn(commit.id, "c" + current, data);
                         current++;
                     } else {
-                        var firstChild = data.commits[nonMasterDevelopChildren[0]]
+                        var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]]
                         putCommitInColumn(commit.id, firstChild.columns[0], data);
+                        firstChild._hasColumnChild = true;
                     }
                 }
             }
@@ -172,6 +179,8 @@
                 for (var j = 0; j < i; j++) {
                     var earlierColumn = columns[j];
                     var lastCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+                    var lastChildOfLastCommitOfFirst = lastCommitOfFirst.children.sort(function (c1, c2) { return data.commits[c1].orderNr - data.commits[c2].orderNr; })[0];
+                    // todo: iets doen met deze last child
                     var firstCommitOfSecond = data.commits[column.commits[0]];
                     if (firstCommitOfSecond.orderNr > lastCommitOfFirst.orderNr) {
                         // combine columns
@@ -327,7 +336,8 @@
                 return result;
             };
             self.drawGraph = function (elem) {
-                var size = { width: 500, height: 800 };
+            	var calcHeight = Math.max(800, data.chronoCommits.length * 14);
+                var size = { width: 500, height: calcHeight };
                 var margin = 10;
 
                 var svg = d3.select(elem).append("svg")
@@ -341,24 +351,25 @@
                     .domain(columnsInOrder)
                     .rangePoints([0, Math.min(size.width, 30 * columnsInOrder.length)]);
                 var y = d3.scale.linear()
-                    .domain([0, 20])
+                    .domain([0, data.chronoCommits.length])
                     .range([0, size.height]);
 
                 var line = d3.svg.line()
-                    //.interpolate("basis")
+                    //.interpolate("bundle")
                     .x(function (d) { return x(d.x); })
                     .y(function (d) { return y(d.y); });
                 var connector = function(d) {
                     var childCommit = data.commits[d.c];
                     var parentCommit = data.commits[d.p];
-                    var leftToRight = (x(childCommit.columns[0]) > x(parentCommit.columns[0]));
-                    //var intermediateColumn = leftToRight ? parentCommit.columns[0] : childCommit.columns[0];
-                    var intermediateColumn = parentCommit.columns[0];
-                    var intermediateRow = parentCommit.orderNr - 1;
-                    if (intermediateRow <= childCommit.orderNr) intermediateRow = childCommit.orderNr + 0.5;
+                    var intermediateRow = childCommit.orderNr + 1;
+                    var parentCol = data.columns[parentCommit.columns[0]]
+                    var parentPosInColumn = parentCol.commits.indexOf(parentCommit.id);
+                    if (parentPosInColumn > 0) {
+                        intermediateRow = Math.max(intermediateRow, data.commits[parentCol.commits[parentPosInColumn - 1]].orderNr);
+                    }
                     var points = [
                         { x: childCommit.columns[0], y: childCommit.orderNr },
-                        { x: intermediateColumn, y: intermediateRow},
+                        { x: parentCommit.columns[0], y: intermediateRow },
                         { x: parentCommit.columns[0], y: parentCommit.orderNr }];
                     return line(points);
                 }
@@ -372,6 +383,7 @@
                 arrow.append("path")
                     .attr("d", connector)
                     .attr("class", "outline");
+                
                 arrow.append("path")
                     .attr("d", connector)
                     .attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
