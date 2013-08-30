@@ -84,8 +84,8 @@
             isolateDevelop();
             isolateRest();
             separateReleaseFeatureBranches();
-            //combineColumnsOfType('f');
-            //combineColumnsOfType('r');
+            combineColumnsOfType('f');
+            combineColumnsOfType('r');
         };
         var isolateMaster = function () {
 			var head = $.grep(data.branches, function (item) { return (item.id == options.masterRef); });
@@ -122,18 +122,21 @@
             for (var i = 0; i < data.chronoCommits.length; i++) {
                 var commit = data.commits[data.chronoCommits[i]];
                 if (!commit.columns) {
-                    var nonMasterDevelopChildren = $.grep(commit.children, function(childId){
+                    var childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent = $.grep(commit.children, function (childId) {
                         var child = data.commits[childId];
-                        if(!child.columns)return true;
-                        return !(child.columns[0] == "m" || child.columns[0] == "d");
+                        var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0] == "d");
+                        if (isOnMasterOrDevelop) return false;
+                        return child.parents[0].id == commit.id;
                     });
-                    if(nonMasterDevelopChildren.length == 0)
+                    if (childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent.length == 0)
                     {
+                        // if this commit has a child that is master or develop, but it is not on a column yet, we start a new column
                         putCommitInColumn(commit.id, "c" + current, data);
                         current++;
                     } else {
-                        var firstChild = data.commits[nonMasterDevelopChildren[0]]
+                        var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]]
                         putCommitInColumn(commit.id, firstChild.columns[0], data);
+                        firstChild._hasColumnChild = true;
                     }
                 }
             }
