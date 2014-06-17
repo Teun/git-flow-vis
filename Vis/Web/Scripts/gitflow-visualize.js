@@ -4,7 +4,6 @@
     {
         'use strict';
         var self = {};
-        var data;
         var options = {
             drawTable: false,
 
@@ -25,7 +24,6 @@
 
         var cleanup = function(_data){
             var result = {};
-            data = result;
             result.commits = {};
             for (var i = 0; i < _data.commits.length; i++) {
                 for (var j = 0; j < _data.commits[i].values.length; j++) {
@@ -70,60 +68,60 @@
                 result.chronoCommits.push(id);
             }
             result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp; })
-			for (var i = 0; i < result.chronoCommits.length; i++) {result.commits[result.chronoCommits[i]].orderNr = i;}
-
+            for (var i = 0; i < result.chronoCommits.length; i++) {result.commits[result.chronoCommits[i]].orderNr = i;}
 
             setColumns(result);
+            return result;
         };
         var setChildToParent = function (parent, childId) {
             parent.children = parent.children || [];
             parent.children.push(childId);
         };
-        var setColumns = function() {
-            isolateMaster();
-            isolateDevelop();
-            isolateRest();
-            separateReleaseFeatureBranches();
-            combineColumnsOfType('f');
-            combineColumnsOfType('r');
+        var setColumns = function(_data) {
+            isolateMaster(_data);
+            isolateDevelop(_data);
+            isolateRest(_data);
+            separateReleaseFeatureBranches(_data);
+            combineColumnsOfType(_data, /^f/);
+            combineColumnsOfType(_data, /^r/);
         };
-        var isolateMaster = function () {
-			var head = $.grep(data.branches, function (item) { return (item.id == options.masterRef); });
+        var isolateMaster = function (_data) {
+			var head = $.grep(_data.branches, function (item) { return (item.id == options.masterRef); });
 			if(head.length == 0) return;
             var versionCommitPath = findShortestPathAlong(
                 /*from*/  head[0].latestChangeset,
-                /*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(options.releaseTagPattern) }), function(i){return i.latestChangeset;}),
-                data
+                /*along*/ $.map($.grep(_data.tags, function (tag) { return tag.id.match(options.releaseTagPattern) }), function(i){return i.latestChangeset;}),
+                _data
                 );
             for (var i = 0; i < versionCommitPath.length; i++) {
-                putCommitInColumn(versionCommitPath[i], 'm', data);
+                putCommitInColumn(versionCommitPath[i], 'm', _data);
             }
 			// add older commits that are the 'first' parents of the oldest master commit
             while (true) {
-                var masterCommits = data.columns['m'].commits;
+                var masterCommits = _data.columns['m'].commits;
                 var oldestMaster = masterCommits[masterCommits.length - 1];
-                var evenOlder = data.commits[oldestMaster].parents;
+                var evenOlder = _data.commits[oldestMaster].parents;
                 if (!evenOlder || evenOlder.length == 0) break;
-                putCommitInColumn(evenOlder[0].id, 'm', data);
+                putCommitInColumn(evenOlder[0].id, 'm', _data);
             }
 
         };
-        var isolateDevelop = function () {
-			var head = $.grep(data.branches, function (item) { return (item.id == options.developRef); });
+        var isolateDevelop = function (_data) {
+			var head = $.grep(_data.branches, function (item) { return (item.id == options.developRef); });
 			if(head.length == 0) return;
 			
-            var versionCommitPath = findDevelopPathFrom(head[0].latestChangeset);
+            var versionCommitPath = findDevelopPathFrom(head[0].latestChangeset, _data);
             for (var i = 0; i < versionCommitPath.length; i++) {
-                putCommitInColumn(versionCommitPath[i], 'd', data);
+                putCommitInColumn(versionCommitPath[i], 'd', _data);
             }
         };
-        var isolateRest = function () {
+        var isolateRest = function (_data) {
             var current = 0;
-            for (var i = 0; i < data.chronoCommits.length; i++) {
-                var commit = data.commits[data.chronoCommits[i]];
+            for (var i = 0; i < _data.chronoCommits.length; i++) {
+                var commit = _data.commits[_data.chronoCommits[i]];
                 if (!commit.columns) {
                     var childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent = $.grep(commit.children, function (childId) {
-                        var child = data.commits[childId];
+                        var child = _data.commits[childId];
                         var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0] == "d");
                         if (isOnMasterOrDevelop) return false;
                         return child.parents[0].id == commit.id;
@@ -131,24 +129,24 @@
                     if (childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent.length == 0)
                     {
                         // if this commit has a child that is master or develop, but it is not on a column yet, we start a new column
-                        putCommitInColumn(commit.id, "c" + current, data);
+                        putCommitInColumn(commit.id, "c" + current, _data);
                         current++;
                     } else {
-                        var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]]
-                        putCommitInColumn(commit.id, firstChild.columns[0], data);
+                        var firstChild = _data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]]
+                        putCommitInColumn(commit.id, firstChild.columns[0], _data);
                         firstChild._hasColumnChild = true;
                     }
                 }
             }
         };
-        var separateReleaseFeatureBranches = function () {
-            for (var col in data.columns) {
-                var column = data.columns[col];
+        var separateReleaseFeatureBranches = function (_data) {
+            for (var col in _data.columns) {
+                var column = _data.columns[col];
                 if (col == 'm' || col == 'd') continue;
-                var lastCommit = data.commits[column.commits[0]];
+                var lastCommit = _data.commits[column.commits[0]];
                 if (lastCommit.children.length > 0) {
-                    var masterCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'm'; });
-                    var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
+                    var masterCommits = $.grep(lastCommit.children, function (id) { return _data.commits[id].columns[0] == 'm'; });
+                    var developCommits = $.grep(lastCommit.children, function (id) { return _data.commits[id].columns[0] == 'd'; });
                     if (masterCommits.length > 0) {
                         //release branches are branches that are not master or develop, but their latest commit merges into master
                         column.name = 'r' + column.name.substring(1);
@@ -157,7 +155,7 @@
                         column.name = 'f' + column.name.substring(1);
                     } else {
                         // so we have a child, but not m or d: probably two branches merged together
-                        var firstChild = data.commits[lastCommit.children[0]];
+                        var firstChild = _data.commits[lastCommit.children[0]];
                         column.name = firstChild.id[0] + column.name.substring(1);
                     }
                 } else {
@@ -169,27 +167,30 @@
                     if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.releasePrefix) == 0 || l.indexOf(options.hotfixPrefix) == 0; }).length > 0) {
                         column.name = 'r' + column.name.substring(1);
                     }
+                    // rest: treat as feature branch
+                    if (column.name[0] == 'c') {column.name = 'f' + column.name.substring(1);}
                 }
             }
         };
-        var combineColumnsOfType = function (type) {
-            var columns = $.map(data.columns, function (v, k) { return v; }).filter(function (v) { return v.name[0] == type });
+        var combineColumnsOfType = function (_data, typeRe) {
+            var columns = $.map(_data.columns, function (v, k) { return v; }).filter(function (v) { return typeRe.test(v.name[0]); });
             for (var i = 0; i < columns.length; i++) {
                 var column = columns[i];
                 for (var j = 0; j < i; j++) {
                     var earlierColumn = columns[j];
-                    var lastCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
-                    var lastChildOfLastCommitOfFirst = lastCommitOfFirst.children.sort(function (c1, c2) { return data.commits[c1].orderNr - data.commits[c2].orderNr; })[0];
+                    if(!_data.columns[earlierColumn.id])continue; // this column was already sweeped up
+                    var lastCommitOfFirst = _data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+                    var lastChildOfLastCommitOfFirst = lastCommitOfFirst.children.sort(function (c1, c2) { return _data.commits[c1].orderNr - _data.commits[c2].orderNr; })[0];
                     // todo: iets doen met deze last child
-                    var firstCommitOfSecond = data.commits[column.commits[0]];
+                    var firstCommitOfSecond = _data.commits[column.commits[0]];
                     if (firstCommitOfSecond.orderNr > lastCommitOfFirst.orderNr) {
                         // combine columns
                         for (var k = 0; k < column.commits.length; k++) {
-                            var commitToMigrate = data.commits[column.commits[k]];
+                            var commitToMigrate = _data.commits[column.commits[k]];
                             commitToMigrate.columns[0] = earlierColumn.id;
                             earlierColumn.commits.push(commitToMigrate.id);
                         }
-                        delete data.columns[column.id];
+                        delete _data.columns[column.id];
                         j = i;//next column
                     }
                 
@@ -197,31 +198,31 @@
             }
         };
 
-        var putCommitInColumn = function (commitId, columnName) {
-            if(!data.columns)data.columns = {};
-            if(!(columnName in data.columns)){
-                data.columns[columnName] = { commits: [], name:columnName, id:columnName };
+        var putCommitInColumn = function (commitId, columnName, _data) {
+            if(!_data.columns)_data.columns = {};
+            if(!(columnName in _data.columns)){
+                _data.columns[columnName] = { commits: [], name:columnName, id:columnName };
             }
-            var commit = data.commits[commitId];
+            var commit = _data.commits[commitId];
             if (commit) {
                 commit.columns = commit.columns || [];
                 commit.columns.push(columnName);
-                data.columns[columnName].commits.push(commitId);
+                _data.columns[columnName].commits.push(commitId);
             }
         };
-        var findAllPathsFrom = function (from, blockedNode) {
+        var findAllPathsFrom = function (from, blockedNode, _data) {
             var closedPaths = [];
             var setOfPaths = [];
             setOfPaths.push([from]);
             while (true) {
                 var prefix = setOfPaths.shift();
-                var tail = data.commits[prefix[prefix.length - 1]];
-                var accessibleParents = tail.parents.filter(function (p) { return !blockedNode(data.commits[p.id], prefix); });
+                var tail = _data.commits[prefix[prefix.length - 1]];
+                var accessibleParents = tail.parents.filter(function (p) { return !blockedNode(_data.commits[p.id], prefix); });
                 if (accessibleParents.length == 0) {
                     closedPaths.push(prefix);
                 }
                 for (var i = 0; i < accessibleParents.length; i++) {
-                    var parent = data.commits[accessibleParents[i].id];
+                    var parent = _data.commits[accessibleParents[i].id];
                     var newPath = prefix.slice(0);
                     newPath.push(parent.id);
                     setOfPaths.push(newPath);
@@ -230,7 +231,7 @@
             }
             return closedPaths;
         }
-        var findShortestPathAlong = function (from, along) {
+        var findShortestPathAlong = function (from, along, _data) {
             var blockedBecauseOfAlong = function (commit, prefix) {
                 var waitingForIndex = 0;
                 for (var i = 0; i < prefix.length; i++) {
@@ -239,19 +240,19 @@
                         waitingForIndex++;
                     }
                 }
-                return commit.authorTimestamp < data.commits[waitingForIndex]; // no nodes that are older than the one we're waiting for please
+                return commit.authorTimestamp < _data.commits[waitingForIndex]; // no nodes that are older than the one we're waiting for please
             }
-            var allAlong = findAllPathsFrom(from, blockedBecauseOfAlong);
+            var allAlong = findAllPathsFrom(from, blockedBecauseOfAlong, _data);
             if (allAlong.length == 0) return [];
             return allAlong.sort(function (v1, v2) { return v1.length - v2.length; })[0];
 
         }
-        var findDevelopPathFrom = function (from) {
+        var findDevelopPathFrom = function (from, _data) {
             var blockedNode = function (c, path) {
                 // no part of m can be d
                 if (c.columns && c.columns[0] == 'm') return true;
                 // in a line, you cannot have more than one child within the lineage
-                var childrenInPath = path.map(function (d) { return data.commits[d];}).filter(function (d) {
+                var childrenInPath = path.map(function (d) { return _data.commits[d];}).filter(function (d) {
 
                     return d.parents.filter(function (p) {
                         return p.id === c.id;
@@ -260,17 +261,17 @@
                 if (childrenInPath.length != 1) return true;
                 return false;
             }
-            var closedPaths = findAllPathsFrom(from, blockedNode);
+            var closedPaths = findAllPathsFrom(from, blockedNode, _data);
             function firstBy(e) { var t = function (t, r) { return e(t, r) || n(t, r) }; t.thenBy = function (e) { if (n.thenBy) { n.thenBy(e) } else { n = firstBy(e) } return t }; var n = function () { return 0 }; return t }
             var oldestTail = function (nr1, nr2) {
                 // needs old ancestor
-                var tail1 = data.commits[nr1[nr1.length - 1]];
-                var tail2 = data.commits[nr2[nr2.length - 1]];
+                var tail1 = _data.commits[nr1[nr1.length - 1]];
+                var tail2 = _data.commits[nr2[nr2.length - 1]];
                 return tail1.authorTimestamp - tail2.authorTimestamp;
             }
             var leastNonMergeCommits = function (nr1, nr2) {
                 function countNonMergeCommits(list) {
-                    var res = list.filter(function (id) { return data.commits[id].parents.length <= 1; }).length
+                    var res = list.filter(function (id) { return _data.commits[id].parents.length <= 1; }).length
                     return res;
                 }
                 return countNonMergeCommits(nr1) - countNonMergeCommits(nr2);
@@ -283,13 +284,13 @@
         self.draw = function (data, elem, opt) {
 			options = $.extend(options, opt);
             data = cleanup(data);
-            self.drawing.drawTable(elem);
-            self.drawing.drawGraph(elem);
+            self.drawing.drawTable(elem, data);
+            self.drawing.drawGraph(elem, data);
         };
         self.drawing = (function(){
             var self = {};
             var panel;
-            self.drawTable = function (elem) {
+            self.drawTable = function (elem, data) {
                 if (options.drawTable) {
                     var table = $('<table/>');
                     table.append('<tr>' + drawColumnsAsHeaders() + '<td>sha</td><td>parent</td><td>author</td><td>at</td><td>msg</td></tr>');
@@ -313,7 +314,7 @@
                 });
                 return keysInOrder
             };
-            var drawColumnsAsCells = function (commit) {
+            var drawColumnsAsCells = function (commit, data) {
                 var result = "";
                 var keys = keysInOrder(data.columns);
                 for (var i = 0; i < keys.length; i++) {
@@ -326,7 +327,7 @@
                 }
                 return result;
             };
-            var drawColumnsAsHeaders = function () {
+            var drawColumnsAsHeaders = function (data) {
                 var result = "";
                 var keys = keysInOrder(data.columns);
                 for (var i = 0; i < keys.length; i++) {
@@ -335,7 +336,7 @@
                 }
                 return result;
             };
-            self.drawGraph = function (elem) {
+            self.drawGraph = function (elem, data) {
             	var calcHeight = Math.max(800, data.chronoCommits.length * 14);
                 var size = { width: 500, height: calcHeight };
                 var margin = 10;
@@ -386,7 +387,7 @@
                 
                 arrow.append("path")
                     .attr("d", connector)
-                    .attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
+                    .attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p, data); });
 
                 var branchLine = svg.selectAll(".branch")
                   .data(d3.values(data.columns))
@@ -452,7 +453,7 @@
                     function () { $(panel[0]).fadeOut(200);  }
                     );
             };
-            var branchType = function (childId, parentId) {
+            var branchType = function (childId, parentId, data) {
                 var ct = function (id) {
                     var commit = data.commits[id];
                     var columns = commit.columns.map(function (d) { return data.columns[d]; });
