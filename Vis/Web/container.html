@@ -11,8 +11,9 @@
         $(function () {
             var element = document.getElementById('drawhere');
             //GitFlowVisualize.draw(Dummy.Data[0], element, {developRef:"refs/heads/integration"});
-            //GitFlowVisualize.draw(Dummy.Data[1], element, { developRef: "refs/heads/integration" });
-            GitFlowVisualize.draw(Dummy.Data[2], element, {});
+        	//GitFlowVisualize.draw(Dummy.Data[1], element, { developRef: "refs/heads/integration" });
+            var dataCallback = function (done) {done(Dummy.Data[2]);}
+            GitFlowVisualize.draw(element, {dataCallback: dataCallback});
         });
     </script>
     <style>

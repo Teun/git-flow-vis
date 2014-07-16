@@ -20,12 +20,17 @@
     		developBrancheHintPrefix: "devhint/",
     		// this pattern should match the tags that are given to release commits on master 
     		releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
+    		dataCallback: function (done) { done({}); },
+    		dataProcessed: function (d) { }
     	};
 
     	var cleanup = function (_data) {
     		var result = {};
     		data = result;
     		result.commits = {};
+    		if (!_data.commits || !_data.branches || !_data.tags) {
+    			throw "raw data should have a commits, branches and  tags property";
+    		}
     		for (var i = 0; i < _data.commits.length; i++) {
     			for (var j = 0; j < _data.commits[i].values.length; j++) {
     				var commit = _data.commits[i].values[j];
@@ -73,6 +78,7 @@
 
 
     		setColumns(result);
+    		return result;
     	};
     	var setChildToParent = function (parent, childId) {
     		parent.children = parent.children || [];
@@ -285,11 +291,16 @@
 						.thenBy(leastNonMergeCommits)
 						)[0];
     	}
-    	self.draw = function (data, elem, opt) {
+    	self.draw = function (elem, opt) {
     		options = $.extend(options, opt);
-    		data = cleanup(data);
-    		self.drawing.drawTable(elem);
-    		self.drawing.drawGraph(elem);
+    		var rawData = opt.dataCallback(function (data) {
+    			data = cleanup(data);
+    			options.dataProcessed(data);
+    			if (elem) {
+    				self.drawing.drawTable(elem);
+    				self.drawing.drawGraph(elem);
+    			}
+    		});
     	};
     	self.drawing = (function () {
     		var self = {};
