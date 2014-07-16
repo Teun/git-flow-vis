@@ -97,7 +97,7 @@
     		if (head.length == 0) return;
     		var versionCommitPath = findShortestPathAlong(
 						/*from*/  head[0].latestChangeset,
-						/*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(options.releaseTagPattern) }), function (i) { return i.latestChangeset; }),
+						/*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(options.releaseTagPattern); }), function (i) { return i.latestChangeset; }),
 						data
 						);
     		for (var i = 0; i < versionCommitPath.length; i++) {
@@ -381,7 +381,8 @@
     				var childCommit = data.commits[d.c];
     				var parentCommit = data.commits[d.p];
     				var intermediateRow = childCommit.orderNr + 1;
-    				var parentCol = data.columns[parentCommit.columns[0]]
+    				var parentCol = data.columns[parentCommit.columns[0]];
+    			    if (!parentCol) return null;
     				var parentPosInColumn = parentCol.commits.indexOf(parentCommit.id);
     				if (parentPosInColumn > 0) {
     					intermediateRow = Math.max(intermediateRow, data.commits[parentCol.commits[parentPosInColumn - 1]].orderNr);
