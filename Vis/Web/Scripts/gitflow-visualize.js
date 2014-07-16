@@ -356,7 +356,9 @@
     			var size = { width: 500, height: calcHeight };
     			var margin = 10;
 
-    			var svg = d3.select(elem).append("svg")
+    			var cont = d3.select(elem).append("div");
+    		    cont.attr("class", "commits-graph-container");
+    			var svg = cont.append("svg")
 							.attr("width", size.width + 2 * margin)
 							.attr("height", size.height + 2 * margin)
 							.attr("class", "commits-graph")
@@ -366,7 +368,7 @@
     			var columnsInOrder = keysInOrder(data.columns);
     			var x = d3.scale.ordinal()
 							.domain(columnsInOrder)
-							.rangePoints([0, Math.min(size.width, 30 * columnsInOrder.length)]);
+							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
 							.range([10, data.chronoCommits.length * 20]);
@@ -479,8 +481,27 @@
 
     	})();
     	if (document) {
-    		$(function(){
-    			$('<style>.commits-graph{float:left;}.messages{position:relative;}.commit-msg{left:200px;position:absolute;white-space:nowrap;}.label{border:1px inset;margin-right:2px;}.branch{background-color:#ffc;border-color:#ff0;}.tag{background-color:#eee;;border-color:#ccc;}.author{background-color:orange;border:black 1px solid;margin:2px;}</style>').appendTo('head');
+    	    $(function () {
+    	        var style =
+    	            'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
+    	            'line {stroke:black;opacity: 0.2;}' +
+    	            'line.m {stroke:red;stroke-width:3px;opacity: 1;}' +
+    	            'line.d {stroke:forestgreen;stroke-width:3px;opacity: 1;}' +
+    	            '.arrow path.outline {stroke:white;stroke-width:8px;opacity: .8;}' +
+    	            '.arrow path {stroke: black;stroke-width: 3px;opacity: 1;fill:none;}' +
+    	            '.arrow path.branch-type-f {stroke: blueviolet;}' +
+    	            '.arrow path.branch-type-r {stroke: gold;}' +
+    	            '.arrow path.branch-type-m {stroke: gold;}' +
+    	            '.arrow path.branch-type-default {stroke-width:1px;}' +
+    	            '.commits-graph{}.messages{position:relative;}' +
+    	            '.commit-msg{left:300px;position:absolute;white-space:nowrap;}' +
+    	            '.commit-msg:hover{background-color:silver;}' +
+    	            '.label{border:1px inset;margin-right:2px;}' +
+    	            '.branch{background-color:#ffc;border-color:#ff0;}' +
+    	            '.tag{background-color:#eee;;border-color:#ccc;}' +
+    	            '.author{background-color:orange;border:black 1px solid;margin:2px;}' +
+    	            '.commits-graph-container{width:300px;overflow-x:scroll;float:left;}';
+    			$('<style>' + style + '</style>').appendTo('head');
     			});
     	}
 

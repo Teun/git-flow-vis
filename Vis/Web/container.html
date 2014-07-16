@@ -12,68 +12,11 @@
             var element = document.getElementById('drawhere');
             //GitFlowVisualize.draw(Dummy.Data[0], element, {developRef:"refs/heads/integration"});
         	//GitFlowVisualize.draw(Dummy.Data[1], element, { developRef: "refs/heads/integration" });
-            var dataCallback = function (done) {done(Dummy.Data[2]);}
+            var dataCallback = function (done) { done(Dummy.Data[2]); };
             GitFlowVisualize.draw(element, {dataCallback: dataCallback});
         });
     </script>
     <style>
-        td {text-align:left; vertical-align:top;}
-        table {
-            font-family: Arial;
-        }
-        circle.commit-dot {
-            fill: white;
-            stroke:black;
-            stroke-width:2px;
-        }
-        #commit-panel {
-            display:none;
-        }
-        rect.commit-panel{
-            fill: white;
-            stroke:black;
-            stroke-width:2px;
-        }
-        rect.commit-panel text{
-            stroke:black;
-        }
-        line {
-            stroke:black;
-            opacity: 0.2;
-        }
-        line.m {
-            stroke:red;
-            stroke-width:3px;
-            opacity: 1;
-        }
-        line.d {
-            stroke:forestgreen;
-            stroke-width:3px;
-            opacity: 1;
-        }
-        .arrow path.outline {
-            stroke:white;
-            stroke-width:8px;
-            opacity: .8;
-        }
-        .arrow path {
-            stroke: black;
-            stroke-width: 3px;
-            opacity: 1;
-            fill:none;
-        }
-        .arrow path.branch-type-f {
-            stroke: blueviolet;
-        }
-        .arrow path.branch-type-r {
-            stroke: gold;
-        }
-        .arrow path.branch-type-m {
-            stroke: gold;
-        }
-        .arrow path.branch-type-default {
-            stroke-width:1px;
-        }
     </style>
     <title></title>
 </head>
