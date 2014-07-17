@@ -1,21 +1,39 @@
 ﻿
-suite('Data', function () {
-	test('GitFlowVisualize should be in global scope', function (done) {
-		if (GitFlowVisualize) {
-			done();
-		}
-	});
-	test('Master branch should be isolated', function (done) {
-		var dataCallback = function (d) {d(Dummy.Data[2]);}
-		var dataClean = function (d) {
-			if (d.columns['m'].commits.length == 0) throw "No master branch found";
-			var colF1 = d.commits["ea08c2c5f4fa9778baec512b28603ff763ef9022"].columns[0];
-			if (d.columns[colF1].name[0] != "f") throw "open feature should be on feature column";
-			
-			done();
-		}
+suite('Library set up', function () {
+    test('GitFlowVisualize should be in global scope', function (done) {
+        if (GitFlowVisualize) {
+            done();
+        }
+    });
 
-		GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean });
-	});
+});
+
+suite('Data set 1', function () {
+    var data;
+    suiteSetup(function(done) {
+        var dataCallback = function(d) { d(Dummy.Data[2]); };
+        var dataClean = function(d) {
+            data = d;
+            done();
+        };
+        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean });
+    });
+    test('Master branch should be isolated', function() {
+        assert(data.columns['m'].commits.length > 0, "No master branch found");
+    });
+    test('Open feature branch should be on f* column', function () {
+        var colF1 = data.commits["ea08c2c5f4fa9778baec512b28603ff763ef9022"].columns[0];
+        assert(data.columns[colF1].name[0] == "f", "open feature is on column " + data.columns[colF1].name);
+    });
+    test('Needs two release columns and one feature column', function () {
+        var releaseColumns = $(Object.keys(data.columns)).filter(function(ix, c) {
+            return data.columns[c].name[0] == "r";
+        });
+        assert(releaseColumns.length == 2, "found " + $.makeArray( releaseColumns.map(function(ix, c) { return data.columns[c].name; })).join() );
+        var featureColumns = $(Object.keys(data.columns)).filter(function (ix, c) {
+            return data.columns[c].name[0] == "f";
+        });
+        assert(featureColumns.length == 1, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
+    });
 
 });

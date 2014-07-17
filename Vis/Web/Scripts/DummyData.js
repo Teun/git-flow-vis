@@ -4,6 +4,7 @@ var Dummy = {
     Data: [
         {},
         {},
+        /* a simple set of commits including one finishe feature, one release, one hotfix (unfinished) */
 {
     branches: { "size": 6, "limit": 100, "isLastPage": true, "values": [{ "id": "refs/heads/hotfix/h1", "displayId": "hotfix/h1", "latestChangeset": "871a7a651cf22f7390d547a8a28782530d191367", "isDefault": false }, { "id": "refs/heads/release/r2", "displayId": "release/r2", "latestChangeset": "0aabee3cc5a668e1dffd3c464b18890caf98e6e9", "isDefault": false }, { "id": "refs/heads/feature/f3", "displayId": "feature/f3", "latestChangeset": "fcda73616bf16fc0d4560c628ed3876ccc9762f5", "isDefault": false }, { "id": "refs/heads/develop", "displayId": "develop", "latestChangeset": "035b319c4dfa9f6baa8580edcaf9f40557bbfd80", "isDefault": false }, { "id": "refs/heads/master", "displayId": "master", "latestChangeset": "12a048fd7a67e4a1690e67cb242e589d7a2594f4", "isDefault": true }, { "id": "refs/heads/feature/F1", "displayId": "feature/F1", "latestChangeset": "ea08c2c5f4fa9778baec512b28603ff763ef9022", "isDefault": false }], "start": 0 }
 ,
