@@ -20,12 +20,17 @@
     		developBrancheHintPrefix: "devhint/",
     		// this pattern should match the tags that are given to release commits on master 
     		releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
+    		dataCallback: function (done) { done({}); },
+    		dataProcessed: function (d) { }
     	};
 
     	var cleanup = function (_data) {
     		var result = {};
     		data = result;
     		result.commits = {};
+    		if (!_data.commits || !_data.branches || !_data.tags) {
+    			throw "raw data should have a commits, branches and  tags property";
+    		}
     		for (var i = 0; i < _data.commits.length; i++) {
     			for (var j = 0; j < _data.commits[i].values.length; j++) {
     				var commit = _data.commits[i].values[j];
@@ -73,6 +78,7 @@
 
 
     		setColumns(result);
+    		return result;
     	};
     	var setChildToParent = function (parent, childId) {
     		parent.children = parent.children || [];
@@ -91,7 +97,7 @@
     		if (head.length == 0) return;
     		var versionCommitPath = findShortestPathAlong(
 						/*from*/  head[0].latestChangeset,
-						/*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(options.releaseTagPattern) }), function (i) { return i.latestChangeset; }),
+						/*along*/ $.map($.grep(data.tags, function (tag) { return tag.id.match(options.releaseTagPattern); }), function (i) { return i.latestChangeset; }),
 						data
 						);
     		for (var i = 0; i < versionCommitPath.length; i++) {
@@ -285,11 +291,16 @@
 						.thenBy(leastNonMergeCommits)
 						)[0];
     	}
-    	self.draw = function (data, elem, opt) {
+    	self.draw = function (elem, opt) {
     		options = $.extend(options, opt);
-    		data = cleanup(data);
-    		self.drawing.drawTable(elem);
-    		self.drawing.drawGraph(elem);
+    		var rawData = opt.dataCallback(function (data) {
+    			data = cleanup(data);
+    			options.dataProcessed(data);
+    			if (elem) {
+    				self.drawing.drawTable(elem);
+    				self.drawing.drawGraph(elem);
+    			}
+    		});
     	};
     	self.drawing = (function () {
     		var self = {};
@@ -345,7 +356,9 @@
     			var size = { width: 500, height: calcHeight };
     			var margin = 10;
 
-    			var svg = d3.select(elem).append("svg")
+    			var cont = d3.select(elem).append("div");
+    		    cont.attr("class", "commits-graph-container");
+    			var svg = cont.append("svg")
 							.attr("width", size.width + 2 * margin)
 							.attr("height", size.height + 2 * margin)
 							.attr("class", "commits-graph")
@@ -355,7 +368,7 @@
     			var columnsInOrder = keysInOrder(data.columns);
     			var x = d3.scale.ordinal()
 							.domain(columnsInOrder)
-							.rangePoints([0, Math.min(size.width, 30 * columnsInOrder.length)]);
+							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
 							.range([10, data.chronoCommits.length * 20]);
@@ -368,7 +381,8 @@
     				var childCommit = data.commits[d.c];
     				var parentCommit = data.commits[d.p];
     				var intermediateRow = childCommit.orderNr + 1;
-    				var parentCol = data.columns[parentCommit.columns[0]]
+    				var parentCol = data.columns[parentCommit.columns[0]];
+    			    if (!parentCol) return null;
     				var parentPosInColumn = parentCol.commits.indexOf(parentCommit.id);
     				if (parentPosInColumn > 0) {
     					intermediateRow = Math.max(intermediateRow, data.commits[parentCol.commits[parentPosInColumn - 1]].orderNr);
@@ -468,8 +482,27 @@
 
     	})();
     	if (document) {
-    		$(function(){
-    			$('<style>.commits-graph{float:left;}.messages{position:relative;}.commit-msg{left:200px;position:absolute;white-space:nowrap;}.label{border:1px inset;margin-right:2px;}.branch{background-color:#ffc;border-color:#ff0;}.tag{background-color:#eee;;border-color:#ccc;}.author{background-color:orange;border:black 1px solid;margin:2px;}</style>').appendTo('head');
+    	    $(function () {
+    	        var style =
+    	            'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
+    	            'line {stroke:black;opacity: 0.2;}' +
+    	            'line.m {stroke:red;stroke-width:3px;opacity: 1;}' +
+    	            'line.d {stroke:forestgreen;stroke-width:3px;opacity: 1;}' +
+    	            '.arrow path.outline {stroke:white;stroke-width:8px;opacity: .8;}' +
+    	            '.arrow path {stroke: black;stroke-width: 3px;opacity: 1;fill:none;}' +
+    	            '.arrow path.branch-type-f {stroke: blueviolet;}' +
+    	            '.arrow path.branch-type-r {stroke: gold;}' +
+    	            '.arrow path.branch-type-m {stroke: gold;}' +
+    	            '.arrow path.branch-type-default {stroke-width:1px;}' +
+    	            '.commits-graph{}.messages{position:relative;}' +
+    	            '.commit-msg{left:300px;position:absolute;white-space:nowrap;}' +
+    	            '.commit-msg:hover{background-color:silver;}' +
+    	            '.label{border:1px inset;margin-right:2px;}' +
+    	            '.branch{background-color:#ffc;border-color:#ff0;}' +
+    	            '.tag{background-color:#eee;;border-color:#ccc;}' +
+    	            '.author{background-color:orange;border:black 1px solid;margin:2px;}' +
+    	            '.commits-graph-container{width:300px;overflow-x:scroll;float:left;}';
+    			$('<style>' + style + '</style>').appendTo('head');
     			});
     	}
 
