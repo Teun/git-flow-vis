@@ -25,7 +25,7 @@ suite('Data set 1', function () {
         var colF1 = data.commits["ea08c2c5f4fa9778baec512b28603ff763ef9022"].columns[0];
         assert(data.columns[colF1].name[0] == "f", "open feature is on column " + data.columns[colF1].name);
     });
-    test('Needs two release columns and one feature column', function () {
+    test('Needs two release columns and two feature columns', function () {
         var releaseColumns = $(Object.keys(data.columns)).filter(function(ix, c) {
             return data.columns[c].name[0] == "r";
         });
@@ -33,7 +33,7 @@ suite('Data set 1', function () {
         var featureColumns = $(Object.keys(data.columns)).filter(function (ix, c) {
             return data.columns[c].name[0] == "f";
         });
-        assert(featureColumns.length == 1, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
+        assert(featureColumns.length == 2, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
     });
 
 });
@@ -64,7 +64,7 @@ suite('Data set 2', function () {
         var colF1 = data.commits["ea08c2c5f4fa9778baec512b28603ff763ef9022"].columns[0];
         assert(data.columns[colF1].name[0] == "f", "open feature is on column " + data.columns[colF1].name);
     });
-    test('Needs two release columns and two feature columns', function () {
+    test('Needs two release columns and three feature columns', function () {
         var releaseColumns = $(Object.keys(data.columns)).filter(function (ix, c) {
             return data.columns[c].name[0] == "r";
         });
@@ -72,7 +72,7 @@ suite('Data set 2', function () {
         var featureColumns = $(Object.keys(data.columns)).filter(function (ix, c) {
             return data.columns[c].name[0] == "f";
         });
-        assert(featureColumns.length == 2, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
+        assert(featureColumns.length == 3, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
     });
     test('Branches f3 and f1 should not be place on one column', function () {
     	var commitF4 = data.commits["ee268f9d33d940722d974ac1c12cd20cb85bc768"];
