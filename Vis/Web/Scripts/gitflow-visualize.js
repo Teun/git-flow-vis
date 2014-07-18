@@ -182,11 +182,16 @@
     			var column = columns[i];
     			for (var j = 0; j < i; j++) {
     				var earlierColumn = columns[j];
-    				var lastCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
-    				var lastChildOfLastCommitOfFirst = lastCommitOfFirst.children.sort(function (c1, c2) { return data.commits[c1].orderNr - data.commits[c2].orderNr; })[0];
+    				var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+    				if (earliestCommitOfFirst.parents.length > 0) {
+    				    earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
+    				}
     				// todo: iets doen met deze last child
-    				var firstCommitOfSecond = data.commits[column.commits[0]];
-    				if (firstCommitOfSecond.orderNr > lastCommitOfFirst.orderNr) {
+    				var lastCommitOfSecond = data.commits[column.commits[0]];
+    			    if (lastCommitOfSecond.children.length > 0) {
+    			        lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
+    			    }
+    				if (lastCommitOfSecond.orderNr > earliestCommitOfFirst.orderNr) {
     					// combine columns
     					for (var k = 0; k < column.commits.length; k++) {
     						var commitToMigrate = data.commits[column.commits[k]];
