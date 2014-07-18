@@ -74,5 +74,12 @@ suite('Data set 2', function () {
         });
         assert(featureColumns.length == 2, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
     });
+    test('Branches f3 and f1 should not be place on one column', function () {
+    	var commitF4 = data.commits["ee268f9d33d940722d974ac1c12cd20cb85bc768"];
+    	var commitF1 = data.commits["ea08c2c5f4fa9778baec512b28603ff763ef9022"];
 
+    	assert(commitF1.columns[0] != commitF4.columns[0], "Branches are on the same column: " + commitF4.columns[0]);
+
+    	
+    });
 });
