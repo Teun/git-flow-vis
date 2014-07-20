@@ -16,7 +16,7 @@ suite('Data set 1', function () {
             data = d;
             done();
         };
-        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean });
+        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean, releaseTagPattern: /refs\/tags\/(r|h)\d$/ });
     });
     test('Master branch should be isolated', function() {
         assert(data.columns['m'].commits.length > 0, "No master branch found");
@@ -45,7 +45,7 @@ suite('Data set 2', function () {
             data = d;
             done();
         };
-        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean });
+        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean, releaseTagPattern: /refs\/tags\/(r|h)\d$/ });
     });
     test('Master branch should be isolated', function () {
         assert(data.columns['m'].commits.length > 0, "No master branch found");

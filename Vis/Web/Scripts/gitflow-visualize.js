@@ -247,20 +247,12 @@
     		return closedPaths;
     	}
     	var findShortestPathAlong = function (from, along) {
-    		var blockedBecauseOfAlong = function (commit, prefix) {
-    			var waitingForIndex = 0;
-    			for (var i = 0; i < prefix.length; i++) {
-    				if (along.length <= waitingForIndex) return false; // always OK if we're not waiting for anything anymore
-    				if (along[waitingForIndex] == prefix[i]) {
-    					waitingForIndex++;
-    				}
-    			}
-    			return commit.authorTimestamp < data.commits[waitingForIndex]; // no nodes that are older than the one we're waiting for please
+    		var scoreForAlong = function (path, childId) {
+    			if ($.inArray(childId, along) > -1) return 1000;
+    			return -1;
     		}
-    		var allAlong = findAllPathsFrom(from, blockedBecauseOfAlong);
-    		if (allAlong.length == 0) return [];
-    		return allAlong.sort(function (v1, v2) { return v1.length - v2.length; })[0];
-
+    		var mostAlong = findBestPathFromBreadthFirst(from, scoreForAlong);
+    		return mostAlong;
     	}
     	var findBestPathFromBreadthFirst = function (from, score) {
     		var scoreFunc = score || function(){return -1};
