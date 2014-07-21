@@ -41,7 +41,13 @@
     		                    { limit: 100, start: 0, until: options.developRef }
     		                ).then(function (d) {
     		                    result.commits.push(d);
-    		                    done(result);
+    		                    $.getJSON(
+																	"/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
+																	{ limit: 100, start: 0, until: options.masterRef }
+																	).then(function (d) {
+																		result.commits.push(d);
+																		done(result);
+																	});
     		                });
     		            });
     		        });
