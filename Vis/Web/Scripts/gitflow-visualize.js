@@ -401,15 +401,16 @@
     				if (precedingCommitOnCol) {
     					var precedingPos = data.commits[precedingCommitOnCol].orderNr;
     					if (precedingPos < intermediateRow) {
-    						var parentCol = data.columns[parentCommit.columns[0]];
-    						var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
-    						if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < parentCommit.orderNr) {
-    							intermediateRow = childCommit.orderNr + .5;
-    							intermediatCol = parentCommit.columns[0];
-    						} else {
-    							// worst case: draw diagonal line
-    							intermediateRow = childCommit.orderNr + .5;
-    						}
+    					    // worst case: draw diagonal line
+    					    intermediateRow = childCommit.orderNr + .5;
+    					    var parentCol = data.columns[parentCommit.columns[0]];
+    					    if (parentCol) {
+    					        var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
+    					        if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < parentCommit.orderNr) {
+    					            intermediateRow = childCommit.orderNr + .5;
+    					            intermediatCol = parentCommit.columns[0];
+    					        }
+    					    }
     					}
     				}
     				var points = [
