@@ -27,29 +27,32 @@
     		        var parts = currUrl.split('/');
     		        var project = parts[parts.length - 2];
     		        var repo = parts[parts.length - 1];
-    		        var toGet = [];
+    		        $.getJSON(
+    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
+    		        ).then(function (d) {
+    		        	result.tags = d;
+    		        });
     		        $.getJSON(
     		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches"
     		        ).then(function(d) {
     		        	result.branches = d;
-    		        	toGet.push({ kind: "tags" });
+    		        	var toGet = [];
     		        	for (var i = 0; i < d.values.length; i++) {
     		        		var br = d.values[i].id;
-    		        		toGet.push({ kind: "commits", until: br });
+    		        		toGet.push(br );
     		        	}
     		        	var completed = 0;
     		        	for (var i = 0; i < toGet.length; i++) {
     		        		var par = { start: 0, limit: 100 };
     		        		var item = toGet[i];
-    		        		if (item.kind == "commits")
-    		        			par.until = item.until;
-    		        		if (item.until == "refs/heads/develop")
+    		        		par.until = item;
+    		        		if (par.until == "refs/heads/develop")
     		        			par.limit = 200;
-    		        		var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/" + item.kind;
+    		        		var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits";
     		        		$.getJSON(
 													url, par
-											).then(function (d, s, x) {
-
+											).then(function (d) {
+												result.commits.push(d);
 												completed++;
 												if (completed >= toGet.length) {
 													done(result);
