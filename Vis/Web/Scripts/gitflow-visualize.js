@@ -298,7 +298,7 @@
     			var descendantsInPath = path.filter(function (desc) { return $.inArray(desc, c.children) > -1; });
     			if (descendantsInPath.length != 1) return false;
 					// following first parent is a bonus
-    			if (c.id == last.parents[0].id) return 1;
+    			if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
     			return -1;
     		}
     		var path = findBestPathFromBreadthFirst(from, score);
@@ -393,16 +393,28 @@
     			var connector = function (d) {
     				var childCommit = data.commits[d.c];
     				var parentCommit = data.commits[d.p];
-    				var intermediateRow = childCommit.orderNr + 1;
-    				var parentCol = data.columns[parentCommit.columns[0]];
-    			    if (!parentCol) return null;
-    				var parentPosInColumn = parentCol.commits.indexOf(parentCommit.id);
-    				if (parentPosInColumn > 0) {
-    					intermediateRow = Math.max(intermediateRow, data.commits[parentCol.commits[parentPosInColumn - 1]].orderNr);
+    				var intermediateRow = parentCommit.orderNr - .5;
+    				var intermediatCol = childCommit.columns[0];
+    				var childCol = data.columns[childCommit.columns[0]];
+    				if (!childCol) return null;
+    				var precedingCommitOnCol = childCol.commits[$.inArray(childCommit.id, childCol.commits) + 1];
+    				if (precedingCommitOnCol) {
+    					var precedingPos = data.commits[precedingCommitOnCol].orderNr;
+    					if (precedingPos < intermediateRow) {
+    						var parentCol = data.columns[parentCommit.columns[0]];
+    						var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
+    						if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < parentCommit.orderNr) {
+    							intermediateRow = childCommit.orderNr + .5;
+    							intermediatCol = parentCommit.columns[0];
+    						} else {
+    							// worst case: draw diagonal line
+    							intermediateRow = childCommit.orderNr + .5;
+    						}
+    					}
     				}
     				var points = [
 								{ x: childCommit.columns[0], y: childCommit.orderNr },
-								{ x: parentCommit.columns[0], y: intermediateRow },
+								{ x: intermediatCol, y: intermediateRow },
 								{ x: parentCommit.columns[0], y: parentCommit.orderNr }];
     				return line(points);
     			}
