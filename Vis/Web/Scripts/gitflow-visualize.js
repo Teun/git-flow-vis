@@ -334,7 +334,7 @@
     	}
     	self.draw = function (elem, opt) {
     		options = $.extend(options, opt);
-    		var rawData = opt.dataCallback(function (data) {
+    		var rawData = options.dataCallback(function (data) {
     			data = cleanup(data);
     			options.dataProcessed(data);
     			if (elem) {
