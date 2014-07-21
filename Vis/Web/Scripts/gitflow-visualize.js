@@ -27,29 +27,35 @@
     		        var parts = currUrl.split('/');
     		        var project = parts[parts.length - 2];
     		        var repo = parts[parts.length - 1];
-    		        var requests = [];
+    		        var toGet = [];
     		        $.getJSON(
     		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches"
     		        ).then(function(d) {
-    		            result.branches = d;
-    		        	$.getJSON(
-    		                "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
-    		            ).then(function(d) {
-    		                result.tags = d;
-    		            	$.getJSON(
-    		                    "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
-    		                    { limit: 200, start: 0, until: options.developRef }
-    		                ).then(function (d) {
-    		                    result.commits.push(d);
-    		                    $.getJSON(
-																	"/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
-																	{ limit: 10, start: 0, until: options.masterRef }
-																	).then(function (d) {
-																		result.commits.push(d);
-																		done(result);
-																	});
-    		                });
-    		            });
+    		        	result.branches = d;
+    		        	toGet.push({ kind: "tags" });
+    		        	for (var i = 0; i < d.values.length; i++) {
+    		        		var br = d.values[i].id;
+    		        		toGet.push({ kind: "commits", until: br });
+    		        	}
+    		        	var completed = 0;
+    		        	for (var i = 0; i < toGet.length; i++) {
+    		        		var par = { start: 0, limit: 100 };
+    		        		var item = toGet[i];
+    		        		if (item.kind == "commits")
+    		        			par.until = item.until;
+    		        		if (item.until == "refs/heads/develop")
+    		        			par.limit = 200;
+    		        		var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/" + item.kind;
+    		        		$.getJSON(
+													url, par
+											).then(function (d, s, x) {
+
+												completed++;
+												if (completed >= toGet.length) {
+													done(result);
+												}
+											});
+    		        	}
     		        });
     		    } else {
     		        console.log("Current URL doesn't look like my stash page");
