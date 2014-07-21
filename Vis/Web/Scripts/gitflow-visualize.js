@@ -51,8 +51,10 @@
     		        		var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits";
     		        		$.getJSON(
 													url, par
-											).then(function (d) {
-												result.commits.push(d);
+											).always(function (d, s) {
+												if (s == "succes") {
+													result.commits.push(d);
+												}
 												completed++;
 												if (completed >= toGet.length) {
 													done(result);
