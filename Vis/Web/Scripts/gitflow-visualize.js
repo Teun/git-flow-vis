@@ -38,12 +38,12 @@
     		                result.tags = d;
     		            	$.getJSON(
     		                    "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
-    		                    { limit: 100, start: 0, until: options.developRef }
+    		                    { limit: 200, start: 0, until: options.developRef }
     		                ).then(function (d) {
     		                    result.commits.push(d);
     		                    $.getJSON(
 																	"/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
-																	{ limit: 100, start: 0, until: options.masterRef }
+																	{ limit: 10, start: 0, until: options.masterRef }
 																	).then(function (d) {
 																		result.commits.push(d);
 																		done(result);
