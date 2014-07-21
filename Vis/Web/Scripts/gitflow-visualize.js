@@ -52,7 +52,7 @@
     		        		$.getJSON(
 													url, par
 											).always(function (d, s) {
-												if (s == "success") {
+												if (s === "success") {
 													result.commits.push(d);
 												}
 												completed++;
