@@ -20,7 +20,35 @@
     		developBrancheHintPrefix: "devhint/",
     		// this pattern should match the tags that are given to release commits on master 
     		releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
-    		dataCallback: function (done) { done({}); },
+    		dataCallback: function(done) {
+    		    var currUrl = document.location.href;
+    		    var result = { branches: {}, tags: {}, commits: [] };
+    		    if (currUrl.indexOf("plugins/servlet/git-flow-graph/") > -1) {
+    		        var parts = currUrl.split('/');
+    		        var project = parts[parts.length - 2];
+    		        var repo = parts[parts.length - 1];
+    		        var requests = [];
+    		        $.json(
+    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches"
+    		        ).then(function(d) {
+    		            result.branches = d;
+    		            $.json(
+    		                "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
+    		            ).then(function(d) {
+    		                result.tags = d;
+    		                $.json(
+    		                    "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
+    		                    { limit: 100, start: 0, until: options.developRef }
+    		                ).then(function (d) {
+    		                    result.commits.push(d);
+    		                    done(result);
+    		                });
+    		            });
+    		        });
+    		    } else {
+    		        console.log("Current URL doesn't look like my stash page");
+    		    }
+    		},
     		dataProcessed: function (d) { }
     	};
 
@@ -182,11 +210,16 @@
     			var column = columns[i];
     			for (var j = 0; j < i; j++) {
     				var earlierColumn = columns[j];
-    				var lastCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
-    				var lastChildOfLastCommitOfFirst = lastCommitOfFirst.children.sort(function (c1, c2) { return data.commits[c1].orderNr - data.commits[c2].orderNr; })[0];
+    				var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+    				if (earliestCommitOfFirst.parents.length > 0) {
+    				    earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
+    				}
     				// todo: iets doen met deze last child
-    				var firstCommitOfSecond = data.commits[column.commits[0]];
-    				if (firstCommitOfSecond.orderNr > lastCommitOfFirst.orderNr) {
+    				var lastCommitOfSecond = data.commits[column.commits[0]];
+    			    if (lastCommitOfSecond.children.length > 0) {
+    			        lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
+    			    }
+    				if (lastCommitOfSecond.orderNr > earliestCommitOfFirst.orderNr) {
     					// combine columns
     					for (var k = 0; k < column.commits.length; k++) {
     						var commitToMigrate = data.commits[column.commits[k]];
@@ -242,54 +275,62 @@
     		return closedPaths;
     	}
     	var findShortestPathAlong = function (from, along) {
-    		var blockedBecauseOfAlong = function (commit, prefix) {
-    			var waitingForIndex = 0;
-    			for (var i = 0; i < prefix.length; i++) {
-    				if (along.length <= waitingForIndex) return false; // always OK if we're not waiting for anything anymore
-    				if (along[waitingForIndex] == prefix[i]) {
-    					waitingForIndex++;
-    				}
-    			}
-    			return commit.authorTimestamp < data.commits[waitingForIndex]; // no nodes that are older than the one we're waiting for please
+    		var scoreForAlong = function (path, childId) {
+    			if ($.inArray(childId, along) > -1) return 1000;
+    			return -1;
     		}
-    		var allAlong = findAllPathsFrom(from, blockedBecauseOfAlong);
-    		if (allAlong.length == 0) return [];
-    		return allAlong.sort(function (v1, v2) { return v1.length - v2.length; })[0];
-
+    		var mostAlong = findBestPathFromBreadthFirst(from, scoreForAlong);
+    		return mostAlong;
+    	}
+    	var findBestPathFromBreadthFirst = function (from, score) {
+    		var scoreFunc = score || function(){return -1};
+    		var openPaths = [];
+    		var bestPathToPoints = {};
+    		var firstPath = [from];
+    		var furthestPath = 0;
+    		firstPath.score = 0;
+    		openPaths.push(firstPath);
+    		while(openPaths.length > 0){
+    			var basePath = openPaths.shift();
+    			var tail = data.commits[ basePath[basePath.length - 1]];
+    			for (var i = 0; i < tail.parents.length; i++) {
+    				var nextChild = data.commits[tail.parents[i].id];
+    				var stepScore = scoreFunc(basePath, nextChild.id);
+    				if (stepScore === false) {
+    					// blocked node
+    					continue;
+    				}
+    				if (bestPathToPoints[nextChild.orderNr]) {
+    					if (bestPathToPoints[nextChild.orderNr].score > basePath.score + stepScore) {
+    						// this is not the best path. We do not place it in the open paths
+    						continue;
+    					}
+    				}
+    				var newPath = basePath.slice(0);
+    				newPath.push(nextChild.id);
+    				newPath.score = basePath.score + stepScore;
+    				openPaths.push(newPath);
+    				bestPathToPoints[nextChild.orderNr] = newPath;
+    				if (furthestPath < nextChild.orderNr) furthestPath = nextChild.orderNr;
+    			}
+    		}
+    		return bestPathToPoints[furthestPath];
     	}
     	var findDevelopPathFrom = function (from) {
-    		var blockedNode = function (c, path) {
+    		var score = function (path, nextId) {
+    			var c = data.commits[nextId];
+    			var last = data.commits[path[path.length - 1]];
     			// no part of m can be d
-    			if (c.columns && c.columns[0] == 'm') return true;
-    			// in a line, you cannot have more than one child within the lineage
-    			var childrenInPath = path.map(function (d) { return data.commits[d]; }).filter(function (d) {
-
-    				return d.parents.filter(function (p) {
-    					return p.id === c.id;
-    				}).length > 0;
-    			});
-    			if (childrenInPath.length != 1) return true;
-    			return false;
+    			if (c.columns && c.columns[0] == 'm') return false;
+    			// next commit cannot have a child further down the line
+    			var descendantsInPath = path.filter(function (desc) { return $.inArray(desc, c.children) > -1; });
+    			if (descendantsInPath.length != 1) return false;
+					// following first parent is a bonus
+    			if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
+    			return -1;
     		}
-    		var closedPaths = findAllPathsFrom(from, blockedNode, true);
-    		function firstBy(e) { var t = function (t, r) { return e(t, r) || n(t, r) }; t.thenBy = function (e) { if (n.thenBy) { n.thenBy(e) } else { n = firstBy(e) } return t }; var n = function () { return 0 }; return t }
-    		var oldestTail = function (nr1, nr2) {
-    			// needs old ancestor
-    			var tail1 = data.commits[nr1[nr1.length - 1]];
-    			var tail2 = data.commits[nr2[nr2.length - 1]];
-    			return tail1.authorTimestamp - tail2.authorTimestamp;
-    		}
-    		var leastNonMergeCommits = function (nr1, nr2) {
-    			function countNonMergeCommits(list) {
-    				var res = list.filter(function (id) { return data.commits[id].parents.length <= 1; }).length
-    				return res;
-    			}
-    			return countNonMergeCommits(nr1) - countNonMergeCommits(nr2);
-    		}
-    		return closedPaths.sort(
-						firstBy(oldestTail)
-						.thenBy(leastNonMergeCommits)
-						)[0];
+    		var path = findBestPathFromBreadthFirst(from, score);
+    		return path;
     	}
     	self.draw = function (elem, opt) {
     		options = $.extend(options, opt);
@@ -380,16 +421,29 @@
     			var connector = function (d) {
     				var childCommit = data.commits[d.c];
     				var parentCommit = data.commits[d.p];
-    				var intermediateRow = childCommit.orderNr + 1;
-    				var parentCol = data.columns[parentCommit.columns[0]];
-    			    if (!parentCol) return null;
-    				var parentPosInColumn = parentCol.commits.indexOf(parentCommit.id);
-    				if (parentPosInColumn > 0) {
-    					intermediateRow = Math.max(intermediateRow, data.commits[parentCol.commits[parentPosInColumn - 1]].orderNr);
+    				var intermediateRow = parentCommit.orderNr - .5;
+    				var intermediatCol = childCommit.columns[0];
+    				var childCol = data.columns[childCommit.columns[0]];
+    				if (!childCol) return null;
+    				var precedingCommitOnCol = childCol.commits[$.inArray(childCommit.id, childCol.commits) + 1];
+    				if (precedingCommitOnCol) {
+    					var precedingPos = data.commits[precedingCommitOnCol].orderNr;
+    					if (precedingPos < intermediateRow) {
+    					    // worst case: draw diagonal line
+    					    intermediateRow = childCommit.orderNr + .5;
+    					    var parentCol = data.columns[parentCommit.columns[0]];
+    					    if (parentCol) {
+    					        var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
+    					        if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < parentCommit.orderNr) {
+    					            intermediateRow = childCommit.orderNr + .5;
+    					            intermediatCol = parentCommit.columns[0];
+    					        }
+    					    }
+    					}
     				}
     				var points = [
 								{ x: childCommit.columns[0], y: childCommit.orderNr },
-								{ x: parentCommit.columns[0], y: intermediateRow },
+								{ x: intermediatCol, y: intermediateRow },
 								{ x: parentCommit.columns[0], y: parentCommit.orderNr }];
     				return line(points);
     			}
