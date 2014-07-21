@@ -28,15 +28,15 @@
     		        var project = parts[parts.length - 2];
     		        var repo = parts[parts.length - 1];
     		        var requests = [];
-    		        $.json(
+    		        $.getJSON(
     		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches"
     		        ).then(function(d) {
     		            result.branches = d;
-    		            $.json(
+    		        	$.getJSON(
     		                "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
     		            ).then(function(d) {
     		                result.tags = d;
-    		                $.json(
+    		            	$.getJSON(
     		                    "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
     		                    { limit: 100, start: 0, until: options.developRef }
     		                ).then(function (d) {
