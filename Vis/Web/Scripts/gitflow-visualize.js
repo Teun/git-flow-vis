@@ -181,9 +181,11 @@
     					putCommitInColumn(commit.id, "c" + current, data);
     					current++;
     				} else {
-    					var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]]
-    					putCommitInColumn(commit.id, firstChild.columns[0], data);
-    					firstChild._hasColumnChild = true;
+    					var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]];
+    					if (firstChild && firstChild.columns) {
+    						putCommitInColumn(commit.id, firstChild.columns[0], data);
+    						firstChild._hasColumnChild = true;
+    					}
     				}
     			}
     		}
