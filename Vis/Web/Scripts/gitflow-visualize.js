@@ -20,7 +20,35 @@
     		developBrancheHintPrefix: "devhint/",
     		// this pattern should match the tags that are given to release commits on master 
     		releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
-    		dataCallback: function (done) { done({}); },
+    		dataCallback: function(done) {
+    		    var currUrl = document.location.href;
+    		    var result = { branches: {}, tags: {}, commits: [] };
+    		    if (currUrl.indexOf("plugins/servlet/git-flow-graph/") > -1) {
+    		        var parts = currUrl.split('/');
+    		        var project = parts[parts.length - 2];
+    		        var repo = parts[parts.length - 1];
+    		        var requests = [];
+    		        $.json(
+    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches"
+    		        ).then(function(d) {
+    		            result.branches = d;
+    		            $.json(
+    		                "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
+    		            ).then(function(d) {
+    		                result.tags = d;
+    		                $.json(
+    		                    "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
+    		                    { limit: 100, start: 0, until: options.developRef }
+    		                ).then(function (d) {
+    		                    result.commits.push(d);
+    		                    done(result);
+    		                });
+    		            });
+    		        });
+    		    } else {
+    		        console.log("Current URL doesn't look like my stash page");
+    		    }
+    		},
     		dataProcessed: function (d) { }
     	};
 
