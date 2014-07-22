@@ -60,6 +60,10 @@ suite('Data set 2', function () {
         
         assert(latestCommits.length == 5, "The recent commits that wrre done directly on develop should be in the d column. Even though a shorter number of commits leads over the featur branch feature/f4");
     });
+    test("Cherry picked commits should appear in parentage-order, not in authorTimestamp order", function () {
+        var cherrypicked = data.commits["19f5bebe9d537f56385f2e7a18f41358dba35013"];
+        assert(cherrypicked.orderNr == 2, "Cherrypicked commit appears at " + cherrypicked.orderNr);
+    });
     test('Open feature branch should be on f* column', function () {
         var colF1 = data.commits["ea08c2c5f4fa9778baec512b28603ff763ef9022"].columns[0];
         assert(data.columns[colF1].name[0] == "f", "open feature is on column " + data.columns[colF1].name);

@@ -27,23 +27,40 @@
     		        var parts = currUrl.split('/');
     		        var project = parts[parts.length - 2];
     		        var repo = parts[parts.length - 1];
-    		        var requests = [];
-    		        $.json(
+    		        $.getJSON(
+    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
+    		        ).then(function (d) {
+    		        	result.tags = d;
+    		        });
+    		        $.getJSON(
     		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches"
     		        ).then(function(d) {
-    		            result.branches = d;
-    		            $.json(
-    		                "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
-    		            ).then(function(d) {
-    		                result.tags = d;
-    		                $.json(
-    		                    "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits",
-    		                    { limit: 100, start: 0, until: options.developRef }
-    		                ).then(function (d) {
-    		                    result.commits.push(d);
-    		                    done(result);
-    		                });
-    		            });
+    		        	result.branches = d;
+    		        	var toGet = [];
+    		        	for (var i = 0; i < d.values.length; i++) {
+    		        		var br = d.values[i].id;
+    		        		toGet.push(br );
+    		        	}
+    		        	var completed = 0;
+    		        	for (var i = 0; i < toGet.length; i++) {
+    		        		var par = { start: 0, limit: 100 };
+    		        		var item = toGet[i];
+    		        		par.until = item;
+    		        		if (par.until == "refs/heads/develop")
+    		        			par.limit = 200;
+    		        		var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits";
+    		        		$.getJSON(
+													url, par
+											).always(function (d, s) {
+												if (s === "success") {
+													result.commits.push(d);
+												}
+												completed++;
+												if (completed >= toGet.length) {
+													done(result);
+												}
+											});
+    		        	}
     		        });
     		    } else {
     		        console.log("Current URL doesn't look like my stash page");
@@ -66,7 +83,8 @@
     			}
     		}
     		for (var id in result.commits) {
-    			var commit = result.commits[id];
+    		    var commit = result.commits[id];
+    		    commit.orderTimestamp = commit.authorTimestamp;
     			if (!commit.children) commit.children = [];
     			for (var i = commit.parents.length - 1; i >= 0; i--) {
     				var parent = result.commits[commit.parents[i].id];
@@ -77,6 +95,26 @@
     				}
     			}
     		}
+    	    
+    	    // fixup orderTimestamp for cases of rebasing and cherrypicking, where the parent can be younger than the child
+    		var fixMyTimeRecursive = function (c, after) {
+    		    if (!c) return;
+    	        if (c.orderTimestamp <= after) {
+    	            c.orderTimestamp = after + 1;
+    	            for (var k = 0; k < c.children.length; k++) {
+    	                fixMyTimeRecursive(result.commits[c.children[k]], c.orderTimestamp);
+    	            }
+    	        }
+    	    };
+    	    for (var key in result.commits) {
+    	        var me = result.commits[key];
+    	        for (var k = 0; k < me.parents.length; k++) {
+    	            var parent = result.commits[me.parents[k].id];
+    	            if (parent)
+    	                fixMyTimeRecursive(me, parent.orderTimestamp);
+    	        }
+    	    }
+    	    
     		result.branches = _data.branches.values;
     		for (var i = 0; i < result.branches.length; i++) {
     			var branch = result.branches[i];
@@ -101,7 +139,7 @@
     		for (var id in result.commits) {
     			result.chronoCommits.push(id);
     		}
-    		result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp; })
+    	    result.chronoCommits.sort(function(a, b) { return result.commits[b].orderTimestamp - result.commits[a].orderTimestamp; });
     		for (var i = 0; i < result.chronoCommits.length; i++) { result.commits[result.chronoCommits[i]].orderNr = i; }
 
 
@@ -166,9 +204,13 @@
     					putCommitInColumn(commit.id, "c" + current, data);
     					current++;
     				} else {
-    					var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]]
-    					putCommitInColumn(commit.id, firstChild.columns[0], data);
-    					firstChild._hasColumnChild = true;
+    					var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]];
+    					if (firstChild && firstChild.columns) {
+    						putCommitInColumn(commit.id, firstChild.columns[0], data);
+    						firstChild._hasColumnChild = true;
+    					} else {
+    						console.log("Couldn't find appropriate parent");
+    					}
     				}
     			}
     		}
