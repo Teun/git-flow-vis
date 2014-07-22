@@ -366,7 +366,13 @@
     				if (furthestPath < nextChild.orderNr) furthestPath = nextChild.orderNr;
     			}
     		}
-    		return bestPathToPoints[furthestPath];
+    		var allDistances = Object.keys(bestPathToPoints);
+    		allDistances.sort(function (p1, p2) {
+    		    if (!p1) return 0;
+    		    if (!p2) return 0;
+    	        return bestPathToPoints[p2].score - bestPathToPoints[p1].score;
+    	    });
+    		return bestPathToPoints[allDistances[0]];
     	}
     	var findDevelopPathFrom = function (from) {
     	    var developBranch = options.developRef.substring(options.developRef.lastIndexOf('/') + 1);
@@ -388,7 +394,7 @@
     		        return 10;
     		    // following first parent is a bonus
     			if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
-    			return -1;
+    			return 0;
     		}
     		var path = findBestPathFromBreadthFirst(from, score);
     		return path;
