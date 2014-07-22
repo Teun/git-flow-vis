@@ -335,9 +335,12 @@
     		var scoreFunc = score || function(){return -1};
     		var openPaths = [];
     		var bestPathToPoints = {};
+    		var fromCommit = data.commits[from];
     		var firstPath = [from];
     		var furthestPath = 0;
     		firstPath.score = 0;
+    		bestPathToPoints[from.orderNr] = firstPath;
+    	    furthestPath = fromCommit.orderNr;
     		openPaths.push(firstPath);
     		while(openPaths.length > 0){
     			var basePath = openPaths.shift();
