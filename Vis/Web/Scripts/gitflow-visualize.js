@@ -33,7 +33,7 @@
     		        	result.tags = d;
     		        });
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches"
+    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches", {limit:50}
     		        ).then(function(d) {
     		        	result.branches = d;
     		        	var toGet = [];
@@ -46,9 +46,12 @@
     		        		var par = { start: 0, limit: 100 };
     		        		var item = toGet[i];
     		        		par.until = item;
-    		        		if (par.until == "refs/heads/develop")
-    		        			par.limit = 200;
-    		        		var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits";
+    		        	    if (par.until == "refs/heads/develop") {
+    		        	        par.limit = 200;
+    		        	    } else {
+    		        	        par.since = "refs/heads/develop";
+    		        	    }
+    		        	    var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits";
     		        		$.getJSON(
 													url, par
 											).always(function (d, s) {
