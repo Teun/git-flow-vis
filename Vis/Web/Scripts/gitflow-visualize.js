@@ -335,9 +335,12 @@
     		var scoreFunc = score || function(){return -1};
     		var openPaths = [];
     		var bestPathToPoints = {};
+    		var fromCommit = data.commits[from];
     		var firstPath = [from];
     		var furthestPath = 0;
     		firstPath.score = 0;
+    		bestPathToPoints[from.orderNr] = firstPath;
+    	    furthestPath = fromCommit.orderNr;
     		openPaths.push(firstPath);
     		while(openPaths.length > 0){
     			var basePath = openPaths.shift();
@@ -366,6 +369,9 @@
     		return bestPathToPoints[furthestPath];
     	}
     	var findDevelopPathFrom = function (from) {
+    	    var developBranch = options.developRef.substring(options.developRef.lastIndexOf('/') + 1);
+    	    var regexSelfMerge = new RegExp("Merge branch '(" + developBranch + ")' of http:\\/\\/\\S+ into \\1");
+    	    var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "");
     		var score = function (path, nextId) {
     			var c = data.commits[nextId];
     			var last = data.commits[path[path.length - 1]];
@@ -374,7 +380,13 @@
     			// next commit cannot have a child further down the line
     			var descendantsInPath = path.filter(function (desc) { return $.inArray(desc, c.children) > -1; });
     			if (descendantsInPath.length != 1) return false;
-					// following first parent is a bonus
+    		    // merges of develop onto itself are neutral
+    			if (regexSelfMerge.test(c.message))
+    			    return 0;
+                //merges of a local branch onto develop are a big bonus
+    		    if (regexRealMerge.test(c.message))
+    		        return 10;
+    		    // following first parent is a bonus
     			if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
     			return -1;
     		}
@@ -474,20 +486,15 @@
     				var intermediatCol = childCommit.columns[0];
     				var childCol = data.columns[childCommit.columns[0]];
     				if (!childCol) return null;
-    				var precedingCommitOnCol = childCol.commits[$.inArray(childCommit.id, childCol.commits) + 1];
-    				if (precedingCommitOnCol) {
-    					var precedingPos = data.commits[precedingCommitOnCol].orderNr;
-    					if (precedingPos < intermediateRow) {
-    					    // worst case: draw diagonal line
+    				var parentCol = data.columns[parentCommit.columns[0]];
+    				if (childCommit.parents.length > 1) { // merge
+    					var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
+    					if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < childCommit.orderNr) {
     					    intermediateRow = childCommit.orderNr + .5;
-    					    var parentCol = data.columns[parentCommit.columns[0]];
-    					    if (parentCol) {
-    					        var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
-    					        if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < parentCommit.orderNr) {
-    					            intermediateRow = childCommit.orderNr + .5;
-    					            intermediatCol = parentCommit.columns[0];
-    					        }
-    					    }
+    					    intermediatCol = parentCommit.columns[0];
+    					} else {
+    					    // worst case: draw diagonal line
+    					    intermediateRow = childCommit.orderNr;
     					}
     				}
     				var points = [
@@ -591,8 +598,8 @@
     	            'line {stroke:black;opacity: 0.2;}' +
     	            'line.m {stroke:red;stroke-width:3px;opacity: 1;}' +
     	            'line.d {stroke:forestgreen;stroke-width:3px;opacity: 1;}' +
-    	            '.arrow path.outline {stroke:white;stroke-width:8px;opacity: .8;}' +
-    	            '.arrow path {stroke: black;stroke-width: 3px;opacity: 1;fill:none;}' +
+    	            '.arrow path.outline {stroke:white;stroke-width:4px;opacity: .8;}' +
+    	            '.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
     	            '.arrow path.branch-type-f {stroke: blueviolet;}' +
     	            '.arrow path.branch-type-r {stroke: gold;}' +
     	            '.arrow path.branch-type-m {stroke: gold;}' +
