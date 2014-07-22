@@ -250,12 +250,12 @@
     		var columns = $.map(data.columns, function (v, k) { return v; }).filter(function (v) { return v.name[0] == type });
     		for (var i = 0; i < columns.length; i++) {
     		    var column = columns[i];
-    		    if (!data.columns[column.id]) {
-    		        // this column has already been sweeped away before
-    		        continue;
-    		    }
     			for (var j = 0; j < i; j++) {
-    				var earlierColumn = columns[j];
+    			    var earlierColumn = columns[j];
+    			    if (!data.columns[earlierColumn.id]) {
+    			        // this column has already been sweeped away before
+    			        continue;
+    			    }
     				var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
     				if (earliestCommitOfFirst.parents.length > 0) {
     				    earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
