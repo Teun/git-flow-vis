@@ -486,20 +486,15 @@
     				var intermediatCol = childCommit.columns[0];
     				var childCol = data.columns[childCommit.columns[0]];
     				if (!childCol) return null;
-    				var precedingCommitOnCol = childCol.commits[$.inArray(childCommit.id, childCol.commits) + 1];
-    				if (precedingCommitOnCol) {
-    					var precedingPos = data.commits[precedingCommitOnCol].orderNr;
-    					if (precedingPos < intermediateRow) {
-    					    // worst case: draw diagonal line
+    				var parentCol = data.columns[parentCommit.columns[0]];
+    				if (childCommit.parents.length > 1) { // merge
+    					var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
+    					if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < childCommit.orderNr) {
     					    intermediateRow = childCommit.orderNr + .5;
-    					    var parentCol = data.columns[parentCommit.columns[0]];
-    					    if (parentCol) {
-    					        var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
-    					        if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < parentCommit.orderNr) {
-    					            intermediateRow = childCommit.orderNr + .5;
-    					            intermediatCol = parentCommit.columns[0];
-    					        }
-    					    }
+    					    intermediatCol = parentCommit.columns[0];
+    					} else {
+    					    // worst case: draw diagonal line
+    					    intermediateRow = childCommit.orderNr;
     					}
     				}
     				var points = [
@@ -604,7 +599,7 @@
     	            'line.m {stroke:red;stroke-width:3px;opacity: 1;}' +
     	            'line.d {stroke:forestgreen;stroke-width:3px;opacity: 1;}' +
     	            '.arrow path.outline {stroke:white;stroke-width:8px;opacity: .8;}' +
-    	            '.arrow path {stroke: black;stroke-width: 3px;opacity: 1;fill:none;}' +
+    	            '.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
     	            '.arrow path.branch-type-f {stroke: blueviolet;}' +
     	            '.arrow path.branch-type-r {stroke: gold;}' +
     	            '.arrow path.branch-type-m {stroke: gold;}' +
