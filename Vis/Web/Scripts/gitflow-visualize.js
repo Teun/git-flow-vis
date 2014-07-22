@@ -371,7 +371,7 @@
     	var findDevelopPathFrom = function (from) {
     	    var developBranch = options.developRef.substring(options.developRef.lastIndexOf('/') + 1);
     	    var regexSelfMerge = new RegExp("Merge branch '(" + developBranch + ")' of http:\\/\\/\\S+ into \\1");
-    	    var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "");
+    	    var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "$");
     		var score = function (path, nextId) {
     			var c = data.commits[nextId];
     			var last = data.commits[path[path.length - 1]];
