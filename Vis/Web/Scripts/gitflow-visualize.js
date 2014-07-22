@@ -83,7 +83,8 @@
     			}
     		}
     		for (var id in result.commits) {
-    			var commit = result.commits[id];
+    		    var commit = result.commits[id];
+    		    commit.orderTimestamp = commit.authorTimestamp;
     			if (!commit.children) commit.children = [];
     			for (var i = commit.parents.length - 1; i >= 0; i--) {
     				var parent = result.commits[commit.parents[i].id];
@@ -94,6 +95,26 @@
     				}
     			}
     		}
+    	    
+    	    // fixup orderTimestamp for cases of rebasing and cherrypicking, where the parent can be younger than the child
+    		var fixMyTimeRecursive = function (c, after) {
+    		    if (!c) return;
+    	        if (c.orderTimestamp <= after) {
+    	            c.orderTimestamp = after + 1;
+    	            for (var k = 0; k < c.children.length; k++) {
+    	                fixMyTimeRecursive(result.commits[c.children[k]], c.orderTimestamp);
+    	            }
+    	        }
+    	    };
+    	    for (var key in result.commits) {
+    	        var me = result.commits[key];
+    	        for (var k = 0; k < me.parents.length; k++) {
+    	            var parent = result.commits[me.parents[k].id];
+    	            if (parent)
+    	                fixMyTimeRecursive(me, parent.orderTimestamp);
+    	        }
+    	    }
+    	    
     		result.branches = _data.branches.values;
     		for (var i = 0; i < result.branches.length; i++) {
     			var branch = result.branches[i];
@@ -118,7 +139,7 @@
     		for (var id in result.commits) {
     			result.chronoCommits.push(id);
     		}
-    		result.chronoCommits.sort(function (a, b) { return result.commits[b].authorTimestamp - result.commits[a].authorTimestamp; })
+    	    result.chronoCommits.sort(function(a, b) { return result.commits[b].orderTimestamp - result.commits[a].orderTimestamp; });
     		for (var i = 0; i < result.chronoCommits.length; i++) { result.commits[result.chronoCommits[i]].orderNr = i; }
 
 
