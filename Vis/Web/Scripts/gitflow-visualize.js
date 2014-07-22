@@ -366,6 +366,9 @@
     		return bestPathToPoints[furthestPath];
     	}
     	var findDevelopPathFrom = function (from) {
+    	    var developBranch = options.developRef.substring(options.developRef.lastIndexOf('/') + 1);
+    	    var regexSelfMerge = new RegExp("Merge branch '(" + developBranch + ")' of http:\\/\\/\\S+ into \\1");
+    	    var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "");
     		var score = function (path, nextId) {
     			var c = data.commits[nextId];
     			var last = data.commits[path[path.length - 1]];
@@ -374,7 +377,13 @@
     			// next commit cannot have a child further down the line
     			var descendantsInPath = path.filter(function (desc) { return $.inArray(desc, c.children) > -1; });
     			if (descendantsInPath.length != 1) return false;
-					// following first parent is a bonus
+    		    // merges of develop onto itself are neutral
+    			if (regexSelfMerge.test(c.message))
+    			    return 0;
+                //merges of a local branch onto develop are a big bonus
+    		    if (regexRealMerge.test(c.message))
+    		        return 10;
+    		    // following first parent is a bonus
     			if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
     			return -1;
     		}
