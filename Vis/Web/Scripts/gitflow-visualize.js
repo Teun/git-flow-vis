@@ -187,6 +187,8 @@
     					if (firstChild && firstChild.columns) {
     						putCommitInColumn(commit.id, firstChild.columns[0], data);
     						firstChild._hasColumnChild = true;
+    					} else {
+    						console.log("Couldn't find appropriate parent");
     					}
     				}
     			}
