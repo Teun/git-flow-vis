@@ -196,18 +196,19 @@
     		for (var i = 0; i < data.chronoCommits.length; i++) {
     			var commit = data.commits[data.chronoCommits[i]];
     			if (!commit.columns) {
-    				var childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent = $.grep(commit.children, function (childId) {
+    				var childrenThatAreNotMasterOrDevelopAndAreLastInTheirColumn = $.grep(commit.children, function (childId) {
     					var child = data.commits[childId];
     					var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0] == "d");
     					if (isOnMasterOrDevelop) return false;
-    					return child.parents[0].id == commit.id;
+    					var commitsInColumn=data.columns[child.columns[0]].commits;
+    					return child.id == commitsInColumn[commitsInColumn.length-1];
     				});
-    				if (childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent.length == 0) {
+    				if (childrenThatAreNotMasterOrDevelopAndAreLastInTheirColumn.length == 0) {
     					// if this commit has a child that is master or develop, but it is not on a column yet, we start a new column
     					putCommitInColumn(commit.id, "c" + current, data);
     					current++;
     				} else {
-    					var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndWhereThisIsTheFirstParent[0]];
+    					var firstChild = data.commits[childrenThatAreNotMasterOrDevelopAndAreLastInTheirColumn[0]];
     					if (firstChild && firstChild.columns) {
     						putCommitInColumn(commit.id, firstChild.columns[0], data);
     						firstChild._hasColumnChild = true;
@@ -235,7 +236,7 @@
     				} else {
     					// so we have a child, but not m or d: probably two branches merged together
     					var firstChild = data.commits[lastCommit.children[0]];
-    					column.name = firstChild.id[0] + column.name.substring(1);
+    					column.name = firstChild.columns[0][0] + column.name.substring(1);
     				}
     			} else {
     				// unmerged branch: if starts with featurePrefix -> f
