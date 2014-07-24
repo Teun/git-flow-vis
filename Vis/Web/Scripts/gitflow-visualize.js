@@ -737,7 +737,7 @@ var GitFlowVisualize =
     	            '.arrow path.branch-type-m {stroke: gold;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;z-index:-1;width:70%;overflow-x:hidden;}' +
+    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;z-index:1;width:70%;overflow-x:hidden;}' +
     	            '.commit-msg.dim{color:#aaa;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
