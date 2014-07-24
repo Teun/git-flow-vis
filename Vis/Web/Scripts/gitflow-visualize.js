@@ -331,35 +331,53 @@ var GitFlowVisualize =
     	};
     	var combineColumnsOfType = function (type) {
     		var columns = $.map(data.columns, function (v, k) { return v; }).filter(function (v) { return v.name[0] == type });
+    		var groups = {};
     		for (var i = 0; i < columns.length; i++) {
-    		    var column = columns[i];
-    			for (var j = 0; j < i; j++) {
-    			    var earlierColumn = columns[j];
-    			    if (!data.columns[earlierColumn.id]) {
-    			        // this column has already been sweeped away before
-    			        continue;
-    			    }
-    				var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
-    				if (earliestCommitOfFirst.parents.length > 0) {
-    				    earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
-    				}
-    				// todo: iets doen met deze last child
-    				var lastCommitOfSecond = data.commits[column.commits[0]];
-    			    if (lastCommitOfSecond.children.length > 0) {
-    			        lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
-    			    }
-    				if (lastCommitOfSecond.orderNr > earliestCommitOfFirst.orderNr) {
-    					// combine columns
-    					for (var k = 0; k < column.commits.length; k++) {
-    						var commitToMigrate = data.commits[column.commits[k]];
-    						commitToMigrate.columns[0] = earlierColumn.id;
-    						earlierColumn.commits.push(commitToMigrate.id);
-    					}
-    					delete data.columns[column.id];
-    					j = i;//next column
-    				}
-
+    			if (columns[i].group) {
+    				groups[columns[i].group] = true;
     			}
+    		}
+    		groups = Object.keys(groups);
+    		groups.unshift(null);
+    		for (var i = 0; i < groups.length; i++) {
+    			var nowGrouping = groups[i];
+    			var columnsToCombine = $.grep(columns, function (c) {
+    				if (nowGrouping === null) {
+    					return (typeof c.group === "undefined");
+    				}
+    				return c.group == nowGrouping;
+    			});
+    			for (var i = 0; i < columnsToCombine.length; i++) {
+    				var column = columnsToCombine[i];
+    				for (var j = 0; j < i; j++) {
+    					var earlierColumn = columnsToCombine[j];
+    					if (!data.columns[earlierColumn.id]) {
+    						// this column has already been sweeped away before
+    						continue;
+    					}
+    					var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+    					if (earliestCommitOfFirst.parents.length > 0) {
+    						earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
+    					}
+    					// todo: iets doen met deze last child
+    					var lastCommitOfSecond = data.commits[column.commits[0]];
+    					if (lastCommitOfSecond.children.length > 0) {
+    						lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
+    					}
+    					if (lastCommitOfSecond.orderNr > earliestCommitOfFirst.orderNr) {
+    						// combine columns
+    						for (var k = 0; k < column.commits.length; k++) {
+    							var commitToMigrate = data.commits[column.commits[k]];
+    							commitToMigrate.columns[0] = earlierColumn.id;
+    							earlierColumn.commits.push(commitToMigrate.id);
+    						}
+    						delete data.columns[column.id];
+    						j = i;//next column
+    					}
+
+    				}
+    			}
+
     		}
     	};
 
@@ -489,7 +507,7 @@ var GitFlowVisualize =
     				if (val == 0) {
     					var group1 = data.columns[k1].group || 0;
     					var group2 = data.columns[k2].group || 0;
-    					val = group2 - group1;
+    					val = group1 - group2;
     					
     				}
     				return val;
@@ -581,7 +599,9 @@ var GitFlowVisualize =
 
     			arrow.append("path")
 							.attr("d", connector)
-							.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
+							.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); })
+    					.attr("title", function (d) { return data.columns[data.commits[d.p].columns[0]].group; });
+    			
 
     			var branchLine = svg.selectAll(".branch")
 						.data(d3.values(data.columns))
