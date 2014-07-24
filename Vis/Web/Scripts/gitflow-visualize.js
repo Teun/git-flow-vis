@@ -142,7 +142,7 @@ var GitFlowVisualize =
     				if (parent) {
     					setChildToParent(parent, commit.id);
     				} else {
-    					commit.parents.splice(i, 1);
+    					//commit.parents.splice(i, 1);
     				}
     			}
     		}
@@ -226,7 +226,9 @@ var GitFlowVisualize =
     			var oldestMaster = masterCommits[masterCommits.length - 1];
     			var evenOlder = data.commits[oldestMaster].parents;
     			if (!evenOlder || evenOlder.length == 0) break;
-    			putCommitInColumn(evenOlder[0].id, 'm', data);
+    			if (!putCommitInColumn(evenOlder[0].id, 'm', data)) {
+    				break;
+    			}
     		}
 
     	};
@@ -391,6 +393,9 @@ var GitFlowVisualize =
     			commit.columns = commit.columns || [];
     			commit.columns.push(columnName);
     			data.columns[columnName].commits.push(commitId);
+    			return true;
+    		} else {
+    			return false;
     		}
     	};
     	var findShortestPathAlong = function (from, along) {
@@ -417,6 +422,7 @@ var GitFlowVisualize =
     			var tail = data.commits[ basePath[basePath.length - 1]];
     			for (var i = 0; i < tail.parents.length; i++) {
     				var nextChild = data.commits[tail.parents[i].id];
+    				if (!nextChild) continue;
     				var stepScore = scoreFunc(basePath, nextChild.id);
     				if (stepScore === false) {
     					// blocked node
