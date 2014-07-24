@@ -646,6 +646,9 @@ var GitFlowVisualize =
     		            if (d.author && d.author.name) {
     		                res += "<span class='aui-avatar aui-avatar-small user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm' title='" + (d.author.displayName || d.author.name) + "'/></span></span>";
     		            }
+    		            if (d.authorTimestamp) {
+    		            	res += "<span class='date'>" + (new Date(d.authorTimestamp)).toISOString().substring(0,16) + "</span>";
+    		            }
     		            if (d.labels) {
     		                $.each($(d.labels), function(k, v) {
     		                    if (v.indexOf('refs/heads/') == 0) {
@@ -734,7 +737,7 @@ var GitFlowVisualize =
     	            '.arrow path.branch-type-m {stroke: gold;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;z-index:-1;width:70%;overflow-x:hidden;}' +
+    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;z-index:1;width:70%;overflow-x:hidden;}' +
     	            '.commit-msg.dim{color:#aaa;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
