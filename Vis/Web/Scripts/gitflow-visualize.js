@@ -284,7 +284,9 @@ var GitFlowVisualize =
     				} else {
     					// so we have a child, but not m or d: probably two branches merged together
     					var firstChild = data.commits[lastCommit.children[0]];
-    					column.name = firstChild.columns[0][0] + column.name.substring(1);
+    					var firstLetter = firstChild.columns[0][0];
+    					if (firstLetter == 'c') firstLetter = 'f'; //guesss
+    					column.name = firstLetter + column.name.substring(1);
     				}
     			} else {
     				// unmerged branch: if starts with featurePrefix -> f
@@ -297,38 +299,85 @@ var GitFlowVisualize =
     				}
     			}
     		}
+    		// now separate the feature branches into groups:
+    		var featureBranches = $.grep($.map(Object.keys(data.columns), function (k) { return data.columns[k];}), function (col) { return (col.name[0] == 'f'); });
+    		var longBranches = $.grep(featureBranches, function (col) { return col.commits.length > 9 });
+    		var groupNr = 1;
+    		for (var i = 0; i < longBranches.length; i++) {
+    			var thisCol = longBranches[i];
+    			thisCol.group = groupNr;
+    			groupNr++;
+    		}
+    		// now loop through _all_ feature branches and group them together
+    		for (var i = 0; i < featureBranches.length; i++) {
+    			var thisCol = featureBranches[i];
+    			var lastCommit = data.commits[thisCol.commits[0]];
+    			if (lastCommit.children && lastCommit.children.length > 0) {
+    				var childColumn = data.columns[data.commits[lastCommit.children[0]].columns[0]];
+    				if (childColumn.group)
+    					thisCol.group = childColumn.group;
+    			} else {
+    				var firstCommit = data.commits[thisCol.commits[thisCol.commits.length - 1]];
+    				if (firstCommit.parents && firstCommit.parents.length > 0) {
+    					var parentCommit = data.commits[firstCommit.parents[0].id];
+    					if (parentCommit) {
+    						var parentCol = data.columns[parentCommit.columns[0]];
+    						if (data.columns[parentCommit.columns[0]].group)
+    							thisCol.group = data.columns[parentCommit.columns[0]].group;
+    					}
+    				}
+    			}
+    		}
     	};
     	var combineColumnsOfType = function (type) {
     		var columns = $.map(data.columns, function (v, k) { return v; }).filter(function (v) { return v.name[0] == type });
+    		var groups = {};
     		for (var i = 0; i < columns.length; i++) {
-    		    var column = columns[i];
-    			for (var j = 0; j < i; j++) {
-    			    var earlierColumn = columns[j];
-    			    if (!data.columns[earlierColumn.id]) {
-    			        // this column has already been sweeped away before
-    			        continue;
-    			    }
-    				var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
-    				if (earliestCommitOfFirst.parents.length > 0) {
-    				    earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
-    				}
-    				// todo: iets doen met deze last child
-    				var lastCommitOfSecond = data.commits[column.commits[0]];
-    			    if (lastCommitOfSecond.children.length > 0) {
-    			        lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
-    			    }
-    				if (lastCommitOfSecond.orderNr > earliestCommitOfFirst.orderNr) {
-    					// combine columns
-    					for (var k = 0; k < column.commits.length; k++) {
-    						var commitToMigrate = data.commits[column.commits[k]];
-    						commitToMigrate.columns[0] = earlierColumn.id;
-    						earlierColumn.commits.push(commitToMigrate.id);
-    					}
-    					delete data.columns[column.id];
-    					j = i;//next column
-    				}
-
+    			if (columns[i].group) {
+    				groups[columns[i].group] = true;
     			}
+    		}
+    		groups = Object.keys(groups);
+    		groups.unshift(null);
+    		for (var i = 0; i < groups.length; i++) {
+    			var nowGrouping = groups[i];
+    			var columnsToCombine = $.grep(columns, function (c) {
+    				if (nowGrouping === null) {
+    					return (typeof c.group === "undefined");
+    				}
+    				return c.group == nowGrouping;
+    			});
+    			for (var i = 0; i < columnsToCombine.length; i++) {
+    				var column = columnsToCombine[i];
+    				for (var j = 0; j < i; j++) {
+    					var earlierColumn = columnsToCombine[j];
+    					if (!data.columns[earlierColumn.id]) {
+    						// this column has already been sweeped away before
+    						continue;
+    					}
+    					var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+    					if (earliestCommitOfFirst.parents.length > 0) {
+    						earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
+    					}
+    					// todo: iets doen met deze last child
+    					var lastCommitOfSecond = data.commits[column.commits[0]];
+    					if (lastCommitOfSecond.children.length > 0) {
+    						lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
+    					}
+    					if (lastCommitOfSecond.orderNr > earliestCommitOfFirst.orderNr) {
+    						// combine columns
+    						for (var k = 0; k < column.commits.length; k++) {
+    							var commitToMigrate = data.commits[column.commits[k]];
+    							commitToMigrate.columns[0] = earlierColumn.id;
+    							earlierColumn.commits.push(commitToMigrate.id);
+    						}
+    						delete data.columns[column.id];
+    						j = i;//next column
+    					}
+
+    				}
+    			}
+
     		}
     	};
 
@@ -344,34 +393,6 @@ var GitFlowVisualize =
     			data.columns[columnName].commits.push(commitId);
     		}
     	};
-    	var findAllPathsFrom = function (from, blockedNode, onlyMergedTo) {
-				var closedPaths = [];
-    		var setOfPaths = [];
-    		setOfPaths.push([from]);
-    		while (true) {
-    			var prefix = setOfPaths.shift();
-    			var tail = data.commits[prefix[prefix.length - 1]];
-    			if (!tail) {
-    				return null;
-    			}
-    			var accessibleParents = tail.parents.filter(function (p) { return !blockedNode(data.commits[p.id], prefix); });
-    			if (accessibleParents.length == 0) {
-    				closedPaths.push(prefix);
-    			}
-    			for (var i = 0; i < accessibleParents.length; i++) {
-    				if (onlyMergedTo) {
-    					// we want to follow only the first parent. We break the loop when i > 0
-    					if (i > 0) break;
-    				}
-    				var parent = data.commits[accessibleParents[i].id];
-    				var newPath = prefix.slice(0);
-    				newPath.push(parent.id);
-    				setOfPaths.push(newPath);
-    			}
-    			if (setOfPaths.length == 0) break;
-    		}
-    		return closedPaths;
-    	}
     	var findShortestPathAlong = function (from, along) {
     		var scoreForAlong = function (path, childId) {
     			if ($.inArray(childId, along) > -1) return 1000;
@@ -482,7 +503,14 @@ var GitFlowVisualize =
     			var keysInOrder = $.map(obj, function (v, k) { return k });
     			keysInOrder.sort(function (k1, k2) {
     				var groupVal = function (k) { return { 'm': 1, 'd': 3, 'f': 4, 'r': 2 }[obj[k].name[0]] || 5 };
-    				return groupVal(k1) - groupVal(k2);
+    				var val = groupVal(k1) - groupVal(k2);
+    				if (val == 0) {
+    					var group1 = data.columns[k1].group || 0;
+    					var group2 = data.columns[k2].group || 0;
+    					val = group1 - group2;
+    					
+    				}
+    				return val;
     			});
     			return keysInOrder
     		};
@@ -571,7 +599,9 @@ var GitFlowVisualize =
 
     			arrow.append("path")
 							.attr("d", connector)
-							.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
+							.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); })
+    					.attr("title", function (d) { return data.columns[data.commits[d.p].columns[0]].group; });
+    			
 
     			var branchLine = svg.selectAll(".branch")
 						.data(d3.values(data.columns))
