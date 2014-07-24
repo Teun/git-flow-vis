@@ -111,4 +111,9 @@ suite('Realistic data set', function () {
             assert(commit.columns[0] == 'd', "Commit " + commit.id + " (" + commit.message + ") should be on develop column. Now on " + commit.columns[0]);
         }
     });
+    test('Related branches should be in the same group', function () {
+    	var shas = ["9f21aa01d191e9342c71df16c87d5d9fe78a0a8c", "97ced13be8581ec0fd8b9394a40e6cec868317e4"];
+    	assert(data.columns[data.commits[shas[0]].columns[0]].group == data.columns[data.commits[shas[1]].columns[0]].group,
+				"These two commits should be in the same group: " + shas.join(','));
+    });
 });
