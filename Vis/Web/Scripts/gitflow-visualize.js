@@ -534,37 +534,38 @@ var GitFlowVisualize =
 							//.interpolate("bundle")
 							.x(function (d) { return x(d.x); })
 							.y(function (d) { return y(d.y); });
-    			var connector = function (d) {
-    				var childCommit = data.commits[d.c];
-    				var parentCommit = data.commits[d.p];
-    				var intermediateRow = parentCommit.orderNr - .5;
-    				var intermediatCol = childCommit.columns[0];
-    				var childCol = data.columns[childCommit.columns[0]];
-    				if (!childCol) return null;
-    				var parentCol = data.columns[parentCommit.columns[0]];
-    				if (childCommit.parents.length > 1) { // merge
-    					var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
-    					if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < childCommit.orderNr) {
-    					    intermediateRow = childCommit.orderNr + .5;
-    					    intermediatCol = parentCommit.columns[0];
-    					} else {
-    					    // worst case: draw diagonal line
-    					    intermediateRow = childCommit.orderNr;
-    					}
-    				}
-    				var points = [
-								{ x: childCommit.columns[0], y: childCommit.orderNr },
-								{ x: intermediatCol, y: intermediateRow },
-								{ x: parentCommit.columns[0], y: parentCommit.orderNr }];
-    				return line(points);
-    			}
+    		    var connector = function(d) {
+    		        var childCommit = data.commits[d.c];
+    		        var parentCommit = data.commits[d.p];
+    		        var intermediateRow = parentCommit.orderNr - .5;
+    		        var intermediatCol = childCommit.columns[0];
+    		        var childCol = data.columns[childCommit.columns[0]];
+    		        if (!childCol) return null;
+    		        var parentCol = data.columns[parentCommit.columns[0]];
+    		        if (childCommit.parents.length > 1) { // merge
+    		            var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
+    		            if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < childCommit.orderNr) {
+    		                intermediateRow = childCommit.orderNr + .5;
+    		                intermediatCol = parentCommit.columns[0];
+    		            } else {
+    		                // worst case: draw diagonal line
+    		                intermediateRow = childCommit.orderNr;
+    		            }
+    		        }
+    		        var points = [
+    		            { x: childCommit.columns[0], y: childCommit.orderNr },
+    		            { x: intermediatCol, y: intermediateRow },
+    		            { x: parentCommit.columns[0], y: parentCommit.orderNr }];
+    		        return line(points);
+    		    };
 
     			// arrows
-    			var arrows = $.map(d3.values(data.commits), function (c) { return c.parents.map(function (p) { return { p: p.id, c: c.id }; }) });
-    			var arrow = svg.selectAll(".arrow")
-							.data(arrows)
-							.enter().append("g")
-							.attr("class", "arrow");
+    			var arrows = $.map(d3.values(data.commits), function (c) { return c.parents.map(function(p) { return { p: p.id, c: c.id }; }); });
+    		    var arrow = svg.selectAll(".arrow")
+    		        .data(arrows)
+    		        .enter().append("g")
+    		        .attr("class", function(d) { return "arrow arrow-to-" + d.c; });
+    		    
     			arrow.append("path")
 							.attr("d", connector)
 							.attr("class", "outline");
@@ -594,50 +595,91 @@ var GitFlowVisualize =
 							.attr("r", 5)
 							.attr("cx", function (d) { return x(d.columns[0]); })
 							.attr("cy", function (d) { return y(d.orderNr); })
-							.attr("sha", function (d) { return d.id; })
+							.attr("id", function (d) { return "commit-" + d.id; })
     			;
-    			$('.commit').hover()
 
-    			var messages = d3.select(elem).append("div")
-							.attr("class", "messages")
+    		    var messages = d3.select(elem).append("div")
+    		        .attr("class", "messages");
 
     			//labels
-    			var label = messages.selectAll(".tag")
-							.data(d3.values(data.commits))
-							.enter().append("div")
-							.attr("class", "commit-msg")
-							.attr("style", function (d) {
-								var commit = d;
-								return "top:" + y(commit.orderNr) + "px;";
-							})
-							.html(function (d) {
-								var res = "<a href='#'>" + d.displayId + "</a> ";
-								if (d.author && d.author.name) {
-									res += "<span class='aui-avatar aui-avatar-small user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm' title='" + (d.author.displayName || d.author.name) + "'/></span></span>";
-								}
-								if (d.labels) {
-									$.each($(d.labels), function (k, v) {
-										if (v.indexOf('refs/heads/') == 0) {
-											res += "<span class='label branch'>" + v.substring(11) + "</span>";
-										}else if (v.indexOf('refs/tags/') == 0) {
-											res += "<span class='label tag'>" + v.substring(10) + "</span>";
-										} else {
-											res += "<span class='label'>" + v + "</span>" ;
-										}
-									});
-								}
-								res += d.message;
-								return res;
-							})
+    		    var label = messages.selectAll(".tag")
+    		        .data(d3.values(data.commits))
+    		        .enter().append("div")
+    		        .attr("class", "commit-msg")
+        		    .attr("id", function(c) { return "msg-" + c.id; })
+    		        .attr("style", function(d) {
+    		            var commit = d;
+    		            return "top:" + y(commit.orderNr) + "px;";
+    		        })
+    		        .html(function(d) {
+    		            var res = "<a class='commit-link' href='#'>" + d.displayId + "</a> ";
+    		            if (d.author && d.author.name) {
+    		                res += "<span class='aui-avatar aui-avatar-small user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm' title='" + (d.author.displayName || d.author.name) + "'/></span></span>";
+    		            }
+    		            if (d.labels) {
+    		                $.each($(d.labels), function(k, v) {
+    		                    if (v.indexOf('refs/heads/') == 0) {
+    		                        res += "<span class='label branch'>" + v.substring(11) + "</span>";
+    		                    } else if (v.indexOf('refs/tags/') == 0) {
+    		                        res += "<span class='label tag'>" + v.substring(10) + "</span>";
+    		                    } else {
+    		                        res += "<span class='label'>" + v + "</span>";
+    		                    }
+    		                });
+    		            }
+    		            res += d.message;
+    		            return res;
+    		        })
+					.on('click', function (a) {
+					    if ($("#msg-" + a.id).hasClass("highlight")) {
+					        highlightCommits([]);
+					    } else {
+					        var toHighlight = {};
+					        var addIdsAncestry = function (id) {
+					            var commit = data.commits[id];
+					            if (!commit) return;
+					            if (!toHighlight[id]) {
+					                toHighlight[id] = true;
+					                for (var i = 0; i < commit.parents.length; i++) {
+					                    addIdsAncestry(commit.parents[i].id);
+					                }
+					            } else {
+					                // prevent cycles
+					            }
+					        };
+					        addIdsAncestry(a.id);
+					        highlightCommits(Object.keys(toHighlight));
+					    }
+					});
 
     		};
+    		var highlightCommits = function (arrIds) {
+    		    if (!arrIds || arrIds.length == 0) {
+    		        $(".commit-msg").removeClass("dim").removeClass("highlight");
+    		        $(".commit-dot").attr("class", "commit-dot");
+    		        $(".arrow" + id).css("opacity", "1");
+    		        return;
+    		    }
+    		    for (var id in data.commits) {
+    		        if ($.inArray(id, arrIds) > -1) {
+    		            $("#msg-" + id).removeClass("dim").addClass("highlight");
+    		            $("#commit-" + id).attr("class","commit-dot");
+    		            $(".arrow-to-" + id).css("opacity", "1");
+    		        } else {
+    		            $("#msg-" + id).addClass("dim").removeClass("highlight");
+    		            $("#commit-" + id).attr("class", "commit-dot dim");
+    		            $(".arrow-to-" + id).css("opacity", "0.2");
+
+                    }
+    		    }
+    	    };
     		var branchType = function (childId, parentId) {
-    			var ct = function (id) {
-    				var commit = data.commits[id];
-    				var columns = commit.columns.map(function (d) { return data.columns[d]; });
-    				if (!columns[0]) return '?';
-    				return columns[0].name[0];
-    			}
+    		    var ct = function(id) {
+    		        var commit = data.commits[id];
+    		        var columns = commit.columns.map(function(d) { return data.columns[d]; });
+    		        if (!columns[0]) return '?';
+    		        return columns[0].name[0];
+    		    };
     			var prioHash = { 'm': 1, 'd': 0, 'r': 2, 'f': 3 };
     			var cols = [ct(childId), ct(parentId)];
     			cols.sort(function (v1, v2) { return prioHash[v2] - prioHash[v1]; });
@@ -651,6 +693,7 @@ var GitFlowVisualize =
     	    $(function () {
     	        var style =
     	            'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
+    	            '.commit-dot.dim {opacity:.2;}' +
     	            'line {stroke:black;opacity: 0.2;}' +
     	            'line.m {stroke:red;stroke-width:3px;opacity: 1;}' +
     	            'line.d {stroke:forestgreen;stroke-width:3px;opacity: 1;}' +
@@ -661,13 +704,15 @@ var GitFlowVisualize =
     	            '.arrow path.branch-type-m {stroke: gold;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{left:300px;position:absolute;white-space:nowrap;}' +
+    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;z-index:-1;width:70%;overflow-x:hidden;}' +
+    	            '.commit-msg.dim{color:#aaa;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
+    	            '.commit-link{font-family:courier;}' +
     	            '.label{border:1px inset;margin-right:2px;}' +
     	            '.branch{background-color:#ffc;border-color:#ff0;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
     	            '.author{background-color:orange;border:black 1px solid;margin:2px;}' +
-    	            '.commits-graph-container{width:300px;overflow-x:scroll;float:left;}';
+    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;}';
     			$('<style>' + style + '</style>').appendTo('head');
     			});
     	}
