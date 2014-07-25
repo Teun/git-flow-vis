@@ -79,12 +79,12 @@ var GitFlowVisualize =
     		        options.project = options.project || parts[parts.length - 2];
     		        options.repo = options.repo || parts[parts.length - 1];
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
+    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/tags"
     		        ).then(function (d) {
     		        	result.tags = d;
     		        });
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches", {limit:50}
+    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/branches", { limit: 50 }
     		        ).then(function(d) {
     		        	result.branches = d;
     		        	var toGet = [];
@@ -102,7 +102,7 @@ var GitFlowVisualize =
     		        	    } else {
     		        	        par.since = "refs/heads/develop";
     		        	    }
-    		        	    var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits";
+    		        	    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		        		$.getJSON(
 													url, par
 											).always(function (d, s) {
