@@ -45,7 +45,6 @@ var CryptoJS = CryptoJS || function (s, p) {
 		}, clone: function () { var a = t.clone.call(this); a._hash = this._hash.clone(); return a }
 	}); r.MD5 = t._createHelper(q); r.HmacMD5 = t._createHmacHelper(q)
 })(Math);
-
 var GitFlowVisualize =
     
 		(function () {
@@ -549,7 +548,6 @@ var GitFlowVisualize =
 							.attr("class", "commits-graph")
 						.append("g")
 							.attr("transform", "translate(" + margin + "," + margin + ")");
-
     			var columnsInOrder = keysInOrder(data.columns);
     			var x = d3.scale.ordinal()
 							.domain(columnsInOrder)
@@ -734,7 +732,7 @@ var GitFlowVisualize =
     	            '.arrow path.branch-type-m {stroke: gold;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;z-index:-1;width:70%;overflow-x:hidden;}' +
+    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
     	            '.commit-msg.dim{color:#aaa;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
@@ -742,7 +740,7 @@ var GitFlowVisualize =
     	            '.branch{background-color:#ffc;border-color:#ff0;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
     	            '.author{background-color:orange;border:black 1px solid;margin:2px;}' +
-    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;}';
+    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}';
     			$('<style>' + style + '</style>').appendTo('head');
     			});
     	}
