@@ -97,10 +97,10 @@ var GitFlowVisualize =
     		        		var par = { start: 0, limit: 100 };
     		        		var item = toGet[i];
     		        		par.until = item;
-    		        	    if (par.until == "refs/heads/develop") {
+    		        	    if (par.until == options.developRef || par.until == options.masterRef) {
     		        	        par.limit = 200;
     		        	    } else {
-    		        	        par.since = "refs/heads/develop";
+    		        	        par.since = options.developRef;
     		        	    }
     		        	    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		        		$.getJSON(
