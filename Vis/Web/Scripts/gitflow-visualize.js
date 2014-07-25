@@ -72,7 +72,7 @@ var GitFlowVisualize =
     		// this pattern should match the tags that are given to release commits on master 
     		releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
     		dataCallback: function(done) {
-    		    var currUrl = document.location.href;
+    		    var currUrl = document.location.pathname;
     		    var result = { branches: {}, tags: {}, commits: [] };
     		    if (currUrl.indexOf("plugins/servlet/git-flow-graph/") > -1) {
     		        var parts = currUrl.split('/');
@@ -97,10 +97,10 @@ var GitFlowVisualize =
     		        		var par = { start: 0, limit: 100 };
     		        		var item = toGet[i];
     		        		par.until = item;
-    		        	    if (par.until == "refs/heads/develop") {
+    		        	    if (par.until == options.developRef || par.until == options.masterRef) {
     		        	        par.limit = 200;
     		        	    } else {
-    		        	        par.since = "refs/heads/develop";
+    		        	        par.since = options.developRef;
     		        	    }
     		        	    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		        		$.getJSON(
