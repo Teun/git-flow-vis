@@ -62,6 +62,10 @@ var GitFlowVisualize =
     		featurePrefix: "refs/heads/feature/",
     		releasePrefix: "refs/heads/release/",
     		hotfixPrefix: "refs/heads/hotfix/",
+    		
+    	    // url params
+    		project:null,
+    		repo: null,
 
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
     		developBrancheHintPrefix: "devhint/",
@@ -72,8 +76,8 @@ var GitFlowVisualize =
     		    var result = { branches: {}, tags: {}, commits: [] };
     		    if (currUrl.indexOf("plugins/servlet/git-flow-graph/") > -1) {
     		        var parts = currUrl.split('/');
-    		        var project = parts[parts.length - 2];
-    		        var repo = parts[parts.length - 1];
+    		        options.project = options.project || parts[parts.length - 2];
+    		        options.repo = options.repo || parts[parts.length - 1];
     		        $.getJSON(
     		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
     		        ).then(function (d) {
@@ -639,8 +643,9 @@ var GitFlowVisualize =
     		            var commit = d;
     		            return "top:" + y(commit.orderNr) + "px;";
     		        })
-    		        .html(function(d) {
-    		            var res = "<a class='commit-link' href='#'>" + d.displayId + "</a> ";
+    		        .html(function (d) {
+    		            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
+    		            var res = "<a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a> ";
     		            if (d.author && d.author.name) {
     		                res += "<span class='aui-avatar aui-avatar-small user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm' title='" + (d.author.displayName || d.author.name) + "'/></span></span>";
     		            }
