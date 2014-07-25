@@ -694,7 +694,7 @@ var GitFlowVisualize =
     		    if (!arrIds || arrIds.length == 0) {
     		        $(".commit-msg").removeClass("dim").removeClass("highlight");
     		        $(".commit-dot").attr("class", "commit-dot");
-    		        $(".arrow" + id).css("opacity", "1");
+    		        $(".arrow").css("opacity", "1");
     		        return;
     		    }
     		    for (var id in data.commits) {
