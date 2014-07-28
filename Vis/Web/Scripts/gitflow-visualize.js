@@ -45,7 +45,6 @@ var CryptoJS = CryptoJS || function (s, p) {
 		}, clone: function () { var a = t.clone.call(this); a._hash = this._hash.clone(); return a }
 	}); r.MD5 = t._createHelper(q); r.HmacMD5 = t._createHmacHelper(q)
 })(Math);
-
 var GitFlowVisualize =
     
 		(function () {
@@ -63,25 +62,29 @@ var GitFlowVisualize =
     		featurePrefix: "refs/heads/feature/",
     		releasePrefix: "refs/heads/release/",
     		hotfixPrefix: "refs/heads/hotfix/",
+    		
+    	    // url params
+    		project:null,
+    		repo: null,
 
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
     		developBrancheHintPrefix: "devhint/",
     		// this pattern should match the tags that are given to release commits on master 
     		releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
     		dataCallback: function(done) {
-    		    var currUrl = document.location.href;
+    		    var currUrl = document.location.pathname;
     		    var result = { branches: {}, tags: {}, commits: [] };
     		    if (currUrl.indexOf("plugins/servlet/git-flow-graph/") > -1) {
     		        var parts = currUrl.split('/');
-    		        var project = parts[parts.length - 2];
-    		        var repo = parts[parts.length - 1];
+    		        options.project = options.project || parts[parts.length - 2];
+    		        options.repo = options.repo || parts[parts.length - 1];
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/tags"
+    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/tags"
     		        ).then(function (d) {
     		        	result.tags = d;
     		        });
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/branches", {limit:50}
+    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/branches", { limit: 50 }
     		        ).then(function(d) {
     		        	result.branches = d;
     		        	var toGet = [];
@@ -94,12 +97,12 @@ var GitFlowVisualize =
     		        		var par = { start: 0, limit: 100 };
     		        		var item = toGet[i];
     		        		par.until = item;
-    		        	    if (par.until == "refs/heads/develop") {
+    		        	    if (par.until == options.developRef || par.until == options.masterRef) {
     		        	        par.limit = 200;
     		        	    } else {
-    		        	        par.since = "refs/heads/develop";
+    		        	        par.since = options.developRef;
     		        	    }
-    		        	    var url = "/rest/api/1.0/projects/" + project + "/repos/" + repo + "/commits";
+    		        	    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		        		$.getJSON(
 													url, par
 											).always(function (d, s) {
@@ -557,7 +560,6 @@ var GitFlowVisualize =
 							.attr("class", "commits-graph")
 						.append("g")
 							.attr("transform", "translate(" + margin + "," + margin + ")");
-
     			var columnsInOrder = keysInOrder(data.columns);
     			var x = d3.scale.ordinal()
 							.domain(columnsInOrder)
@@ -649,10 +651,15 @@ var GitFlowVisualize =
     		            var commit = d;
     		            return "top:" + y(commit.orderNr) + "px;";
     		        })
-    		        .html(function(d) {
-    		            var res = "<a class='commit-link' href='#'>" + d.displayId + "</a> ";
+    		        .html(function (d) {
+    		            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
+    		            var res = "<a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a> ";
     		            if (d.author && d.author.name) {
-    		                res += "<span class='aui-avatar aui-avatar-small user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm' title='" + (d.author.displayName || d.author.name) + "'/></span></span>";
+    		                res += "<span class='aui-avatar aui-avatar-small user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm' title='" + (d.author.displayName || d.author.name) + "'/></span></span> ";
+    		            }
+    		            if (d.authorTimestamp) {
+    		                var dt = new Date(d.authorTimestamp);
+    		                res += "<span class='date'>" + moment(dt).format("dd YY-MM-DD HH:mm:ss") + "</span> ";
     		            }
     		            if (d.labels) {
     		                $.each($(d.labels), function(k, v) {
@@ -669,7 +676,9 @@ var GitFlowVisualize =
     		            return res;
     		        })
 					.on('click', function (a) {
-					    if ($("#msg-" + a.id).hasClass("highlight")) {
+					    var clicked = $("#msg-" + a.id);
+					    $('.commit-msg.selected').removeClass("selected");
+					    if (clicked.hasClass("highlight")) {
 					        highlightCommits([]);
 					    } else {
 					        var toHighlight = {};
@@ -685,6 +694,7 @@ var GitFlowVisualize =
 					                // prevent cycles
 					            }
 					        };
+					        clicked.addClass("selected");
 					        addIdsAncestry(a.id);
 					        highlightCommits(Object.keys(toHighlight));
 					    }
@@ -712,7 +722,7 @@ var GitFlowVisualize =
     		    if (!arrIds || arrIds.length == 0) {
     		        $(".commit-msg").removeClass("dim").removeClass("highlight");
     		        $(".commit-dot").attr("class", "commit-dot");
-    		        $(".arrow" + id).css("opacity", "1");
+    		        $(".arrow").css("opacity", "1");
     		        return;
     		    }
     		    for (var id in data.commits) {
@@ -750,24 +760,25 @@ var GitFlowVisualize =
     	            'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
     	            '.commit-dot.dim {opacity:.2;}' +
     	            'line {stroke:black;opacity: 0.2;}' +
-    	            'line.m {stroke:red;stroke-width:3px;opacity: 1;}' +
-    	            'line.d {stroke:forestgreen;stroke-width:3px;opacity: 1;}' +
+    	            'line.m {stroke:#d04437;stroke-width:3px;opacity: 1;}' +
+    	            'line.d {stroke:#8eb021;stroke-width:3px;opacity: 1;}' +
     	            '.arrow path.outline {stroke:white;stroke-width:4px;opacity: .8;}' +
     	            '.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
-    	            '.arrow path.branch-type-f {stroke: blueviolet;}' +
-    	            '.arrow path.branch-type-r {stroke: gold;}' +
-    	            '.arrow path.branch-type-m {stroke: gold;}' +
+    	            '.arrow path.branch-type-f {stroke: #3b7fc4;}' +
+    	            '.arrow path.branch-type-r {stroke: #f6c342;}' +
+    	            '.arrow path.branch-type-m {stroke: #f6c342;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;z-index:-1;width:70%;overflow-x:hidden;}' +
+    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
     	            '.commit-msg.dim{color:#aaa;}' +
+    	            '.commit-msg.selected{background-color:#ccd9ea;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
     	            '.label{border:1px inset;margin-right:2px;}' +
     	            '.branch{background-color:#ffc;border-color:#ff0;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
     	            '.author{background-color:orange;border:black 1px solid;margin:2px;}' +
-    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;}';
+    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}';
     			$('<style>' + style + '</style>').appendTo('head');
     			});
     	}
