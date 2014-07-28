@@ -124,6 +124,7 @@ var GitFlowVisualize =
     		var result = {};
     		data = result;
     		result.commits = {};
+    		result.openEnds = {};
     		if (!_data.commits || !_data.branches || !_data.tags) {
     			throw "raw data should have a commits, branches and  tags property";
     		}
@@ -142,7 +143,8 @@ var GitFlowVisualize =
     				if (parent) {
     					setChildToParent(parent, commit.id);
     				} else {
-    					//commit.parents.splice(i, 1);
+    					result.openEnds[commit.id] = result.openEnds[commit.id] || [];
+    					result.openEnds[commit.id].push(commit.parents[i].id);
     				}
     			}
     		}
@@ -358,15 +360,15 @@ var GitFlowVisualize =
     						continue;
     					}
     					var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
-    					if (earliestCommitOfFirst.parents.length > 0) {
+    					if (earliestCommitOfFirst.parents.length > 0 && data.commits[earliestCommitOfFirst.parents[0].id]) {
     						earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
     					}
     					// todo: iets doen met deze last child
     					var lastCommitOfSecond = data.commits[column.commits[0]];
-    					if (lastCommitOfSecond.children.length > 0) {
+    					if (lastCommitOfSecond.children.length > 0 && data.commits[lastCommitOfSecond.children[0]]) {
     						lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
     					}
-    					if (lastCommitOfSecond.orderNr > earliestCommitOfFirst.orderNr) {
+    					if (lastCommitOfSecond.orderNr >= earliestCommitOfFirst.orderNr) {
     						// combine columns
     						for (var k = 0; k < column.commits.length; k++) {
     							var commitToMigrate = data.commits[column.commits[k]];
@@ -571,6 +573,7 @@ var GitFlowVisualize =
     		    var connector = function(d) {
     		        var childCommit = data.commits[d.c];
     		        var parentCommit = data.commits[d.p];
+    		        if (!childCommit || !parentCommit) return null;
     		        var intermediateRow = parentCommit.orderNr - .5;
     		        var intermediatCol = childCommit.columns[0];
     		        var childCol = data.columns[childCommit.columns[0]];
@@ -606,8 +609,7 @@ var GitFlowVisualize =
 
     			arrow.append("path")
 							.attr("d", connector)
-							.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); })
-    					.attr("title", function (d) { return data.columns[data.commits[d.p].columns[0]].group; });
+							.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
     			
 
     			var branchLine = svg.selectAll(".branch")
@@ -687,7 +689,24 @@ var GitFlowVisualize =
 					        highlightCommits(Object.keys(toHighlight));
 					    }
 					});
-
+    		    function isElementInViewport(el) {
+    		    	if (el instanceof jQuery) {el = el[0];}
+    		    	var rect = el.getBoundingClientRect();
+    		    	return (
+									rect.top >= 0 &&
+									rect.left >= 0 &&
+									rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
+									rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
+							);
+    		    }
+    		    $(document).on("scroll resize", function () {
+    		    	//check for openEnded messages in view
+    		    	for (var key in data.openEnds) {
+    		    		if (isElementInViewport($('#msg-' + key))) {
+    		    			console.log("now load new commits until " + key + " since develop");
+    		    		}
+    		    	}
+    		    });
     		};
     		var highlightCommits = function (arrIds) {
     		    if (!arrIds || arrIds.length == 0) {
@@ -711,10 +730,10 @@ var GitFlowVisualize =
     	    };
     		var branchType = function (childId, parentId) {
     		    var ct = function(id) {
-    		        var commit = data.commits[id];
-    		        var columns = commit.columns.map(function(d) { return data.columns[d]; });
-    		        if (!columns[0]) return '?';
-    		        return columns[0].name[0];
+    		    	var commit = data.commits[id];
+    		    	if (!commit || data.columns.length == 0) return "?";
+    					var columns = commit.columns.map(function(d) { return data.columns[d]; });
+    					return columns[0].name[0];
     		    };
     			var prioHash = { 'm': 1, 'd': 0, 'r': 2, 'f': 3 };
     			var cols = [ct(childId), ct(parentId)];
