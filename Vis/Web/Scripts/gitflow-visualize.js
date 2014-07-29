@@ -274,14 +274,20 @@ var GitFlowVisualize =
     		for (var col in data.columns) {
     			var column = data.columns[col];
     			if (col == 'm' || col == 'd') continue;
-    			var lastCommit = data.commits[column.commits[0]];
-    			if (lastCommit.children.length > 0) {
-    				var masterCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'm'; });
-    				var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
-    				if (masterCommits.length > 0) {
-    					//release branches are branches that are not master or develop, but their latest commit merges into master
-    					column.name = 'r' + column.name.substring(1);
-    				} else if (developCommits.length > 0) {
+    			var allParents = $.map(column.commits, function (id) { return data.commits[id].children; });
+    		    var allParentsOnMaster = $.grep(allParents, function(id) {
+    		        var parent = data.commits[id];
+    		        return parent.columns && parent.columns[0] == 'm';
+    		    });
+    		    if (allParentsOnMaster.length > 0) {
+    		        //release branches are branches that are not master or develop, but some commit merges into master
+    		        column.name = 'r' + column.name.substring(1);
+    		        continue;
+    		    }
+    		    var lastCommit = data.commits[column.commits[0]];
+    		    if (lastCommit.children.length > 0) {
+    		        var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
+    		        if (developCommits.length > 0) {
     					// feature branches are branches that eventually merge into develop, not master
     					column.name = 'f' + column.name.substring(1);
     				} else {
@@ -668,7 +674,9 @@ var GitFlowVisualize =
     		            return res;
     		        })
 					.on('click', function (a) {
-					    if ($("#msg-" + a.id).hasClass("highlight")) {
+					    var clicked = $("#msg-" + a.id);
+					    $('.commit-msg.selected').removeClass("selected");
+					    if (clicked.hasClass("highlight")) {
 					        highlightCommits([]);
 					    } else {
 					        var toHighlight = {};
@@ -684,6 +692,7 @@ var GitFlowVisualize =
 					                // prevent cycles
 					            }
 					        };
+					        clicked.addClass("selected");
 					        addIdsAncestry(a.id);
 					        highlightCommits(Object.keys(toHighlight));
 					    }
@@ -732,17 +741,18 @@ var GitFlowVisualize =
     	            'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
     	            '.commit-dot.dim {opacity:.2;}' +
     	            'line {stroke:black;opacity: 0.2;}' +
-    	            'line.m {stroke:red;stroke-width:3px;opacity: 1;}' +
-    	            'line.d {stroke:forestgreen;stroke-width:3px;opacity: 1;}' +
+    	            'line.m {stroke:#d04437;stroke-width:3px;opacity: 1;}' +
+    	            'line.d {stroke:#8eb021;stroke-width:3px;opacity: 1;}' +
     	            '.arrow path.outline {stroke:white;stroke-width:4px;opacity: .8;}' +
     	            '.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
-    	            '.arrow path.branch-type-f {stroke: blueviolet;}' +
-    	            '.arrow path.branch-type-r {stroke: gold;}' +
-    	            '.arrow path.branch-type-m {stroke: gold;}' +
+    	            '.arrow path.branch-type-f {stroke: #3b7fc4;}' +
+    	            '.arrow path.branch-type-r {stroke: #f6c342;}' +
+    	            '.arrow path.branch-type-m {stroke: #f6c342;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
     	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
     	            '.commit-msg.dim{color:#aaa;}' +
+    	            '.commit-msg.selected{background-color:#ccd9ea;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
     	            '.label{border:1px inset;margin-right:2px;}' +
