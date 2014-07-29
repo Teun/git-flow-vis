@@ -274,14 +274,20 @@ var GitFlowVisualize =
     		for (var col in data.columns) {
     			var column = data.columns[col];
     			if (col == 'm' || col == 'd') continue;
-    			var lastCommit = data.commits[column.commits[0]];
-    			if (lastCommit.children.length > 0) {
-    				var masterCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'm'; });
-    				var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
-    				if (masterCommits.length > 0) {
-    					//release branches are branches that are not master or develop, but their latest commit merges into master
-    					column.name = 'r' + column.name.substring(1);
-    				} else if (developCommits.length > 0) {
+    			var allParents = $.map(column.commits, function (id) { return data.commits[id].children; });
+    		    var allParentsOnMaster = $.grep(allParents, function(id) {
+    		        var parent = data.commits[id];
+    		        return parent.columns && parent.columns[0] == 'm';
+    		    });
+    		    if (allParentsOnMaster.length > 0) {
+    		        //release branches are branches that are not master or develop, but some commit merges into master
+    		        column.name = 'r' + column.name.substring(1);
+    		        continue;
+    		    }
+    		    var lastCommit = data.commits[column.commits[0]];
+    		    if (lastCommit.children.length > 0) {
+    		        var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
+    		        if (developCommits.length > 0) {
     					// feature branches are branches that eventually merge into develop, not master
     					column.name = 'f' + column.name.substring(1);
     				} else {
