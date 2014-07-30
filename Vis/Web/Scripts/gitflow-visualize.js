@@ -786,17 +786,25 @@ var GitFlowVisualize =
     		    $(document).on("scroll resize", function () {
     		    	//check for openEnded messages in view
     		    	for (var key in data.openEnds) {
-    		    		if (isElementInViewport($('#msg-' + key))) {
-    		    			delete data.openEnds[key];
-    		    			options.moreDataCallback(key, function (commits) {
-    		    				appendData(commits);
-    		    			});
-    		    			console.log("now load new commits until " + key + " since develop");
+    		    	    if (isElementInViewport($('#msg-' + key))) {
+    		    	        openEndsToBeDownloaded[key] = true;
+    		    	        console.log("scheduled: " + key);
+    		    	        setTimeout(function () {
+    		    	            for (var key in openEndsToBeDownloaded) {
+    		    	                console.log("downloading: " + key);
+    		    	                delete data.openEnds[key];
+    		    	                options.moreDataCallback(key, function (commits) {
+    		    	                    appendData(commits);
+    		    	                });
+    		    	            }
+    		    	            openEndsToBeDownloaded = {};
+    		    	        }, 5000);
     		    		}
     		    	}
     		    });
 
     		};
+    	    var openEndsToBeDownloaded = {};
     		var highlightCommits = function (arrIds) {
     		    if (!arrIds || arrIds.length == 0) {
     		        $(".commit-msg").removeClass("dim").removeClass("highlight");
