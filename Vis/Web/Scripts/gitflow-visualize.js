@@ -124,7 +124,7 @@ var GitFlowVisualize =
     		},
     		dataProcessed: function (d) { },
     		moreDataCallback: function(from, done) {
-    		    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commit";
+    		    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		    $.getJSON(url, { limit: 25, until: from })
     		        .then(function(d) {
     		            done(d);
