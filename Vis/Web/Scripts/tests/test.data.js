@@ -55,7 +55,7 @@ suite('Data set 2', function() {
         var latestCommits = $.map(latestShas, function(sha) {
             return data.commits[sha];
         }).filter(function(c) {
-            return c.columns[0] == "d";
+            return c.columns[0][0] == "d";
         });
 
         assert(latestCommits.length == 5, "The recent commits that were done directly on develop should be in the d column. Even though a shorter number of commits leads over the featur branch feature/f4");
@@ -108,7 +108,7 @@ suite('Realistic data set', function () {
         ];
         for (var i = 0; i < shas.length; i++) {
             var commit = data.commits[shas[i]];
-            assert(commit.columns[0] == 'd', "Commit " + commit.id + " (" + commit.message + ") should be on develop column. Now on " + commit.columns[0]);
+            assert(commit.columns[0][0] == 'd', "Commit " + commit.id + " (" + commit.message + ") should be on develop column. Now on " + commit.columns[0]);
         }
     });
     test('Related branches should be in the same group', function () {
@@ -116,4 +116,16 @@ suite('Realistic data set', function () {
     	assert(data.columns[data.commits[shas[0]].columns[0]].group == data.columns[data.commits[shas[1]].columns[0]].group,
 				"These two commits should be in the same group: " + shas.join(','));
     });
+    test('Some commits should be on develop, although not in primary line', function() {
+        var shas = [
+            "88c1a2b70a36eae0ac1e14791467f428293001a9",
+            "b922548bfc7dafb8fe6ad5e8042adacc3817fe1a",
+        ];
+        for (var i = 0; i < shas.length; i++) {
+            var commit = data.commits[shas[i]];
+            assert(commit.columns[0][0] == 'd', "Commit " + commit.id + " (" + commit.message + ") should be on develop column. Now on " + commit.columns[0]);
+        }
+
+    });
+    
 });
