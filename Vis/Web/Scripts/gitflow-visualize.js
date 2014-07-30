@@ -136,7 +136,13 @@ var GitFlowVisualize =
     		}
     		for (var i = 0; i < _data.commits.length; i++) {
     			for (var j = 0; j < _data.commits[i].values.length; j++) {
-    				var commit = _data.commits[i].values[j];
+    			    var commit = _data.commits[i].values[j];
+
+    			    // cleanup stuff (when redrawing, this can still be there from last time)
+    			    delete commit.columns;
+    			    delete commit.labels;
+    			    delete commit.orderTimestamp;
+
     				result.commits[commit.id] = commit;
     			}
     		}
@@ -524,7 +530,6 @@ var GitFlowVisualize =
     		drawFromRaw();
     	}
     	var drawFromRaw = function () {
-    		data = {};
     		data = cleanup(rawData);
     		options.dataProcessed(data);
     		if (drawElem) {
