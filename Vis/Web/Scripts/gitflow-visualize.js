@@ -239,7 +239,7 @@ var GitFlowVisualize =
 
     		var versionCommitPath = findDevelopPathFrom(head[0].latestChangeset);
     		for (var i = 0; i < versionCommitPath.length; i++) {
-    			putCommitInColumn(versionCommitPath[i], 'd', data);
+    			putCommitInColumn(versionCommitPath[i], 'd0', data);
     		}
     	};
     	var isolateRest = function () {
@@ -249,7 +249,7 @@ var GitFlowVisualize =
     			if (!commit.columns) {
     				var childrenThatAreNotMasterOrDevelopAndAreLastInTheirColumn = $.grep(commit.children, function (childId) {
     					var child = data.commits[childId];
-    					var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0] == "d");
+    					var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0][0] == "d");
     					if (isOnMasterOrDevelop) return false;
     					var commitsInColumn=data.columns[child.columns[0]].commits;
     					return child.id == commitsInColumn[commitsInColumn.length-1];
@@ -273,7 +273,7 @@ var GitFlowVisualize =
     	var separateReleaseFeatureBranches = function () {
     		for (var col in data.columns) {
     			var column = data.columns[col];
-    			if (col == 'm' || col == 'd') continue;
+    			if (col == 'm' || col[0] == 'd') continue;
     			var allParents = $.map(column.commits, function (id) { return data.commits[id].children; });
     		    var allParentsOnMaster = $.grep(allParents, function(id) {
     		        var parent = data.commits[id];
@@ -286,7 +286,7 @@ var GitFlowVisualize =
     		    }
     		    var lastCommit = data.commits[column.commits[0]];
     		    if (lastCommit.children.length > 0) {
-    		        var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0] == 'd'; });
+    		        var developCommits = $.grep(lastCommit.children, function (id) { return data.commits[id].columns[0][0] == 'd'; });
     		        if (developCommits.length > 0) {
     					// feature branches are branches that eventually merge into develop, not master
     					column.name = 'f' + column.name.substring(1);
@@ -511,7 +511,7 @@ var GitFlowVisualize =
     		var keysInOrder = function (obj) {
     			var keysInOrder = $.map(obj, function (v, k) { return k });
     			keysInOrder.sort(function (k1, k2) {
-    				var groupVal = function (k) { return { 'm': 1, 'd': 3, 'f': 4, 'r': 2 }[obj[k].name[0]] || 5 };
+    				var groupVal = function (k) { return { 'm': 1, 'd': 3, 'f': 4, 'r': 2 }[obj[k].name[0]] || 5; };
     				var val = groupVal(k1) - groupVal(k2);
     				if (val == 0) {
     					var group1 = data.columns[k1].group || 0;
