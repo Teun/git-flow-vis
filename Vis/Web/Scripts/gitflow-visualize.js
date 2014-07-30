@@ -120,7 +120,8 @@ var GitFlowVisualize =
     		        console.log("Current URL doesn't look like my stash page");
     		    }
     		},
-    		dataProcessed: function (d) { }
+    		dataProcessed: function (d) { },
+    		moreDataCallback: function (from, done) { }
     	};
 
     	var cleanup = function (_data) {
@@ -155,7 +156,8 @@ var GitFlowVisualize =
     	    // fixup orderTimestamp for cases of rebasing and cherrypicking, where the parent can be younger than the child
     		var fixMyTimeRecursive = function (c, after) {
     		    if (!c) return;
-    	        if (c.orderTimestamp <= after) {
+    		    if (c.orderTimestamp <= after) {
+    		    	console.log("fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
     	            c.orderTimestamp = after + 1;
     	            for (var k = 0; k < c.children.length; k++) {
     	                fixMyTimeRecursive(result.commits[c.children[k]], c.orderTimestamp);
@@ -255,6 +257,9 @@ var GitFlowVisualize =
     					var child = data.commits[childId];
     					var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0] == "d");
     					if (isOnMasterOrDevelop) return false;
+    					if (!data.columns[child.columns[0]]) {
+    						console.log('huh');
+    					}
     					var commitsInColumn=data.columns[child.columns[0]].commits;
     					return child.id == commitsInColumn[commitsInColumn.length-1];
     				});
@@ -480,17 +485,30 @@ var GitFlowVisualize =
     		var path = findBestPathFromBreadthFirst(from, score);
     		return path;
     	}
+
+    	var rawData = null;
+    	var drawElem = null;
     	self.draw = function (elem, opt) {
+    		drawElem = elem;
     		options = $.extend(options, opt);
-    		var rawData = options.dataCallback(function (data) {
-    			data = cleanup(data);
-    			options.dataProcessed(data);
-    			if (elem) {
-    				self.drawing.drawTable(elem);
-    				self.drawing.drawGraph(elem);
-    			}
+    		options.dataCallback(function (data) {
+    			rawData = data;
+    			drawFromRaw();
     		});
     	};
+    	var appendData = function (newCommits) {
+    		rawData.commits.push(newCommits);
+    		drawFromRaw();
+    	}
+    	var drawFromRaw = function () {
+    		data = {};
+    		data = cleanup(rawData);
+    		options.dataProcessed(data);
+    		if (drawElem) {
+    			self.drawing.drawTable(drawElem);
+    			self.drawing.drawGraph(drawElem);
+    		}
+    	}
     	self.drawing = (function () {
     		var self = {};
     		var panel;
@@ -713,6 +731,10 @@ var GitFlowVisualize =
     		    	//check for openEnded messages in view
     		    	for (var key in data.openEnds) {
     		    		if (isElementInViewport($('#msg-' + key))) {
+    		    			delete data.openEnds[key];
+    		    			options.moreDataCallback(key, function (commits) {
+    		    				appendData(commits);
+    		    			});
     		    			console.log("now load new commits until " + key + " since develop");
     		    		}
     		    	}
