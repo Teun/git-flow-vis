@@ -798,7 +798,7 @@ var GitFlowVisualize =
     		    	                });
     		    	            }
     		    	            openEndsToBeDownloaded = {};
-    		    	        }, 5000);
+    		    	        }, 500);
     		    		}
     		    	}
     		    });
