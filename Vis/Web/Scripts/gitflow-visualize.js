@@ -607,12 +607,13 @@ var GitFlowVisualize =
     		        var cont = d3.select(elem).append("div");
     		        cont.attr("class", "commits-graph-container");
     		        var svg = cont.append("svg")
-                                .attr("width", size.width + 2 * margin)
-                                .attr("height", size.height + 2 * margin)
                                 .attr("class", "commits-graph")
-                            .append("g")
-                                .attr("transform", "translate(" + margin + "," + margin + ")");
-    		    }
+                                .append("g")
+    		                    .attr("transform", "translate(" + margin + "," + margin + ")");
+                }
+    		    d3.select(elem).select("svg")
+    		        .attr("width", size.width + 2 * margin)
+    		        .attr("height", size.height + 2 * margin);
     			var columnsInOrder = keysInOrder(data.columns);
     			var x = d3.scale.ordinal()
 							.domain(columnsInOrder)
