@@ -750,7 +750,7 @@ var GitFlowVisualize =
     		        })
     		        .html(function(d) {
     		            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
-    		            var res = "";
+    		            var res = "<table class='commit-table'><tr><td class='msg'>";
     		            if (d.labels) {
     		                $.each($(d.labels), function (k, v) {
     		                    if (v.indexOf('refs/heads/') == 0) {
@@ -762,20 +762,24 @@ var GitFlowVisualize =
     		                    }
     		                });
     		            }
-    		            res += "<span class='col msg'>" + d.message + "</span>";
+    		            res += " " + d.message;
+    		            res += "</td>";
     		            if (d.author && d.author.name) {
-    		                res += "<span class='col author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm'/></span></span>" + (d.author.displayName || d.author.name) + "</span>";
+    		                res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm'/></span></span>" + (d.author.displayName || d.author.name) + "</td>";
+    		            } else {
+    		                res += "<td class='author'> </td>";
     		            }
     		            if (d.authorTimestamp) {
     		                var dt = new Date(d.authorTimestamp);
     		                var today = (new Date().toDateString() === dt.toDateString());
     		                if (today) {
-    		                    res += "<span class='col date'>" + moment(dt).format("HH:mm:ss") + " today</span> ";
+    		                    res += "<td class='date'>" + moment(dt).format("HH:mm:ss") + " today</td> ";
     		                } else {
-    		                    res += "<span class='col date' title='" + moment(dt).format("dddd YYYY-MM-DD HH:mm:ss") + "'>" + moment(dt).format("dd YYYY-MM-DD") + "</span> ";
+    		                    res += "<td class='date' title='" + moment(dt).format("dddd YYYY-MM-DD HH:mm:ss") + "'>" + moment(dt).format("dd YYYY-MM-DD") + "</td> ";
     		                }
     		            }
-    		            res += "<span class='col sha'><a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a></span> ";
+    		            res += "<td class='sha'><a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a></td> ";
+    		            res += "</tr></table>";
     		            return res;
     		        });
     		    
@@ -863,15 +867,16 @@ var GitFlowVisualize =
     	            '.arrow path.branch-type-m {stroke: #f6c342;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
+    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:100%;overflow-x:hidden;}' +
     	            '.commit-msg.dim{color:#aaa;}' +
     	            '.commit-msg.selected{background-color:#ccd9ea;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
+    	            '.commit-table{width:70%;table-layout:fixed;}td.author{width:7em;}td.sha{width:5em;}td.date{width:7em;}' +
     	            '.label{border:1px inset;margin-right:2px;}' +
     	            '.branch{background-color:#ffc;border-color:#ff0;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
-    	            '.col{display:inline-block;overflow:hidden;margin:2px;}' +
+    	            'table.commit-table td{overflow:hidden;margin:2px;}' +
     	            '.author{font-weight:bold;width:120px;}' +
     	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}';
     			$('<style>' + style + '</style>').appendTo('head');
