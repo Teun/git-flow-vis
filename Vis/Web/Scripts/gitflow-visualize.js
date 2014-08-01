@@ -706,7 +706,7 @@ var GitFlowVisualize =
 					.attr("class", "commit-dot")
 					.attr("r", 5)
 					.attr("cx", function (d) { return x(d.columns[0]); })
-					.attr("cy", function (d) { return y(d.orderNr) + 4; })
+					.attr("cy", function (d) { return y(d.orderNr); })
 					.attr("id", function (d) { return "commit-" + d.id; })
     			;
 
