@@ -867,13 +867,13 @@ var GitFlowVisualize =
     	            '.arrow path.branch-type-m {stroke: #f6c342;}' +
     	            '.arrow path.branch-type-default {stroke-width:1px;}' +
     	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:100%;overflow-x:hidden;}' +
+    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
     	            '.commit-msg.dim{color:#aaa;}' +
     	            '.commit-msg.selected{background-color:#ccd9ea;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
-    	            '.commit-table{width:70%;table-layout:fixed;}td.author{width:7em;}td.sha{width:5em;}td.date{width:7em;}' +
-    	            '.label{border:1px inset;margin-right:2px;}' +
+    	            '.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
+    	            '.label{font-weight:bold;border:1px inset;margin-right:2px;}' +
     	            '.branch{background-color:#ffc;border-color:#ff0;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
     	            'table.commit-table td{overflow:hidden;margin:2px;}' +
