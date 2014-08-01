@@ -571,6 +571,13 @@ var GitFlowVisualize =
     		    }).thenBy(function(k1, k2) {
     		        return (data.columns[k1].group || 0) - (data.columns[k2].group || 0);
     		    }).thenBy(function (k1, k2) {
+    		        if (data.columns[k1].name[0] == 'f') {
+    		            // for feature branches we want the ones with recent commits closer to develop
+    		            var commits1 = data.columns[k1].commits;
+    		            var commits2 = data.columns[k2].commits;
+    		            // order by last commit
+    		            return data.commits[commits1[0]].orderNr - data.commits[commits2[0]].orderNr;
+    		        }
     		        return k2 > k1 ? -1 : 1;
     		    }));
     		    return keys;
@@ -699,7 +706,7 @@ var GitFlowVisualize =
 					.attr("class", "commit-dot")
 					.attr("r", 5)
 					.attr("cx", function (d) { return x(d.columns[0]); })
-					.attr("cy", function (d) { return y(d.orderNr); })
+					.attr("cy", function (d) { return y(d.orderNr) + 4; })
 					.attr("id", function (d) { return "commit-" + d.id; })
     			;
 
