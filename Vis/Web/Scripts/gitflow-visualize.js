@@ -571,6 +571,13 @@ var GitFlowVisualize =
     		    }).thenBy(function(k1, k2) {
     		        return (data.columns[k1].group || 0) - (data.columns[k2].group || 0);
     		    }).thenBy(function (k1, k2) {
+    		        if (data.columns[k1].name[0] == 'f') {
+    		            // for feature branches we want the ones with recent commits closer to develop
+    		            var commits1 = data.columns[k1].commits;
+    		            var commits2 = data.columns[k2].commits;
+    		            // order by last commit
+    		            return data.commits[commits1[0]].orderNr - data.commits[commits2[0]].orderNr;
+    		        }
     		        return k2 > k1 ? -1 : 1;
     		    }));
     		    return keys;
@@ -620,7 +627,7 @@ var GitFlowVisualize =
 							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
-							.range([10, data.chronoCommits.length * 20]);
+							.range([10, data.chronoCommits.length * 25]);
 
     			var line = d3.svg.line()
 							//.interpolate("bundle")
@@ -699,7 +706,7 @@ var GitFlowVisualize =
 					.attr("class", "commit-dot")
 					.attr("r", 5)
 					.attr("cx", function (d) { return x(d.columns[0]); })
-					.attr("cy", function (d) { return y(d.orderNr); })
+					.attr("cy", function (d) { return y(d.orderNr) + 4; })
 					.attr("id", function (d) { return "commit-" + d.id; })
     			;
 
@@ -750,16 +757,9 @@ var GitFlowVisualize =
     		        })
     		        .html(function(d) {
     		            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
-    		            var res = "<a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a> ";
-    		            if (d.author && d.author.name) {
-    		                res += "<span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm' title='" + (d.author.displayName || d.author.name) + "'/></span></span> ";
-    		            }
-    		            if (d.authorTimestamp) {
-    		                var dt = new Date(d.authorTimestamp);
-    		                res += "<span class='date'>" + moment(dt).format("dd YY-MM-DD HH:mm:ss") + "</span> ";
-    		            }
+    		            var res = "<table class='commit-table'><tr><td class='msg'>";
     		            if (d.labels) {
-    		                $.each($(d.labels), function(k, v) {
+    		                $.each($(d.labels), function (k, v) {
     		                    if (v.indexOf('refs/heads/') == 0) {
     		                        res += "<span class='label branch'>" + v.substring(11) + "</span>";
     		                    } else if (v.indexOf('refs/tags/') == 0) {
@@ -769,7 +769,24 @@ var GitFlowVisualize =
     		                    }
     		                });
     		            }
-    		            res += d.message;
+    		            res += " " + d.message;
+    		            res += "</td>";
+    		            if (d.author && d.author.name) {
+    		                res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm'/></span></span>" + (d.author.displayName || d.author.name) + "</td>";
+    		            } else {
+    		                res += "<td class='author'> </td>";
+    		            }
+    		            if (d.authorTimestamp) {
+    		                var dt = new Date(d.authorTimestamp);
+    		                var today = (new Date().toDateString() === dt.toDateString());
+    		                if (today) {
+    		                    res += "<td class='date'>" + moment(dt).format("HH:mm:ss") + " today</td> ";
+    		                } else {
+    		                    res += "<td class='date' title='" + moment(dt).format("dddd YYYY-MM-DD HH:mm:ss") + "'>" + moment(dt).format("dd YYYY-MM-DD") + "</td> ";
+    		                }
+    		            }
+    		            res += "<td class='sha'><a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a></td> ";
+    		            res += "</tr></table>";
     		            return res;
     		        });
     		    
@@ -862,10 +879,12 @@ var GitFlowVisualize =
     	            '.commit-msg.selected{background-color:#ccd9ea;}' +
     	            '.commit-msg:hover{background-color:silver;}' +
     	            '.commit-link{font-family:courier;}' +
-    	            '.label{border:1px inset;margin-right:2px;}' +
+    	            '.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
+    	            '.label{font-weight:bold;border:1px inset;margin-right:2px;}' +
     	            '.branch{background-color:#ffc;border-color:#ff0;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
-    	            '.author{background-color:orange;border:black 1px solid;margin:2px;}' +
+    	            'table.commit-table td{overflow:hidden;margin:2px;}' +
+    	            '.author{font-weight:bold;width:120px;}' +
     	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}';
     			$('<style>' + style + '</style>').appendTo('head');
     			});
