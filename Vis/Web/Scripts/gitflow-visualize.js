@@ -154,8 +154,8 @@ var GitFlowVisualize =
     			}
     		}
     		for (var id in result.commits) {
-    		    var commit = result.commits[id];
-    		    commit.orderTimestamp = commit.authorTimestamp;
+    			var commit = result.commits[id];
+    			commit.orderTimestamp = commit.authorTimestamp;
     			if (!commit.children) commit.children = [];
     			for (var i = commit.parents.length - 1; i >= 0; i--) {
     				var parent = result.commits[commit.parents[i].id];
@@ -803,19 +803,22 @@ var GitFlowVisualize =
     		    $(document).on("scroll resize", function () {
     		    	//check for openEnded messages in view
     		    	for (var key in data.openEnds) {
-    		    	    if (isElementInViewport($('#msg-' + key))) {
-    		    	        openEndsToBeDownloaded[key] = true;
-    		    	        console.log("scheduled: " + key);
-    		    	        setTimeout(function () {
-    		    	            for (var key in openEndsToBeDownloaded) {
-    		    	                console.log("downloading: " + key);
-    		    	                delete data.openEnds[key];
-    		    	                options.moreDataCallback(key, function (commits) {
-    		    	                    appendData(commits);
-    		    	                });
-    		    	            }
-    		    	            openEndsToBeDownloaded = {};
-    		    	        }, 500);
+    		    		if (isElementInViewport($('#msg-' + key))) {
+    		    			for (var i = 0; i < data.openEnds[key].length; i++) {
+    		    				var parentId = data.openEnds[key][i];
+    		    				openEndsToBeDownloaded[parentId] = true;
+    		    				console.log("scheduled: " + parentId);
+									}
+    		    			delete data.openEnds[key];
+    		    			setTimeout(function () {
+    		    					for (var key in openEndsToBeDownloaded) {
+    		    							console.log("downloading: " + key);
+    		    							options.moreDataCallback(key, function (commits) {
+    		    									appendData(commits);
+    		    							});
+    		    					}
+    		    					openEndsToBeDownloaded = {};
+    		    			}, 500);
     		    		}
     		    	}
     		    });
