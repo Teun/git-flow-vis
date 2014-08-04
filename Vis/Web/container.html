@@ -13,7 +13,7 @@
             //GitFlowVisualize.draw(Dummy.Data[0], element, {developRef:"refs/heads/integration"});
         	//GitFlowVisualize.draw(Dummy.Data[1], element, { developRef: "refs/heads/integration" });
             var dataCallback = function (done) { done(Dummy.Data[1]); };
-            var moreDataCallback = function (from, done) { if (from == "8a23cee9ef19a4c2cd741bdc280423bb327b2532") { done(Dummy.Data[3]); } };
+            var moreDataCallback = function (from, done) { if (from == "4c1f8a4811e2798be63b5552ee3518e1b47be54f") { done(Dummy.Data[3]); } };
             GitFlowVisualize.draw(element, { dataCallback: dataCallback, moreDataCallback: moreDataCallback});
         });
     </script>
