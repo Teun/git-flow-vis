@@ -53,6 +53,9 @@ var GitFlowVisualize =
     	'use strict';
     	var self = {};
     	var data;
+    	var constants = {
+				rowHeight: 25
+    	};
     	var options = {
     		drawTable: false,
 
@@ -605,7 +608,7 @@ var GitFlowVisualize =
     			return result;
     		};
     		self.drawGraph = function (elem) {
-    			var calcHeight = Math.max(800, data.chronoCommits.length * 20);
+    			var calcHeight = Math.max(800, data.chronoCommits.length * constants.rowHeight);
     			var size = { width: 500, height: calcHeight };
     			var margin = 10;
 
@@ -627,7 +630,7 @@ var GitFlowVisualize =
 							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
-							.range([10, data.chronoCommits.length * 25]);
+							.range([10, data.chronoCommits.length * constants.rowHeight]);
 
     			var line = d3.svg.line()
 							//.interpolate("bundle")
