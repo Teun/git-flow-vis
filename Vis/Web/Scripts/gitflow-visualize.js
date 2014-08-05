@@ -69,6 +69,10 @@ var GitFlowVisualize =
     		project:null,
     		repo: null,
 
+    		// UI interaction
+    		showSpinner: function () { },
+    		hideSpinner: function(){},
+
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
     		developBrancheHintPrefix: "devhint/",
     		// this pattern should match the tags that are given to release commits on master 
@@ -527,8 +531,10 @@ var GitFlowVisualize =
     	self.draw = function (elem, opt) {
     		drawElem = elem;
     		options = $.extend(options, opt);
+    		options.showSpinner();
     		options.dataCallback(function (data) {
     			rawData = data;
+    			options.hideSpinner();
     			drawFromRaw();
     		});
     	};
@@ -537,7 +543,9 @@ var GitFlowVisualize =
     		drawFromRaw();
     	}
     	var drawFromRaw = function () {
+    		options.showSpinner();
     		data = cleanup(rawData);
+    		options.hideSpinner();
     		options.dataProcessed(data);
     		if (drawElem) {
     			self.drawing.drawTable(drawElem);
