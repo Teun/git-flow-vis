@@ -544,13 +544,15 @@ var GitFlowVisualize =
     	}
     	var drawFromRaw = function () {
     		options.showSpinner();
-    		data = cleanup(rawData);
-    		options.hideSpinner();
-    		options.dataProcessed(data);
-    		if (drawElem) {
-    			self.drawing.drawTable(drawElem);
-    			self.drawing.drawGraph(drawElem);
-    		}
+    		data = setTimeout(function () {
+    			cleanup(rawData);
+    			options.hideSpinner();
+    			options.dataProcessed(data);
+    			if (drawElem) {
+    				self.drawing.drawTable(drawElem);
+    				self.drawing.drawGraph(drawElem);
+    			}
+    		}, 10);
     	}
     	self.drawing = (function () {
     		var self = {};
