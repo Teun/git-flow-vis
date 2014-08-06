@@ -828,6 +828,7 @@ var GitFlowVisualize =
     		    								delete openEndsBeingDownloaded[thisKey];
     		    								if (commits) appendData(commits);
     		    								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
+    		    									console.log("queues empty, ready to draw");
     		    									drawFromRaw();
     		    								} else {
     		    									console.log("waiting, still downloads in progress");
