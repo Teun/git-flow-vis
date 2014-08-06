@@ -923,7 +923,7 @@ var GitFlowVisualize =
     	            '.author{font-weight:bold;width:120px;}' +
     	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
     	            '#gitflow-spinner{position:fixed; left:300px;top:200px;z-index:999}';
-    			$('<style>' + style + '</style>').appendTo('head');
+    	        $('<link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/5.6.16/css/aui.css" media="all"><style>' + style + '</style>').appendTo('head');
     			});
     	}
 
