@@ -756,8 +756,7 @@ var GitFlowVisualize =
 							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0)-10) + ") rotate(-40)";
 						});
 					var rect = rotated.append("rect")
-						.attr("width", 60)
-						.attr("height", 15);
+						.attr("width", 60).attr("height", 15).attr("rx", "2");
 					var text = rotated.append("text").attr("y", "12").attr("x", "3")
 						.text(function (d) { return d; });
 					blockLegenda.append("path").attr("d", function (d) {
