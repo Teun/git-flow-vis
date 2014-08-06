@@ -10,18 +10,26 @@
     <script>
         $(function () {
             var element = document.getElementById('drawhere');
-            //GitFlowVisualize.draw(Dummy.Data[0], element, {developRef:"refs/heads/integration"});
-        	//GitFlowVisualize.draw(Dummy.Data[1], element, { developRef: "refs/heads/integration" });
-            var dataCallback = function (done) { done(Dummy.Data[1]); };
-            var moreDataCallback = function (from, done) { if (from == "4c1f8a4811e2798be63b5552ee3518e1b47be54f") { done(Dummy.Data[3]); } };
-            GitFlowVisualize.draw(element, { dataCallback: dataCallback, moreDataCallback: moreDataCallback});
+            var dataCallback = function (done) { window.setTimeout(function () { done(Dummy.Data[1]); }, 100); };
+            var moreDataCallback = function (from, done) {
+            	if (from == "4c1f8a4811e2798be63b5552ee3518e1b47be54f") {
+            		done(Dummy.Data[3], from);
+            	} else {
+            		done(null, from);
+            	}
+            };
+            GitFlowVisualize.draw(element,
+							{
+								dataCallback: dataCallback,
+								moreDataCallback: moreDataCallback
+							});
         });
     </script>
     <style>
-.aui-avatar-xsmall .aui-avatar-inner img {
-max-height: 12px;
-max-width: 12px;
-}
+    	.aui-avatar-xsmall .aui-avatar-inner img {
+    		max-height: 12px;
+    		max-width: 12px;
+    	}
 
     </style>
     <title></title>
