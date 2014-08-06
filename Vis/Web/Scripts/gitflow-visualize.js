@@ -96,12 +96,12 @@ var GitFlowVisualize =
     		        options.project = options.project || parts[parts.length - 2];
     		        options.repo = options.repo || parts[parts.length - 1];
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/tags"
+    		            AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/tags"
     		        ).then(function (d) {
     		        	result.tags = d;
     		        });
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/branches", { limit: 50 }
+    		            AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/branches", { limit: 50 }
     		        ).then(function(d) {
     		        	result.branches = d;
     		        	var toGet = [];
@@ -119,7 +119,7 @@ var GitFlowVisualize =
     		        	    } else {
     		        	        par.since = options.developRef;
     		        	    }
-    		        	    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
+    		        	    var url = AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		        		$.getJSON(
 													url, par
 											).always(function (d, s) {
@@ -139,7 +139,7 @@ var GitFlowVisualize =
     		},
     		dataProcessed: function (d) { },
     		moreDataCallback: function(from, done) {
-    		    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
+    		    var url = AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		    $.getJSON(url, { limit: 50, until: from })
     		        .then(function(d) {
     		            done(d, from);
