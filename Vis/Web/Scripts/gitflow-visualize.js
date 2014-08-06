@@ -742,7 +742,7 @@ var GitFlowVisualize =
 					.attr("class", "commit-dot")
 					.attr("r", 5)
 					.attr("cx", function (d) { return x(d.columns[0]); })
-					.attr("cy", function (d) { return y(d.orderNr); })
+					.attr("cy", function (d) { return y(d.orderNr) + 3; })
 					.attr("id", function (d) { return "commit-" + d.id; })
     			;
 
@@ -954,7 +954,7 @@ var GitFlowVisualize =
 								'.branch{background-color:#ffc;border-color:#ff0;}' +
 								'.legenda-label text{fill:white;} .legenda-label path{stroke-width:4}' +
 								'.legenda-label.m rect{fill:#d04437;}.legenda-label.m path{stroke:#d04437;}' +
-								'.legenda-label.r rect{fill:#f6c342;}.legenda-label.r text{fill:black;} .legenda-label.r path{stroke:#f6c342;}' +
+								'.legenda-label.r rect{fill:#f6c342;}.legenda-label.r path{stroke:#f6c342;}' +
 								'.legenda-label.d rect{fill:#8eb021;}.legenda-label.d text{fill:white;} .legenda-label.d path{stroke:#8eb021;}' +
 								'.legenda-label.f rect{fill:#3b7fc4;;}.legenda-label.f text{fill:white;} .legenda-label.f path{stroke:#3b7fc4;;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
