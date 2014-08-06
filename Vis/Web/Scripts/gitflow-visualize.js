@@ -729,7 +729,7 @@ var GitFlowVisualize =
 						.attr("class", function (d) { return "branch-line " + d.name; })
 						.attr("x1", function (d) { return x(d.id); })
 						.attr("x2", function (d) { return x(d.id); })
-						.attr("y1", 0)
+						.attr("y1", y(0))
 						.attr("y2", size.height);
 
     		    svg.selectAll(".commit").remove();
