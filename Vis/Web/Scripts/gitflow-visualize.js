@@ -131,7 +131,7 @@ var GitFlowVisualize =
     		    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		    $.getJSON(url, { limit: 25, until: from })
     		        .then(function(d) {
-    		            done(d);
+    		            done(d, from);
     		        });
 
     		}
@@ -540,7 +540,6 @@ var GitFlowVisualize =
     	};
     	var appendData = function (newCommits) {
     		rawData.commits.push(newCommits);
-    		drawFromRaw();
     	}
     	var drawFromRaw = function () {
     		options.showSpinner();
@@ -823,8 +822,19 @@ var GitFlowVisualize =
     		    			setTimeout(function () {
     		    					for (var key in openEndsToBeDownloaded) {
     		    							console.log("downloading: " + key);
-    		    							options.moreDataCallback(key, function (commits) {
-    		    									appendData(commits);
+    		    							delete openEndsToBeDownloaded[key];
+    		    							openEndsBeingDownloaded[key] = true;
+    		    							options.moreDataCallback(key, function (commits, thisKey) {
+    		    								delete openEndsBeingDownloaded[thisKey];
+    		    								if (commits) appendData(commits);
+    		    								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
+    		    									drawFromRaw();
+    		    								} else {
+    		    									console.log("waiting, still downloads in progress");
+    		    									console.log(openEndsToBeDownloaded);
+    		    									console.log(openEndsBeingDownloaded);
+														}
+
     		    							});
     		    					}
     		    					openEndsToBeDownloaded = {};
@@ -834,7 +844,8 @@ var GitFlowVisualize =
     		    });
 
     		};
-    	    var openEndsToBeDownloaded = {};
+    		var openEndsToBeDownloaded = {};
+    		var openEndsBeingDownloaded = {};
     		var highlightCommits = function (arrIds) {
     		    if (!arrIds || arrIds.length == 0) {
     		        $(".commit-msg").removeClass("dim").removeClass("highlight");
