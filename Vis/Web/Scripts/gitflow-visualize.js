@@ -74,12 +74,15 @@ var GitFlowVisualize =
 
     		// UI interaction
     		showSpinner: function () {
-    			var spinner = $("gitflow-spinner");
-    			if (!spinner) {
-    				$("body").append('<div class="aui-group" id="gitflow-spinner"><p style="margin-bottom: 10px;">Processing...</p><div id="small-toggle-progress-bar" class="aui-progress-indicator"><div class="aui-progress-indicator-value"></div></div></div>');
+    			var spinner = $("#gitflow-spinner");
+    			if (spinner.length === 0) {
+    				spinner = $("body").append('<div class="aui-group" id="gitflow-spinner"><p style="margin-bottom: 10px;">Processing...</p><div id="small-toggle-progress-bar" class="aui-progress-indicator"><div class="aui-progress-indicator-value"></div></div></div>');
     			}
+    			spinner.show();
     		},
-    		hideSpinner: function(){},
+    		hideSpinner: function () {
+    			$("#gitflow-spinner").hide();
+    		},
 
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
     		developBrancheHintPrefix: "devhint/",
