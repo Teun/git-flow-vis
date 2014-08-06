@@ -76,7 +76,7 @@ var GitFlowVisualize =
     		showSpinner: function () {
     			var spinner = $("#gitflow-spinner");
     			if (spinner.length === 0) {
-    				spinner = $("body").append('<div class="aui-group" id="gitflow-spinner"><p style="margin-bottom: 10px;">Processing...</p><div id="small-toggle-progress-bar" class="aui-progress-indicator"><div class="aui-progress-indicator-value"></div></div></div>');
+    				spinner = $("body").append('<div id="gitflow-spinner">Processing...</p></div>');
     			}
     			spinner.show();
     		},
@@ -922,8 +922,8 @@ var GitFlowVisualize =
     	            'table.commit-table td{overflow:hidden;margin:2px;}' +
     	            '.author{font-weight:bold;width:120px;}' +
     	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
-    	            '#gitflow-spinner{position:fixed; left:300px;top:200px;z-index:999}';
-    	        $('<link rel="stylesheet" href="//aui-cdn.atlassian.com/aui-adg/5.6.16/css/aui.css" media="all"><style>' + style + '</style>').appendTo('head');
+    	            '#gitflow-spinner{position:fixed; left:300px;top:200px;z-index:999;opacity:.8;font-family:arial;font-size:2em;background-color:#888;color:white;padding:30px;padding-top:50px;box-shadow: 5px 5px 2px #444;border: 2px solid #444;border-radius: 3px;}';
+    	        $('<style>' + style + '</style>').appendTo('head');
     			});
     	}
 

@@ -18,17 +18,10 @@
             		done(null, from);
             	}
             };
-            var showSpinner = function () { 
-            	var back = ["#ccc", "#aaa","blue","#330"];
-            	var rand = back[Math.floor(Math.random() * back.length)];
-            	$('#spinner').show().css("background-color", rand); }
-            var hideSpinner = function () { $('#spinner').hide(); }
             GitFlowVisualize.draw(element,
 							{
 								dataCallback: dataCallback,
-								moreDataCallback: moreDataCallback,
-								showSpinner: showSpinner,
-								hideSpinner: hideSpinner
+								moreDataCallback: moreDataCallback
 							});
         });
     </script>
@@ -37,16 +30,11 @@
     		max-height: 12px;
     		max-width: 12px;
     	}
-    	#spinner {position:fixed;width:100px;height:50px;top:200px;left:400px;padding-top:20px;
-								background-color:black;color:white;font: bold 2em arial;text-align:center;
-								opacity:0.4;z-index:999;
-    	}
 
     </style>
     <title></title>
 </head>
 <body>
     <div id="drawhere"></div>
-	<div id="spinner">busy</div>
 </body>
 </html>
