@@ -636,18 +636,35 @@ var GitFlowVisualize =
     		        var svg = cont.append("svg")
                                 .attr("class", "commits-graph")
                                 .append("g")
-    		                    .attr("transform", "translate(" + margin + "," + margin + ")");
+    		                    .attr("transform", "translate(" + margin + "," + (margin) + ")");
                 }
     		    d3.select(elem).select("svg")
     		        .attr("width", size.width + 2 * margin)
     		        .attr("height", size.height + 2 * margin);
-    			var columnsInOrder = keysInOrder(data.columns);
+    		    var columnsInOrder = keysInOrder(data.columns);
+
+    		    var legendaBlocks = {
+    		    	"master": {prefix:'m'},
+    		    	"releases": {prefix:'r'},
+    		    	"develop": {prefix:'d'},
+    		    	"features": {prefix:'f'}
+    		    }
+    		    for (var key in legendaBlocks) {
+    		    	var groupColumns = columnsInOrder.filter(function (k) { return data.columns[k].name[0] === legendaBlocks[key].prefix; });
+    		    	if (groupColumns.length == 0) {
+    		    		delete legendaBlocks[key];
+    		    		continue;
+    		    	}
+    		    	legendaBlocks[key].first = groupColumns[0];
+    		    	legendaBlocks[key].last = groupColumns[groupColumns.length-1];
+						}
+
     			var x = d3.scale.ordinal()
 							.domain(columnsInOrder)
 							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
-							.range([10, data.chronoCommits.length * constants.rowHeight]);
+							.range([40, 40 + data.chronoCommits.length * constants.rowHeight]);
 
     			var line = d3.svg.line()
 							//.interpolate("bundle")
@@ -684,7 +701,7 @@ var GitFlowVisualize =
     		        return line(points);
     		    };
 
-    		    // arrows
+    			// arrows
     		    svg.selectAll(".arrow").remove();
     			var arrows = $.map(d3.values(data.commits), function (c) { return c.parents.map(function(p) { return { p: p.id, c: c.id }; }); });
     		    var arrow = svg.selectAll(".arrow")
@@ -715,7 +732,6 @@ var GitFlowVisualize =
 						.attr("y1", 0)
 						.attr("y2", size.height);
 
-
     		    svg.selectAll(".commit").remove();
     		    var commit = svg.selectAll(".commit")
     		        .data(d3.values(data.commits))
@@ -729,6 +745,25 @@ var GitFlowVisualize =
 					.attr("cy", function (d) { return y(d.orderNr); })
 					.attr("id", function (d) { return "commit-" + d.id; })
     			;
+
+					var blockLegenda = svg.selectAll(".legenda-label")
+						.data(Object.keys(legendaBlocks))
+						.enter().append("g")
+						.attr("class", function (d) { return "legenda-label " + legendaBlocks[d].prefix; });
+					var rotated = blockLegenda.append("g")
+						.attr("transform", function (d) {
+							var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
+							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0)-10) + ") rotate(-40)";
+						});
+					var rect = rotated.append("rect")
+						.attr("width", 60)
+						.attr("height", 15);
+					var text = rotated.append("text").attr("y", "12").attr("x", "3")
+						.text(function (d) { return d; });
+					blockLegenda.append("path").attr("d", function (d) {
+						var group = legendaBlocks[d];
+						return line([{ x: group.first, y: 0 }, { x: group.last, y: 0 }])
+					});
 
     			var messages = d3.select(elem).select("div.messages");
     		    if (messages[0][0] == null) {
@@ -897,27 +932,32 @@ var GitFlowVisualize =
     	if (document) {
     	    $(function () {
     	        var style =
-    	            'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
-    	            '.commit-dot.dim {opacity:.2;}' +
-    	            'line {stroke:black;opacity: 0.2;}' +
-    	            'line.m {stroke:#d04437;stroke-width:3px;opacity: 1;}' +
-    	            'line.d0 {stroke:#8eb021;stroke-width:3px;opacity: 1;}' +
-    	            '.arrow path.outline {stroke:white;stroke-width:4px;opacity: .8;}' +
-    	            '.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
-    	            '.arrow path.branch-type-f {stroke: #3b7fc4;}' +
-    	            '.arrow path.branch-type-r {stroke: #f6c342;}' +
-    	            '.arrow path.branch-type-d {stroke: #8eb021;}' +
-    	            '.arrow path.branch-type-m {stroke: #f6c342;}' +
-    	            '.arrow path.branch-type-default {stroke-width:1px;}' +
-    	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
-    	            '.commit-msg.dim{color:#aaa;}' +
-    	            '.commit-msg.selected{background-color:#ccd9ea;}' +
-    	            '.commit-msg:hover{background-color:silver;}' +
-    	            '.commit-link{font-family:courier;}' +
-    	            '.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
-    	            '.label{font-weight:bold;border:1px inset;margin-right:2px;}' +
-    	            '.branch{background-color:#ffc;border-color:#ff0;}' +
+								'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
+								'.commit-dot.dim {opacity:.2;}' +
+								'line {stroke:black;opacity: 0.2;}' +
+								'line.m {stroke:#d04437;stroke-width:3px;opacity: 1;}' +
+								'line.d0 {stroke:#8eb021;stroke-width:3px;opacity: 1;}' +
+								'.arrow path.outline {stroke:white;stroke-width:4px;opacity: .8;}' +
+								'.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
+								'.arrow path.branch-type-f {stroke: #3b7fc4;}' +
+								'.arrow path.branch-type-r {stroke: #f6c342;}' +
+								'.arrow path.branch-type-d {stroke: #8eb021;}' +
+								'.arrow path.branch-type-m {stroke: #f6c342;}' +
+								'.arrow path.branch-type-default {stroke-width:1px;}' +
+								'.commits-graph{}.messages{position:relative;}' +
+								'.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
+								'.commit-msg.dim{color:#aaa;}' +
+								'.commit-msg.selected{background-color:#ccd9ea;}' +
+								'.commit-msg:hover{background-color:silver;}' +
+								'.commit-link{font-family:courier;}' +
+								'.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
+								'.label{font-weight:bold;border:1px inset;margin-right:2px;}' +
+								'.branch{background-color:#ffc;border-color:#ff0;}' +
+								'.legenda-label text{fill:white;} .legenda-label path{stroke-width:4}' +
+								'.legenda-label.m rect{fill:#d04437;}.legenda-label.m path{stroke:#d04437;}' +
+								'.legenda-label.r rect{fill:#f6c342;}.legenda-label.r text{fill:black;} .legenda-label.r path{stroke:#f6c342;}' +
+								'.legenda-label.d rect{fill:#8eb021;}.legenda-label.d text{fill:white;} .legenda-label.d path{stroke:#8eb021;}' +
+								'.legenda-label.f rect{fill:#3b7fc4;;}.legenda-label.f text{fill:white;} .legenda-label.f path{stroke:#3b7fc4;;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
     	            'table.commit-table td{overflow:hidden;margin:2px;}' +
     	            '.author{font-weight:bold;width:120px;}' +
