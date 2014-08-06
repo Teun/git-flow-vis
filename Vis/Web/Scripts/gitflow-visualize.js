@@ -72,6 +72,18 @@ var GitFlowVisualize =
     		project:null,
     		repo: null,
 
+    		// UI interaction
+    		showSpinner: function () {
+    			var spinner = $("#gitflow-spinner");
+    			if (spinner.length === 0) {
+    				spinner = $("body").append('<div id="gitflow-spinner">Processing...</p></div>');
+    			}
+    			spinner.show();
+    		},
+    		hideSpinner: function () {
+    			$("#gitflow-spinner").hide();
+    		},
+
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
     		developBrancheHintPrefix: "devhint/",
     		// this pattern should match the tags that are given to release commits on master 
@@ -128,9 +140,9 @@ var GitFlowVisualize =
     		dataProcessed: function (d) { },
     		moreDataCallback: function(from, done) {
     		    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
-    		    $.getJSON(url, { limit: 25, until: from })
+    		    $.getJSON(url, { limit: 50, until: from })
     		        .then(function(d) {
-    		            done(d);
+    		            done(d, from);
     		        });
 
     		}
@@ -530,22 +542,27 @@ var GitFlowVisualize =
     	self.draw = function (elem, opt) {
     		drawElem = elem;
     		options = $.extend(options, opt);
+    		options.showSpinner();
     		options.dataCallback(function (data) {
     			rawData = data;
+    			options.hideSpinner();
     			drawFromRaw();
     		});
     	};
     	var appendData = function (newCommits) {
     		rawData.commits.push(newCommits);
-    		drawFromRaw();
     	}
     	var drawFromRaw = function () {
-    		data = cleanup(rawData);
-    		options.dataProcessed(data);
-    		if (drawElem) {
-    			self.drawing.drawTable(drawElem);
-    			self.drawing.drawGraph(drawElem);
-    		}
+    		options.showSpinner();
+    		data = setTimeout(function () {
+    			cleanup(rawData);
+    			options.hideSpinner();
+    			options.dataProcessed(data);
+    			if (drawElem) {
+    				self.drawing.drawTable(drawElem);
+    				self.drawing.drawGraph(drawElem);
+    			}
+    		}, 10);
     	}
     	self.drawing = (function () {
     		var self = {};
@@ -619,18 +636,35 @@ var GitFlowVisualize =
     		        var svg = cont.append("svg")
                                 .attr("class", "commits-graph")
                                 .append("g")
-    		                    .attr("transform", "translate(" + margin + "," + margin + ")");
+    		                    .attr("transform", "translate(" + margin + "," + (margin) + ")");
                 }
     		    d3.select(elem).select("svg")
     		        .attr("width", size.width + 2 * margin)
     		        .attr("height", size.height + 2 * margin);
-    			var columnsInOrder = keysInOrder(data.columns);
+    		    var columnsInOrder = keysInOrder(data.columns);
+
+    		    var legendaBlocks = {
+    		    	"master": {prefix:'m'},
+    		    	"releases": {prefix:'r'},
+    		    	"develop": {prefix:'d'},
+    		    	"features": {prefix:'f'}
+    		    }
+    		    for (var key in legendaBlocks) {
+    		    	var groupColumns = columnsInOrder.filter(function (k) { return data.columns[k].name[0] === legendaBlocks[key].prefix; });
+    		    	if (groupColumns.length == 0) {
+    		    		delete legendaBlocks[key];
+    		    		continue;
+    		    	}
+    		    	legendaBlocks[key].first = groupColumns[0];
+    		    	legendaBlocks[key].last = groupColumns[groupColumns.length-1];
+						}
+
     			var x = d3.scale.ordinal()
 							.domain(columnsInOrder)
 							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
-							.range([10, data.chronoCommits.length * constants.rowHeight]);
+							.range([40, 40 + data.chronoCommits.length * constants.rowHeight]);
 
     			var line = d3.svg.line()
 							//.interpolate("bundle")
@@ -667,7 +701,7 @@ var GitFlowVisualize =
     		        return line(points);
     		    };
 
-    		    // arrows
+    			// arrows
     		    svg.selectAll(".arrow").remove();
     			var arrows = $.map(d3.values(data.commits), function (c) { return c.parents.map(function(p) { return { p: p.id, c: c.id }; }); });
     		    var arrow = svg.selectAll(".arrow")
@@ -695,9 +729,8 @@ var GitFlowVisualize =
 						.attr("class", function (d) { return "branch-line " + d.name; })
 						.attr("x1", function (d) { return x(d.id); })
 						.attr("x2", function (d) { return x(d.id); })
-						.attr("y1", 0)
+						.attr("y1", y(0))
 						.attr("y2", size.height);
-
 
     		    svg.selectAll(".commit").remove();
     		    var commit = svg.selectAll(".commit")
@@ -709,9 +742,27 @@ var GitFlowVisualize =
 					.attr("class", "commit-dot")
 					.attr("r", 5)
 					.attr("cx", function (d) { return x(d.columns[0]); })
-					.attr("cy", function (d) { return y(d.orderNr); })
+					.attr("cy", function (d) { return y(d.orderNr) + 3; })
 					.attr("id", function (d) { return "commit-" + d.id; })
     			;
+
+					var blockLegenda = svg.selectAll(".legenda-label")
+						.data(Object.keys(legendaBlocks))
+						.enter().append("g")
+						.attr("class", function (d) { return "legenda-label " + legendaBlocks[d].prefix; });
+					var rotated = blockLegenda.append("g")
+						.attr("transform", function (d) {
+							var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
+							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0)-10) + ") rotate(-40)";
+						});
+					var rect = rotated.append("rect")
+						.attr("width", 60).attr("height", 15).attr("rx", "2");
+					var text = rotated.append("text").attr("y", "12").attr("x", "3")
+						.text(function (d) { return d; });
+					blockLegenda.append("path").attr("d", function (d) {
+						var group = legendaBlocks[d];
+						return line([{ x: group.first, y: 0 }, { x: group.last, y: 0 }])
+					});
 
     			var messages = d3.select(elem).select("div.messages");
     		    if (messages[0][0] == null) {
@@ -816,8 +867,20 @@ var GitFlowVisualize =
     		    			setTimeout(function () {
     		    					for (var key in openEndsToBeDownloaded) {
     		    							console.log("downloading: " + key);
-    		    							options.moreDataCallback(key, function (commits) {
-    		    									appendData(commits);
+    		    							delete openEndsToBeDownloaded[key];
+    		    							openEndsBeingDownloaded[key] = true;
+    		    							options.moreDataCallback(key, function (commits, thisKey) {
+    		    								delete openEndsBeingDownloaded[thisKey];
+    		    								if (commits) appendData(commits);
+    		    								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
+    		    									console.log("queues empty, ready to draw");
+    		    									drawFromRaw();
+    		    								} else {
+    		    									console.log("waiting, still downloads in progress");
+    		    									console.log(openEndsToBeDownloaded);
+    		    									console.log(openEndsBeingDownloaded);
+														}
+
     		    							});
     		    					}
     		    					openEndsToBeDownloaded = {};
@@ -827,7 +890,8 @@ var GitFlowVisualize =
     		    });
 
     		};
-    	    var openEndsToBeDownloaded = {};
+    		var openEndsToBeDownloaded = {};
+    		var openEndsBeingDownloaded = {};
     		var highlightCommits = function (arrIds) {
     		    if (!arrIds || arrIds.length == 0) {
     		        $(".commit-msg").removeClass("dim").removeClass("highlight");
@@ -867,32 +931,38 @@ var GitFlowVisualize =
     	if (document) {
     	    $(function () {
     	        var style =
-    	            'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
-    	            '.commit-dot.dim {opacity:.2;}' +
-    	            'line {stroke:black;opacity: 0.2;}' +
-    	            'line.m {stroke:#d04437;stroke-width:3px;opacity: 1;}' +
-    	            'line.d0 {stroke:#8eb021;stroke-width:3px;opacity: 1;}' +
-    	            '.arrow path.outline {stroke:white;stroke-width:4px;opacity: .8;}' +
-    	            '.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
-    	            '.arrow path.branch-type-f {stroke: #3b7fc4;}' +
-    	            '.arrow path.branch-type-r {stroke: #f6c342;}' +
-    	            '.arrow path.branch-type-d {stroke: #8eb021;}' +
-    	            '.arrow path.branch-type-m {stroke: #f6c342;}' +
-    	            '.arrow path.branch-type-default {stroke-width:1px;}' +
-    	            '.commits-graph{}.messages{position:relative;}' +
-    	            '.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
-    	            '.commit-msg.dim{color:#aaa;}' +
-    	            '.commit-msg.selected{background-color:#ccd9ea;}' +
-    	            '.commit-msg:hover{background-color:silver;}' +
-    	            '.commit-link{font-family:courier;}' +
-    	            '.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
-    	            '.label{font-weight:bold;border:1px inset;margin-right:2px;}' +
-    	            '.branch{background-color:#ffc;border-color:#ff0;}' +
+								'circle.commit-dot {fill: white;stroke:black;stroke-width:2px;}' +
+								'.commit-dot.dim {opacity:.2;}' +
+								'line {stroke:black;opacity: 0.2;}' +
+								'line.m {stroke:#d04437;stroke-width:3px;opacity: 1;}' +
+								'line.d0 {stroke:#8eb021;stroke-width:3px;opacity: 1;}' +
+								'.arrow path.outline {stroke:white;stroke-width:4px;opacity: .8;}' +
+								'.arrow path {stroke: black;stroke-width: 2px;opacity: 1;fill:none;}' +
+								'.arrow path.branch-type-f {stroke: #3b7fc4;}' +
+								'.arrow path.branch-type-r {stroke: #f6c342;}' +
+								'.arrow path.branch-type-d {stroke: #8eb021;}' +
+								'.arrow path.branch-type-m {stroke: #f6c342;}' +
+								'.arrow path.branch-type-default {stroke-width:1px;}' +
+								'.commits-graph{}.messages{position:relative;}' +
+								'.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
+								'.commit-msg.dim{color:#aaa;}' +
+								'.commit-msg.selected{background-color:#ccd9ea;}' +
+								'.commit-msg:hover{background-color:silver;}' +
+								'.commit-link{font-family:courier;}' +
+								'.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
+								'.label{font-weight:bold;border:1px inset;margin-right:2px;}' +
+								'.branch{background-color:#ffc;border-color:#ff0;}' +
+								'.legenda-label text{fill:white;} .legenda-label path{stroke-width:4}' +
+								'.legenda-label.m rect{fill:#d04437;}.legenda-label.m path{stroke:#d04437;}' +
+								'.legenda-label.r rect{fill:#f6c342;}.legenda-label.r path{stroke:#f6c342;}' +
+								'.legenda-label.d rect{fill:#8eb021;}.legenda-label.d text{fill:white;} .legenda-label.d path{stroke:#8eb021;}' +
+								'.legenda-label.f rect{fill:#3b7fc4;;}.legenda-label.f text{fill:white;} .legenda-label.f path{stroke:#3b7fc4;;}' +
     	            '.tag{background-color:#eee;;border-color:#ccc;}' +
     	            'table.commit-table td{overflow:hidden;margin:2px;}' +
     	            '.author{font-weight:bold;width:120px;}' +
-    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}';
-    			$('<style>' + style + '</style>').appendTo('head');
+    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
+    	            '#gitflow-spinner{position:fixed; left:300px;top:200px;z-index:999;opacity:.8;font-family:arial;font-size:2em;background-color:#888;color:white;padding:30px;padding-top:50px;box-shadow: 5px 5px 2px #444;border: 2px solid #444;border-radius: 3px;}';
+    	        $('<style>' + style + '</style>').appendTo('head');
     			});
     	}
 
