@@ -1,3 +1,9 @@
+/* Override console.log() to avoid browser compatibility issues */
+if(!window.console) {
+    var console = {};
+    console.log = function(){};
+}
+
 ﻿/*
 CryptoJS v3.1.2
 code.google.com/p/crypto-js
