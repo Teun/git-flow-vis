@@ -1,3 +1,9 @@
+/* Override console.log() to avoid browser compatibility issues */
+if(!window.console) {
+    var console = {};
+    console.log = function(){};
+}
+
 ﻿/*
 CryptoJS v3.1.2
 code.google.com/p/crypto-js
@@ -96,12 +102,12 @@ var GitFlowVisualize =
     		        options.project = options.project || parts[parts.length - 2];
     		        options.repo = options.repo || parts[parts.length - 1];
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/tags"
+    		            AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/tags"
     		        ).then(function (d) {
     		        	result.tags = d;
     		        });
     		        $.getJSON(
-    		            "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/branches", { limit: 50 }
+    		            AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/branches", { limit: 50 }
     		        ).then(function(d) {
     		        	result.branches = d;
     		        	var toGet = [];
@@ -119,7 +125,7 @@ var GitFlowVisualize =
     		        	    } else {
     		        	        par.since = options.developRef;
     		        	    }
-    		        	    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
+    		        	    var url = AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		        		$.getJSON(
 													url, par
 											).always(function (d, s) {
@@ -139,7 +145,7 @@ var GitFlowVisualize =
     		},
     		dataProcessed: function (d) { },
     		moreDataCallback: function(from, done) {
-    		    var url = "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
+    		    var url = AJS.contextPath() + "/rest/api/1.0/projects/" + options.project + "/repos/" + options.repo + "/commits";
     		    $.getJSON(url, { limit: 50, until: from })
     		        .then(function(d) {
     		            done(d, from);
@@ -815,11 +821,21 @@ var GitFlowVisualize =
     		            if (d.labels) {
     		                $.each($(d.labels), function (k, v) {
     		                    if (v.indexOf('refs/heads/') == 0) {
-    		                        res += "<span class='label branch'>" + v.substring(11) + "</span>";
+                                    if(v.indexOf(options.masterRef) == 0) {
+        		                        res += "<span class='label aui-lozenge aui-lozenge-error aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+                                    } else if(v.indexOf(options.developRef) == 0) {
+                                        res += "<span class='label aui-lozenge aui-lozenge-success aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+                                    } else if(v.indexOf(options.featurePrefix) == 0) {
+                                        res += "<span class='label aui-lozenge aui-lozenge-complete aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+                                    } else if(v.indexOf(options.releasePrefix) == 0 || v.indexOf(options.hotfixPrefix) == 0) {
+                                        res += "<span class='label aui-lozenge aui-lozenge-current aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+                                    } else {
+                                        res += "<span class='label aui-lozenge aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+                                    }
     		                    } else if (v.indexOf('refs/tags/') == 0) {
-    		                        res += "<span class='label tag'>" + v.substring(10) + "</span>";
+    		                        res += "<span class='label aui-lozenge aui-lozenge-moved aui-lozenge-subtle'>" + v.substring(10) + "</span>";
     		                    } else {
-    		                        res += "<span class='label'>" + v + "</span>";
+    		                        res += "<span class='label aui-lozenge aui-lozenge-subtle'>" + v + "</span>";
     		                    }
     		                });
     		            }
@@ -950,7 +966,7 @@ var GitFlowVisualize =
 								'.commit-msg:hover{background-color:silver;}' +
 								'.commit-link{font-family:courier;}' +
 								'.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
-								'.label{font-weight:bold;border:1px inset;margin-right:2px;}' +
+								'.label{margin-right:2px;}' +
 								'.branch{background-color:#ffc;border-color:#ff0;}' +
 								'.legenda-label text{fill:white;} .legenda-label path{stroke-width:4}' +
 								'.legenda-label.m rect{fill:#d04437;}.legenda-label.m path{stroke:#d04437;}' +
