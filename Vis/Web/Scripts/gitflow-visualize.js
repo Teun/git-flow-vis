@@ -57,6 +57,7 @@ var GitFlowVisualize =
     
 		(function () {
     	'use strict';
+        var $ = AJS.$;
     	var self = {};
     	var data;
     	var constants = {
