@@ -990,14 +990,14 @@ var GitFlowVisualize =
 								'.legenda-label.r rect{fill:#f6c342;}.legenda-label.r path{stroke:#f6c342;}' +
 								'.legenda-label.d rect{fill:#8eb021;}.legenda-label.d text{fill:white;} .legenda-label.d path{stroke:#8eb021;}' +
 								'.legenda-label.f rect{fill:#3b7fc4;;}.legenda-label.f text{fill:white;} .legenda-label.f path{stroke:#3b7fc4;;}' +
-    	            '.tag{background-color:#eee;;border-color:#ccc;}' +
-    	            'table.commit-table td{overflow:hidden;margin:2px;}' +
-    	            '.author{font-weight:bold;width:120px;}' +
-    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
-                    '#gfc-vis-container{min-height:400px;}' +
-    	            '#gfc-spinner{display:inline-block;padding-left:10px;width:75px;}' + 
-                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
-                    '#git-flow-graph .aui-nav-item-label{display:inline;}';
+    	                        '.tag{background-color:#eee;;border-color:#ccc;}' +
+    	                        'table.commit-table td{overflow:hidden;margin:2px;}' +
+    	                        '.author{font-weight:bold;width:120px;}' +
+    	                        '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:5;position:relative;}' + 
+                                '#gfc-vis-container{min-height:400px;}' +
+    	                        '#gfc-spinner{display:inline-block;padding-left:10px;width:75px;}' + 
+                                '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
+                                '#git-flow-graph .aui-nav-item-label{display:inline;}';
     	        $('<style>' + style + '</style>').appendTo('head');
                 $('#git-flow-graph .aui-icon').removeClass('aui-iconfont-close-dialog').addClass('aui-iconfont-sourcetree');
     			});
