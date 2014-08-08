@@ -81,14 +81,20 @@ var GitFlowVisualize =
 
     		// UI interaction
     		showSpinner: function () {
-    			var spinner = $("#gitflow-spinner");
+    			var spinner = $("#gfc-spinner");
     			if (spinner.length === 0) {
-    				spinner = $("body").append('<div id="gitflow-spinner">Processing...</p></div>');
+    				spinner = $("body").append('<div id="gfc-spinner"><p>Retrieving commits</p><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
     			}
     			spinner.show();
+                options.progressSpinner();
     		},
+            progressSpinner: function () {
+                AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 0.1);
+                setTimeout(function(){options.progressSpinner()},500);
+            },
     		hideSpinner: function () {
-    			$("#gitflow-spinner").hide();
+                AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 1);                
+    			$("#gfc-spinner").fadeOut('slow');
     		},
 
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
@@ -978,7 +984,8 @@ var GitFlowVisualize =
     	            'table.commit-table td{overflow:hidden;margin:2px;}' +
     	            '.author{font-weight:bold;width:120px;}' +
     	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
-    	            '#gitflow-spinner{position:fixed; left:300px;top:200px;z-index:999;opacity:.8;font-family:arial;font-size:2em;background-color:#888;color:white;padding:30px;padding-top:50px;box-shadow: 5px 5px 2px #444;border: 2px solid #444;border-radius: 3px;}';
+                    '#gfc-vis-container{min-height:400px;}' +
+    	            '#gfc-spinner{position:fixed;right:30px;top:125px;z-index:999;}';
     	        $('<style>' + style + '</style>').appendTo('head');
     			});
     	}
