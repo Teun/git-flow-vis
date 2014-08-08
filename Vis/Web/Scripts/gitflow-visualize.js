@@ -83,7 +83,7 @@ var GitFlowVisualize =
     		showSpinner: function () {
     			var spinner = $("#gfc-spinner");
     			if (spinner.length === 0) {
-    				spinner = $("body").append('<div id="gfc-spinner"><p>Retrieving commits</p><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
+    				spinner = $("#git-flow-graph").append('<div id="gfc-spinner"><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
     			}
     			spinner.show();
                 options.progressSpinner();
@@ -985,7 +985,9 @@ var GitFlowVisualize =
     	            '.author{font-weight:bold;width:120px;}' +
     	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
                     '#gfc-vis-container{min-height:400px;}' +
-    	            '#gfc-spinner{position:fixed;right:30px;top:125px;z-index:999;}';
+    	            '#gfc-spinner{display:inline-block;padding-left:10px;width:75px;}' + 
+                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
+                    '#git-flow-graph .aui-nav-item-label{display:inline;}';
     	        $('<style>' + style + '</style>').appendTo('head');
     			});
     	}
