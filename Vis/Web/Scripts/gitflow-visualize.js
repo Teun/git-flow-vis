@@ -999,7 +999,6 @@ var GitFlowVisualize =
                     '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
                     '#git-flow-graph .aui-nav-item-label{display:inline;}';
     	        $('<style>' + style + '</style>').appendTo('head');
-                $('#git-flow-graph .aui-icon').removeClass('aui-iconfont-close-dialog').addClass('aui-iconfont-sourcetree');
     			});
     	}
 
