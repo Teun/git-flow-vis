@@ -57,10 +57,11 @@ var GitFlowVisualize =
     
 		(function () {
     	'use strict';
+        var $ = AJS.$;
     	var self = {};
     	var data;
     	var constants = {
-				rowHeight: 25
+				rowHeight: 35
     	};
     	var options = {
     		drawTable: false,
@@ -80,14 +81,20 @@ var GitFlowVisualize =
 
     		// UI interaction
     		showSpinner: function () {
-    			var spinner = $("#gitflow-spinner");
+    			var spinner = $("#gfc-spinner");
     			if (spinner.length === 0) {
-    				spinner = $("body").append('<div id="gitflow-spinner">Processing...</p></div>');
+    				spinner = $("#git-flow-graph").append('<div id="gfc-spinner"><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
     			}
     			spinner.show();
+                options.progressSpinner();
     		},
+            progressSpinner: function () {
+                AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 0.1);
+                setTimeout(function(){options.progressSpinner()},500);
+            },
     		hideSpinner: function () {
-    			$("#gitflow-spinner").hide();
+                AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 1);                
+    			$("#gfc-spinner").fadeOut('slow');
     		},
 
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
@@ -817,7 +824,7 @@ var GitFlowVisualize =
     		        })
     		        .html(function(d) {
     		            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
-    		            var res = "<table class='commit-table'><tr><td class='msg'>";
+    		            var res = "<table class='commit-table aui'><tr><td class='msg'>";
     		            if (d.labels) {
     		                $.each($(d.labels), function (k, v) {
     		                    if (v.indexOf('refs/heads/') == 0) {
@@ -963,7 +970,7 @@ var GitFlowVisualize =
 								'.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
 								'.commit-msg.dim{color:#aaa;}' +
 								'.commit-msg.selected{background-color:#ccd9ea;}' +
-								'.commit-msg:hover{background-color:silver;}' +
+								'.commit-msg:hover{background-color:#f5f5f5;}' +
 								'.commit-link{font-family:courier;}' +
 								'.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
 								'.label{margin-right:2px;}' +
@@ -977,8 +984,12 @@ var GitFlowVisualize =
     	            'table.commit-table td{overflow:hidden;margin:2px;}' +
     	            '.author{font-weight:bold;width:120px;}' +
     	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
-    	            '#gitflow-spinner{position:fixed; left:300px;top:200px;z-index:999;opacity:.8;font-family:arial;font-size:2em;background-color:#888;color:white;padding:30px;padding-top:50px;box-shadow: 5px 5px 2px #444;border: 2px solid #444;border-radius: 3px;}';
+                    '#gfc-vis-container{min-height:400px;}' +
+    	            '#gfc-spinner{display:inline-block;padding-left:10px;width:75px;}' + 
+                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
+                    '#git-flow-graph .aui-nav-item-label{display:inline;}';
     	        $('<style>' + style + '</style>').appendTo('head');
+                $('#git-flow-graph .aui-icon').removeClass('aui-iconfont-close-dialog').addClass('aui-iconfont-sourcetree');
     			});
     	}
 
