@@ -555,7 +555,7 @@ var GitFlowVisualize =
     		        return 10;
     		    // following first parent is a bonus
     			if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
-    			return 0;
+    			return -.1;
     		}
     		var path = findBestPathFromBreadthFirst(from, score);
     		return path;
