@@ -61,7 +61,7 @@ var GitFlowVisualize =
     	var self = {};
     	var data;
     	var constants = {
-				rowHeight: 25
+				rowHeight: 35
     	};
     	var options = {
     		drawTable: false,
@@ -818,7 +818,7 @@ var GitFlowVisualize =
     		        })
     		        .html(function(d) {
     		            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
-    		            var res = "<table class='commit-table'><tr><td class='msg'>";
+    		            var res = "<table class='commit-table aui'><tr><td class='msg'>";
     		            if (d.labels) {
     		                $.each($(d.labels), function (k, v) {
     		                    if (v.indexOf('refs/heads/') == 0) {
@@ -964,7 +964,7 @@ var GitFlowVisualize =
 								'.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
 								'.commit-msg.dim{color:#aaa;}' +
 								'.commit-msg.selected{background-color:#ccd9ea;}' +
-								'.commit-msg:hover{background-color:silver;}' +
+								'.commit-msg:hover{background-color:#f5f5f5;}' +
 								'.commit-link{font-family:courier;}' +
 								'.commit-table{width:100%;table-layout:fixed;}td.author{width:8em;}td.sha{width:5em;}td.date{width:7em;}' +
 								'.label{margin-right:2px;}' +
