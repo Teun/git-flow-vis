@@ -81,20 +81,30 @@ var GitFlowVisualize =
 
     		// UI interaction
     		showSpinner: function () {
-    			var spinner = $("#gfc-spinner");
-    			if (spinner.length === 0) {
-    				spinner = $("#git-flow-graph").append('<div id="gfc-spinner"><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
-    			}
-    			spinner.show();
-                options.progressSpinner();
+                if(AJS.progressBars) {
+        			var spinner = $("#gfc-spinner");
+        			if (spinner.length === 0) {
+        				spinner = $("#git-flow-graph").append('<div id="gfc-spinner"><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
+                    }
+        			spinner.show();
+                    options.progressSpinner();
+                }
     		},
             progressSpinner: function () {
-                AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 0.1);
-                setTimeout(function(){options.progressSpinner()},500);
+                if(AJS.progressBars) {
+                    var spinner = $("#gfc-spinner:visible .aui-progress-indicator");
+                    if(spinner.length > 0) {
+                        var currProgress = spinner.attr('data-value') ? parseFloat(spinner.attr('data-value')) : 0;
+                        AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", currProgress + 0.1);
+                        setTimeout(function(){options.progressSpinner()},500);
+                    }
+                }
             },
     		hideSpinner: function () {
-                AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 1);                
-    			$("#gfc-spinner").fadeOut('slow');
+                if(AJS.progressBars) {
+                    AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 1);                
+        			$("#gfc-spinner").fadeOut('slow').remove();
+                }
     		},
 
     		// any tag starting with this prefix will enhance the chance of the commit being on the develop branch
@@ -558,8 +568,8 @@ var GitFlowVisualize =
     		options.showSpinner();
     		options.dataCallback(function (data) {
     			rawData = data;
-    			options.hideSpinner();
     			drawFromRaw();
+                options.hideSpinner();
     		});
     	};
     	var appendData = function (newCommits) {
@@ -569,12 +579,12 @@ var GitFlowVisualize =
     		options.showSpinner();
     		data = setTimeout(function () {
     			cleanup(rawData);
-    			options.hideSpinner();
     			options.dataProcessed(data);
     			if (drawElem) {
     				self.drawing.drawTable(drawElem);
     				self.drawing.drawGraph(drawElem);
     			}
+                options.hideSpinner();
     		}, 10);
     	}
     	self.drawing = (function () {
