@@ -565,11 +565,11 @@ var GitFlowVisualize =
     	self.draw = function (elem, opt) {
     		drawElem = elem;
     		options = $.extend(options, opt);
-    		options.showSpinner();
+            options.showSpinner();
     		options.dataCallback(function (data) {
     			rawData = data;
-    			drawFromRaw();
                 options.hideSpinner();
+    			drawFromRaw();
     		});
     	};
     	var appendData = function (newCommits) {
@@ -579,12 +579,12 @@ var GitFlowVisualize =
     		options.showSpinner();
     		data = setTimeout(function () {
     			cleanup(rawData);
+                options.hideSpinner();
     			options.dataProcessed(data);
     			if (drawElem) {
     				self.drawing.drawTable(drawElem);
     				self.drawing.drawGraph(drawElem);
     			}
-                options.hideSpinner();
     		}, 10);
     	}
     	self.drawing = (function () {
