@@ -1,3 +1,4 @@
+﻿var AJS = AJS || {};
 /* Override console.log() to avoid browser compatibility issues */
 if(!window.console) {
     var console = {};
@@ -56,8 +57,8 @@ var firstBy = (function () { function e(f) { f.thenBy = t; return f } function t
 var GitFlowVisualize =
     
 		(function () {
-    	'use strict';
-        var $ = AJS.$;
+		    'use strict';
+        var $ = AJS.$ || window.$;
     	var self = {};
     	var data;
     	var constants = {
@@ -81,7 +82,7 @@ var GitFlowVisualize =
 
     		// UI interaction
     		showSpinner: function () {
-                if(AJS.progressBars) {
+                if(AJS && AJS.progressBars) {
         			var spinner = $("#gfc-spinner");
         			if (spinner.length === 0) {
         				spinner = $("#git-flow-graph").append('<div id="gfc-spinner"><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
@@ -91,7 +92,7 @@ var GitFlowVisualize =
                 }
     		},
             progressSpinner: function () {
-                if(AJS.progressBars) {
+                if(AJS && AJS.progressBars) {
                     var spinner = $("#gfc-spinner:visible .aui-progress-indicator");
                     if(spinner.length > 0) {
                         var currProgress = spinner.attr('data-value') ? parseFloat(spinner.attr('data-value')) : 0;
@@ -554,7 +555,7 @@ var GitFlowVisualize =
     		        return 10;
     		    // following first parent is a bonus
     			if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
-    			return 0;
+    			return -.1;
     		}
     		var path = findBestPathFromBreadthFirst(from, score);
     		return path;
@@ -659,7 +660,7 @@ var GitFlowVisualize =
     		        var svg = cont.append("svg")
                                 .attr("class", "commits-graph")
                                 .append("g")
-    		                    .attr("transform", "translate(" + margin + "," + (margin) + ")");
+    		                    .attr("transform", "translate(" + margin + ",0)");
                 }
     		    d3.select(elem).select("svg")
     		        .attr("width", size.width + 2 * margin)
@@ -687,7 +688,7 @@ var GitFlowVisualize =
 							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
-							.range([40, 40 + data.chronoCommits.length * constants.rowHeight]);
+							.range([50, 50 + data.chronoCommits.length * constants.rowHeight]);
 
     			var line = d3.svg.line()
 							//.interpolate("bundle")
@@ -765,7 +766,7 @@ var GitFlowVisualize =
 					.attr("class", "commit-dot")
 					.attr("r", 5)
 					.attr("cx", function (d) { return x(d.columns[0]); })
-					.attr("cy", function (d) { return y(d.orderNr) + 3; })
+					.attr("cy", function (d) { return y(d.orderNr); })
 					.attr("id", function (d) { return "commit-" + d.id; })
     			;
 
@@ -776,7 +777,7 @@ var GitFlowVisualize =
 					var rotated = blockLegenda.append("g")
 						.attr("transform", function (d) {
 							var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
-							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0)-10) + ") rotate(-40)";
+							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0)-20) + ") rotate(-40)";
 						});
 					var rect = rotated.append("rect")
 						.attr("width", 60).attr("height", 15).attr("rx", "2");
@@ -784,7 +785,7 @@ var GitFlowVisualize =
 						.text(function (d) { return d; });
 					blockLegenda.append("path").attr("d", function (d) {
 						var group = legendaBlocks[d];
-						return line([{ x: group.first, y: 0 }, { x: group.last, y: 0 }])
+					    return line([{ x: group.first, y: -.3 }, { x: group.last, y: -.3 }]);
 					});
 
     			var messages = d3.select(elem).select("div.messages");
@@ -830,7 +831,7 @@ var GitFlowVisualize =
     		    labelData
     		        .attr("style", function(d) {
     		            var commit = d;
-    		            return "top:" + y(commit.orderNr) + "px;";
+    		            return "top:" + (y(commit.orderNr) - constants.rowHeight/2 )+ "px;";
     		        })
     		        .html(function(d) {
     		            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
@@ -990,14 +991,14 @@ var GitFlowVisualize =
 								'.legenda-label.r rect{fill:#f6c342;}.legenda-label.r path{stroke:#f6c342;}' +
 								'.legenda-label.d rect{fill:#8eb021;}.legenda-label.d text{fill:white;} .legenda-label.d path{stroke:#8eb021;}' +
 								'.legenda-label.f rect{fill:#3b7fc4;;}.legenda-label.f text{fill:white;} .legenda-label.f path{stroke:#3b7fc4;;}' +
-    	            '.tag{background-color:#eee;;border-color:#ccc;}' +
-    	            'table.commit-table td{overflow:hidden;margin:2px;}' +
-    	            '.author{font-weight:bold;width:120px;}' +
-    	            '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:11;position:relative;}' + 
-                    '#gfc-vis-container{min-height:400px;}' +
-    	            '#gfc-spinner{display:inline-block;padding-left:10px;width:75px;}' + 
-                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
-                    '#git-flow-graph .aui-nav-item-label{display:inline;}';
+    	                        '.tag{background-color:#eee;;border-color:#ccc;}' +
+    	                        'table.commit-table td{overflow:hidden;margin:2px;}' +
+    	                        '.author{font-weight:bold;width:120px;}' +
+    	                        '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:5;position:relative;}' + 
+                                '#gfc-vis-container{min-height:400px;}' +
+    	                        '#gfc-spinner{display:inline-block;padding-left:10px;width:75px;}' + 
+                                '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
+                                '#git-flow-graph .aui-nav-item-label{display:inline;}';
     	        $('<style>' + style + '</style>').appendTo('head');
     			});
     	}

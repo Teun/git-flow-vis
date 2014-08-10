@@ -149,6 +149,7 @@ suite('Realistic dataset (4)', function() {
         assert(data.columns['m'].commits.length > 0, "No master branch found");
     });
     test('OBJ-847 commits should not be on develop', function () {
-        fail();
+    	var commit = data.commits['c8d172c52045ca6bd8da96b50492c97fc2c0d492'];
+    	assert(commit.columns[0][0] != 'd', "Commit " + commit.id + " (" + commit.message + ") should be on develop column. Now on " + commit.columns[0]);
     });
 });
