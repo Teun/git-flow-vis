@@ -688,7 +688,7 @@ var GitFlowVisualize =
 							.rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
     			var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
-							.range([50, 50 + data.chronoCommits.length * constants.rowHeight]);
+							.range([60, 60 + data.chronoCommits.length * constants.rowHeight]);
 
     			var line = d3.svg.line()
 							//.interpolate("bundle")
