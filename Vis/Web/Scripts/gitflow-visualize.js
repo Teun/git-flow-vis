@@ -889,37 +889,45 @@ var GitFlowVisualize =
 							);
     		    }
     		    $(document).on("scroll resize", function () {
-    		    	//check for openEnded messages in view
-    		    	for (var key in data.openEnds) {
-    		    		if (isElementInViewport($('#msg-' + key))) {
-    		    			for (var i = 0; i < data.openEnds[key].length; i++) {
-    		    				var parentId = data.openEnds[key][i];
-    		    				openEndsToBeDownloaded[parentId] = true;
-    		    				console.log("scheduled: " + parentId);
-									}
-    		    			delete data.openEnds[key];
-    		    			setTimeout(function () {
-    		    					for (var key in openEndsToBeDownloaded) {
-    		    							console.log("downloading: " + key);
-    		    							delete openEndsToBeDownloaded[key];
-    		    							openEndsBeingDownloaded[key] = true;
-    		    							options.moreDataCallback(key, function (commits, thisKey) {
-    		    								delete openEndsBeingDownloaded[thisKey];
-    		    								if (commits) appendData(commits);
-    		    								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
-    		    									console.log("queues empty, ready to draw");
-    		    									drawFromRaw();
-    		    								} else {
-    		    									console.log("waiting, still downloads in progress");
-    		    									console.log(openEndsToBeDownloaded);
-    		    									console.log(openEndsBeingDownloaded);
-														}
+    		        //check for openEnded messages in view
+    		        var needLoad = false;
+    		        for (var key in data.openEnds) {
+    		            if (isElementInViewport($('#msg-' + key))) {
+    		                needLoad = true;
+    		                break;
+    		            }
+    		        }
+    		        if (needLoad) {
+    		            for (var key in data.openEnds) {
+    		                for (var i = 0; i < data.openEnds[key].length; i++) {
+    		                    var parentId = data.openEnds[key][i];
+    		                    openEndsToBeDownloaded[parentId] = true;
+    		                    console.log("scheduled: " + parentId);
+    		                }
+                            delete data.openEnds[key];
+                        }
+    		            for (var key in openEndsToBeDownloaded) {
+    		                console.log("downloading: " + key);
+    		                delete openEndsToBeDownloaded[key];
+    		                openEndsBeingDownloaded[key] = true;
+    		                options.moreDataCallback(key, function(commits, thisKey) {
+    		                    delete openEndsBeingDownloaded[thisKey];
+    		                    if (commits) appendData(commits);
+    		                    if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
+    		                        console.log("queues empty, ready to draw");
+    		                        setTimeout(function() {
+    		                            drawFromRaw();
+    		                        }, 50);
+    		                    } else {
+    		                        console.log("waiting, still downloads in progress");
+    		                        console.log(openEndsToBeDownloaded);
+    		                        console.log(openEndsBeingDownloaded);
+    		                    }
 
-    		    							});
-    		    					}
-    		    					openEndsToBeDownloaded = {};
-    		    			}, 500);
-    		    		}
+    		                });
+    		            }
+    		            openEndsToBeDownloaded = {};
+    		            
     		    	}
     		    });
 
