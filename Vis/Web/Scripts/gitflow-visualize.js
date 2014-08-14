@@ -489,14 +489,45 @@ var GitFlowVisualize =
     			return -1;
     		}
     		var mostAlong = findBestPathFromBreadthFirst(from, scoreForAlong);
-    		return mostAlong;
+    		return mostAlong.asArray();
     	}
-    	var findBestPathFromBreadthFirst = function (from, score) {
+
+		    function makePath(initialPath) {
+		        var self = {score:0};
+		        var arrayPath = [];
+		        var length = 0;
+		        var last = null;
+		        self.push = function (newStep) {
+		            var currLast = last;
+		            self[newStep] = currLast;
+		            length++;
+		            last = newStep;
+		            arrayPath.push(newStep);
+		        };
+
+		        self.last = function() {
+		            return last;
+		        };
+		        self.clone = function () {
+		            var clone = makePath(arrayPath);
+		            clone.score = self.score;
+		            return clone;
+		        };
+		        self.asArray = function() {
+		            return arrayPath.slice(0);
+		        };
+		        for (var i = 0; i < initialPath.length; i++) {
+		            self.push(initialPath[i]);
+		        }
+		        return self;
+		    }
+
+		    var findBestPathFromBreadthFirst = function (from, score) {
     		var scoreFunc = score || function(){return -1};
     		var openPaths = [];
     		var bestPathToPoints = {};
     		var fromCommit = data.commits[from];
-    		var firstPath = [from];
+    		var firstPath = makePath([from]);
     		var furthestPath = 0;
     		firstPath.score = 0;
     		bestPathToPoints[from.orderNr] = firstPath;
@@ -504,7 +535,7 @@ var GitFlowVisualize =
     		openPaths.push(firstPath);
     		while(openPaths.length > 0){
     			var basePath = openPaths.shift();
-    			var tail = data.commits[ basePath[basePath.length - 1]];
+    			var tail = data.commits[ basePath.last()];
     			for (var i = 0; i < tail.parents.length; i++) {
     				var nextChild = data.commits[tail.parents[i].id];
     				if (!nextChild) continue;
@@ -519,7 +550,7 @@ var GitFlowVisualize =
     						continue;
     					}
     				}
-    				var newPath = basePath.slice(0);
+    				var newPath = basePath.clone();
     				newPath.push(nextChild.id);
     				newPath.score = basePath.score + stepScore;
     				openPaths.push(newPath);
@@ -541,12 +572,14 @@ var GitFlowVisualize =
     	    var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "$");
     		var score = function (path, nextId) {
     			var c = data.commits[nextId];
-    			var last = data.commits[path[path.length - 1]];
+    			var last = data.commits[path.last()];
     			// no part of m can be d
     			if (c.columns && c.columns[0] == 'm') return false;
-    			// next commit cannot have a child further down the line
-    			var descendantsInPath = path.filter(function (desc) { return $.inArray(desc, c.children) > -1; });
-    			if (descendantsInPath.length != 1) return false;
+    		    // next commit cannot have a child further down the line
+    			var childrenInPath = c.children.filter(function(child) {
+    			    return child in path;
+    			});
+    			if (childrenInPath.length != 1) return false;
     		    // merges of develop onto itself are neutral
     			if (regexSelfMerge.test(c.message))
     			    return 0;
@@ -558,7 +591,7 @@ var GitFlowVisualize =
     			return -.1;
     		}
     		var path = findBestPathFromBreadthFirst(from, score);
-    		return path;
+    		return path.asArray();
     	}
 
     	var rawData = null;
