@@ -16,7 +16,7 @@ suite('Data set 1', function () {
             data = d;
             done();
         };
-        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean, releaseTagPattern: /refs\/tags\/(r|h)\d$/ });
+        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean, releaseTagPattern: /refs\/tags\/(r|h)\d$/, showSpinner: function () { } });
     });
     test('Master branch should be isolated', function() {
         assert(data.columns['m'].commits.length > 0, "No master branch found");
@@ -45,7 +45,7 @@ suite('Data set 2', function() {
             data = d;
             done();
         };
-        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean, releaseTagPattern: /refs\/tags\/(r|h)\d$/ });
+        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean, releaseTagPattern: /refs\/tags\/(r|h)\d$/, showSpinner: function () { } });
     });
     test('Master branch should be isolated', function() {
         assert(data.columns['m'].commits.length > 0, "No master branch found");
@@ -87,7 +87,7 @@ suite('Data set 2', function() {
 
     });
 });
-suite('Realistic data set', function () {
+suite('Realistic data set (3)', function () {
     var data;
     suiteSetup(function (done) {
         var dataCallback = function (d) { d(Dummy.Data[1]); };
@@ -95,7 +95,10 @@ suite('Realistic data set', function () {
             data = d;
             done();
         };
-        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean });
+        GitFlowVisualize.draw(null, { dataCallback: dataCallback, dataProcessed: dataClean, showSpinner: function () { } });
+    });
+    test('Master branch should be isolated', function () {
+        assert(data.columns['m'].commits.length > 0, "No master branch found");
     });
     test('Certain known commits should be on develop', function () {
         var shas = [
@@ -128,4 +131,25 @@ suite('Realistic data set', function () {
 
     });
     
+});
+
+suite('Realistic dataset (4)', function() {
+    var data;
+    suiteSetup(function (done) {
+        var dataCallback = function (d) { d(Dummy.Data[4]); };
+        var dataClean = function (d) {
+            data = d;
+            done();
+        };
+        GitFlowVisualize.draw(null, {
+            dataCallback: dataCallback, dataProcessed: dataClean, showSpinner: function() {}
+        });
+    });
+    test('Master branch should be isolated', function() {
+        assert(data.columns['m'].commits.length > 0, "No master branch found");
+    });
+    test('OBJ-847 commits should not be on develop', function () {
+    	var commit = data.commits['c8d172c52045ca6bd8da96b50492c97fc2c0d492'];
+    	assert(commit.columns[0][0] != 'd', "Commit " + commit.id + " (" + commit.message + ") should be on develop column. Now on " + commit.columns[0]);
+    });
 });
