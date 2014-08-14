@@ -890,15 +890,20 @@ var GitFlowVisualize =
     		    }
     		    $(document).on("scroll resize", function () {
     		        //check for openEnded messages in view
-    		        var needLoad = false;
+    		        var keyInView = null;
     		        for (var key in data.openEnds) {
     		            if (isElementInViewport($('#msg-' + key))) {
-    		                needLoad = true;
+    		                keyInView = key;
     		                break;
     		            }
     		        }
-    		        if (needLoad) {
+    		        if (keyInView) {
+    		            var ourOrderNr = data.commits[keyInView].orderNr;
     		            for (var key in data.openEnds) {
+    		                if (data.commits[key].orderNr > ourOrderNr + 200) {
+    		                    // to far out, skip
+    		                    continue;
+    		                }
     		                for (var i = 0; i < data.openEnds[key].length; i++) {
     		                    var parentId = data.openEnds[key][i];
     		                    openEndsToBeDownloaded[parentId] = true;
