@@ -111,7 +111,7 @@ var GitFlowVisualize =
 		        // any tag starting with this prefix will enhance the chance of the commit being on the develop branch
 		        developBrancheHintPrefix: "devhint/",
 		        // this pattern should match the tags that are given to release commits on master 
-		        releaseTagPattern: /refs\/tags\/\d+(\.\d+)*\.0$/,
+		        releaseTagPattern: /refs\/tags\/\d+(\.\d+)+$/,
 		        dataCallback: function (done) {
 		            var currUrl = document.location.pathname;
 		            var result = { branches: {}, tags: {}, commits: [] };
