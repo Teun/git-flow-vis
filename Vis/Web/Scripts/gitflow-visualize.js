@@ -65,6 +65,7 @@ var GitFlowVisualize =
                 rowHeight: 35
             };
             var options = {
+                drawElem: null,
                 drawTable: false,
 
                 // these are the exact names of the branches that should be drawn as stright lines master and develop
@@ -82,17 +83,18 @@ var GitFlowVisualize =
 
                 // UI interaction
                 showSpinner: function () {
-                    if (AJS && AJS.progressBars) {
+                    if (AJS.progressBars) {
                         var spinner = $("#gfc-spinner");
                         if (spinner.length === 0) {
-                            spinner = $("#git-flow-graph").append('<div id="gfc-spinner"><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div>');
+                            var placeholder = $(options.drawElem).parent();
+                            spinner = placeholder.append('<div id="gfc-spinner"><div class="gfc-spinner-overlay"></div><div class="gfc-spinner-inner"><p>Loading...</p><div class="aui-progress-indicator"><span class="aui-progress-indicator-value"></span></div></div></div>');
                         }
                         spinner.show();
                         options.progressSpinner();
                     }
                 },
                 progressSpinner: function () {
-                    if (AJS && AJS.progressBars) {
+                    if (AJS.progressBars) {
                         var spinner = $("#gfc-spinner:visible .aui-progress-indicator");
                         if (spinner.length > 0) {
                             var currProgress = spinner.attr('data-value') ? parseFloat(spinner.attr('data-value')) : 0;
@@ -104,7 +106,9 @@ var GitFlowVisualize =
                 hideSpinner: function () {
                     if (AJS.progressBars) {
                         AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 1);
-                        $("#gfc-spinner").fadeOut('slow').remove();
+                        $("#gfc-spinner").fadeOut('slow', function() {
+                            AJS.progressBars.update("#gfc-spinner .aui-progress-indicator", 0);
+                        });
                     }
                 },
 
@@ -599,6 +603,7 @@ var GitFlowVisualize =
             self.draw = function (elem, opt) {
                 drawElem = elem;
                 options = $.extend(options, opt);
+                options.drawElem = elem;
                 options.showSpinner();
                 options.dataCallback(function (data) {
                     rawData = data;
@@ -1042,10 +1047,12 @@ var GitFlowVisualize =
                                     'table.commit-table td{overflow:hidden;margin:2px;}' +
                                     '.author{font-weight:bold;width:120px;}' +
                                     '.commits-graph-container{width:30%;overflow-x:scroll;float:left;z-index:5;position:relative;}' +
-                                    '#gfc-vis-container{min-height:400px;}' +
-                                    '#gfc-spinner{display:inline-block;padding-left:10px;width:75px;}' +
-                                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' +
-                                    '#git-flow-graph .aui-nav-item-label{display:inline;}';
+                                    '#gfc-vis-container{min-height:400px;margin-top:15px;}' +
+                                    '#gfc-spinner{position:absolute;top:0;bottom:0;left:0;right:0;}' +
+                                    '#gfc-spinner .gfc-spinner-overlay{position:absolute;top:0;left:0;bottom:0;right:0;background-color:#fff;opacity:0.5;z-index:15;}' +
+                                    '#gfc-spinner .gfc-spinner-inner{position:fixed;right:10px;padding:10px;width:200px;z-index:20;}' +
+                                    '#gfc-spinner.aui-is-docked .gfc-spinner-inner{margin-top:-45px;}' +
+                                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}';
                     $('<style>' + style + '</style>').appendTo('head');
                 });
             }
