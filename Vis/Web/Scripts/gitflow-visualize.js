@@ -78,6 +78,7 @@ var GitFlowVisualize =
                 hotfixPrefix: "refs/heads/hotfix/",
 
                 // url params
+                urlPrefix: 'plugins/servlet/gfc/',
                 project: null,
                 repo: null,
 
@@ -119,7 +120,7 @@ var GitFlowVisualize =
                 dataCallback: function (done) {
                     var currUrl = document.location.pathname;
                     var result = { branches: {}, tags: {}, commits: [] };
-                    if (currUrl.indexOf("plugins/servlet/git-flow-graph/") > -1) {
+                    if (currUrl.indexOf(options.urlPrefix) > -1) {
                         var parts = currUrl.split('/');
                         options.project = options.project || parts[parts.length - 2];
                         options.repo = options.repo || parts[parts.length - 1];
