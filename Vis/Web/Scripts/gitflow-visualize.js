@@ -571,17 +571,17 @@ var GitFlowVisualize =
                 });
                 return bestPathToPoints[allDistances[0]];
             }
-            var findDevelopPathFrom = function (from) {
+            var findDevelopPathFrom = function(from) {
                 var developBranch = options.developRef.substring(options.developRef.lastIndexOf('/') + 1);
                 var regexSelfMerge = new RegExp("Merge branch '(" + developBranch + ")' of http:\\/\\/\\S+ into \\1");
                 var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "$");
-                var score = function (path, nextId) {
+                var score = function(path, nextId) {
                     var c = data.commits[nextId];
                     var last = data.commits[path.last()];
                     // no part of m can be d
                     if (c.columns && c.columns[0] == 'm') return false;
                     // next commit cannot have a child further down the line
-                    var childrenInPath = c.children.filter(function (child) {
+                    var childrenInPath = c.children.filter(function(child) {
                         return child in path;
                     });
                     if (childrenInPath.length != 1) return false;
@@ -597,7 +597,12 @@ var GitFlowVisualize =
                 }
                 var path = findBestPathFromBreadthFirst(from, score);
                 return path.asArray();
-            }
+            };
+
+            self.state = function () {
+                var state = JSON.stringify(rawData);
+                return state;
+            };
 
             var rawData = null;
             var drawElem = null;
@@ -1055,6 +1060,12 @@ var GitFlowVisualize =
                                     '#gfc-spinner.aui-is-docked .gfc-spinner-inner{margin-top:-45px;}' +
                                     '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}';
                     $('<style>' + style + '</style>').appendTo('head');
+                    $(document).keydown(function (event) {
+                        if (event.ctrlKey && event.shiftKey && event.which == 221) {
+                            //prompt("Ctrl-C to copy the grap source", GitFlowVisualize.state());
+                            //$("body").append(GitFlowVisualize.state());
+                        }
+                    });
                 });
             }
 
