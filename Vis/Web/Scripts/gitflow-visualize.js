@@ -193,6 +193,7 @@ var GitFlowVisualize =
                         delete commit.columns;
                         delete commit.labels;
                         delete commit.orderTimestamp;
+                        delete commit.children;
 
                         result.commits[commit.id] = commit;
                     }
@@ -573,9 +574,12 @@ var GitFlowVisualize =
             }
             var findDevelopPathFrom = function(from) {
                 var developBranch = options.developRef.substring(options.developRef.lastIndexOf('/') + 1);
+                var releasePrefix = options.releasePrefix.split('/')[2];
+                var hotfixPrefix = options.hotfixPrefix.split('/')[2];
                 var regexSelfMerge = new RegExp("Merge branch '(" + developBranch + ")' of http:\\/\\/\\S+ into \\1");
                 var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "$");
-                var score = function(path, nextId) {
+                var regexReleaseMerge = new RegExp("Merge branch '(" + releasePrefix + "|" + hotfixPrefix + ")[^']+' into " + developBranch + "$");
+                var score = function (path, nextId) {
                     var c = data.commits[nextId];
                     var last = data.commits[path.last()];
                     // no part of m can be d
@@ -588,9 +592,12 @@ var GitFlowVisualize =
                     // merges of develop onto itself are neutral
                     if (regexSelfMerge.test(c.message))
                         return 0;
-                    //merges of a local branch onto develop are a big bonus
+                    //merges of a release branch onto develop are a big bonus (we want these on the primary develop branch)
+                    if (regexReleaseMerge.test(c.message))
+                        return 20;
+                    //merges of a local branch onto develop are a bonus
                     if (regexRealMerge.test(c.message))
-                        return 10;
+                        return 5;
                     // following first parent is a bonus
                     if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
                     return -.1;
