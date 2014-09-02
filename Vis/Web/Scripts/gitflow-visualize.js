@@ -376,10 +376,8 @@ var GitFlowVisualize =
                             column.name = 'f' + column.name.substring(1);
                         } else {
                             // so we have a child, but not m or d: probably two branches merged together
-                            var firstChild = data.commits[lastCommit.children[0]];
-                            var firstLetter = firstChild.columns[0][0];
-                            if (firstLetter == 'c') firstLetter = 'f'; //guesss
-                            column.name = firstLetter + column.name.substring(1);
+                            // we'll figure this out later
+                            column.firstChild = data.commits[lastCommit.children[0]];
                         }
                     } else {
                         // unmerged branch: if starts with featurePrefix -> f
@@ -392,6 +390,23 @@ var GitFlowVisualize =
                         }
                     }
                 }
+                
+                var unassignedColumns = $.grep($.map(Object.keys(data.columns), function (id) { return data.columns[id]; }), function (c) { return c.name[0] == 'c'; });
+                while (true) {
+                    var connected = false;
+                    for (var j = 0; j < unassignedColumns.length; j++) {
+                        var column = unassignedColumns[j];
+                        if (!column.firstChild) continue;
+                        var childCol = data.columns[column.firstChild.columns[0]];
+                        var firstLetter = childCol.name[0];
+                        if (firstLetter == 'c') continue;
+                        column.name = firstLetter + column.name.substring(1);
+                        delete column.firstChild;
+                        connected = true;
+                    }
+                    if(!connected)break;
+                }
+
                 // now separate the feature branches into groups:
                 var featureBranches = $.grep($.map(Object.keys(data.columns), function (k) { return data.columns[k]; }), function (col) { return (col.name[0] == 'f'); });
                 var longBranches = $.grep(featureBranches, function (col) { return col.commits.length > 9 });

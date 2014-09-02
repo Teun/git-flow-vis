@@ -172,6 +172,14 @@ suite('Realistic dataset (5)', function () {
     });
     test('Commit 8a1355 should be on first develop column', function () {
         var commit = data.commits['8a1355bed1bb8be4dcffa179b3f5c2f61e70f325'];
-        assert(commit.columns[0] === 'd0', "Commit " + commit.id + " (" + commit.message + ") should be on first develop column. Now on " + commit.columns[0]);
+        var column = data.columns[commit.columns[0]];
+        assert(column.name === 'd0', "Commit " + commit.id + " (" + commit.message + ") should be on first develop column. Now on " + column.name);
     });
+    test('Commit 40ebb6 should be on a release column', function () {
+        var commit = data.commits['40ebb6d70110a304f0e7fa72854e35a9577bc4f4'];
+        var column = data.columns[commit.columns[0]];
+        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column. Now on " + column.name);
+    });
+    
+    
 });
