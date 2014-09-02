@@ -1058,12 +1058,21 @@ var GitFlowVisualize =
                                     '#gfc-spinner .gfc-spinner-overlay{position:absolute;top:0;left:0;bottom:0;right:0;background-color:#fff;opacity:0.5;z-index:15;}' +
                                     '#gfc-spinner .gfc-spinner-inner{position:fixed;right:10px;padding:10px;width:200px;z-index:20;}' +
                                     '#gfc-spinner.aui-is-docked .gfc-spinner-inner{margin-top:-45px;}' +
-                                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}';
+                                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
+                                    '#debug-output{width:600px;height:300px;position:absolute;left:300px;top:100px;z-index:100;}'
+                        ;
                     $('<style>' + style + '</style>').appendTo('head');
                     $(document).keydown(function (event) {
                         if (event.ctrlKey && event.shiftKey && event.which == 221) {
                             //prompt("Ctrl-C to copy the grap source", GitFlowVisualize.state());
-                            //$("body").append(GitFlowVisualize.state());
+                            var out = $("#debug-output");
+                            if (out.length == 0) {
+                                $("body").append("<textarea id='debug-output'></textarea>");
+                                out = $("#debug-output");
+                            }
+                            out.show();
+                            out.val(GitFlowVisualize.state()).focus().select();
+                            out.on('blur', function() { out.hide(); });
                         }
                     });
                 });
