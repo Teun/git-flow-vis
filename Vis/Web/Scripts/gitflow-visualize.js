@@ -571,17 +571,17 @@ var GitFlowVisualize =
                 });
                 return bestPathToPoints[allDistances[0]];
             }
-            var findDevelopPathFrom = function (from) {
+            var findDevelopPathFrom = function(from) {
                 var developBranch = options.developRef.substring(options.developRef.lastIndexOf('/') + 1);
                 var regexSelfMerge = new RegExp("Merge branch '(" + developBranch + ")' of http:\\/\\/\\S+ into \\1");
                 var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "$");
-                var score = function (path, nextId) {
+                var score = function(path, nextId) {
                     var c = data.commits[nextId];
                     var last = data.commits[path.last()];
                     // no part of m can be d
                     if (c.columns && c.columns[0] == 'm') return false;
                     // next commit cannot have a child further down the line
-                    var childrenInPath = c.children.filter(function (child) {
+                    var childrenInPath = c.children.filter(function(child) {
                         return child in path;
                     });
                     if (childrenInPath.length != 1) return false;
@@ -597,7 +597,12 @@ var GitFlowVisualize =
                 }
                 var path = findBestPathFromBreadthFirst(from, score);
                 return path.asArray();
-            }
+            };
+
+            self.state = function () {
+                var state = JSON.stringify(rawData);
+                return state;
+            };
 
             var rawData = null;
             var drawElem = null;
@@ -1053,8 +1058,23 @@ var GitFlowVisualize =
                                     '#gfc-spinner .gfc-spinner-overlay{position:absolute;top:0;left:0;bottom:0;right:0;background-color:#fff;opacity:0.5;z-index:15;}' +
                                     '#gfc-spinner .gfc-spinner-inner{position:fixed;right:10px;padding:10px;width:200px;z-index:20;}' +
                                     '#gfc-spinner.aui-is-docked .gfc-spinner-inner{margin-top:-45px;}' +
-                                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}';
+                                    '#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
+                                    '#debug-output{width:600px;height:300px;position:absolute;left:300px;top:100px;z-index:100;}'
+                        ;
                     $('<style>' + style + '</style>').appendTo('head');
+                    $(document).keydown(function (event) {
+                        if (event.ctrlKey && event.shiftKey && event.which == 221) {
+                            //prompt("Ctrl-C to copy the grap source", GitFlowVisualize.state());
+                            var out = $("#debug-output");
+                            if (out.length == 0) {
+                                $("body").append("<textarea id='debug-output'></textarea>");
+                                out = $("#debug-output");
+                            }
+                            out.show();
+                            out.val(GitFlowVisualize.state()).focus().select();
+                            out.on('blur', function() { out.hide(); });
+                        }
+                    });
                 });
             }
 
