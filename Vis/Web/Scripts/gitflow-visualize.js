@@ -78,7 +78,7 @@ var GitFlowVisualize =
                 hotfixPrefix: "refs/heads/hotfix/",
 
                 // url params
-                urlPrefix: 'plugins/servlet/gfc/',
+                urlPrefix: 'plugins/servlet/git-flow-graph/',
                 project: null,
                 repo: null,
 
