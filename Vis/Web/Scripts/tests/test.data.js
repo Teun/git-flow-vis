@@ -122,7 +122,7 @@ suite('Realistic data set (3)', function () {
     test('Some commits should be on develop, although not in primary line', function() {
         var shas = [
             "88c1a2b70a36eae0ac1e14791467f428293001a9",
-            "b922548bfc7dafb8fe6ad5e8042adacc3817fe1a",
+            "b922548bfc7dafb8fe6ad5e8042adacc3817fe1a"
         ];
         for (var i = 0; i < shas.length; i++) {
             var commit = data.commits[shas[i]];
@@ -150,6 +150,36 @@ suite('Realistic dataset (4)', function() {
     });
     test('OBJ-847 commits should not be on develop', function () {
     	var commit = data.commits['c8d172c52045ca6bd8da96b50492c97fc2c0d492'];
-    	assert(commit.columns[0][0] != 'd', "Commit " + commit.id + " (" + commit.message + ") should be on develop column. Now on " + commit.columns[0]);
+    	assert(commit.columns[0][0] != 'd', "Commit " + commit.id + " (" + commit.message + ") should not be on develop column. Now it is.");
     });
+});
+
+
+suite('Realistic dataset (5)', function () {
+    var data;
+    suiteSetup(function (done) {
+        var dataCallback = function (d) { d(Dummy.Data[5]); };
+        var dataClean = function (d) {
+            data = d;
+            done();
+        };
+        GitFlowVisualize.draw(null, {
+            dataCallback: dataCallback, dataProcessed: dataClean, showSpinner: function () { }
+        });
+    });
+    test('Master branch should be isolated', function () {
+        assert(data.columns['m'].commits.length > 0, "No master branch found");
+    });
+    test('Commit 8a1355 should be on first develop column', function () {
+        var commit = data.commits['8a1355bed1bb8be4dcffa179b3f5c2f61e70f325'];
+        var column = data.columns[commit.columns[0]];
+        assert(column.name === 'd0', "Commit " + commit.id + " (" + commit.message + ") should be on first develop column. Now on " + column.name);
+    });
+    test('Commit 40ebb6 should be on a release column', function () {
+        var commit = data.commits['40ebb6d70110a304f0e7fa72854e35a9577bc4f4'];
+        var column = data.columns[commit.columns[0]];
+        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column. Now on " + column.name);
+    });
+    
+    
 });
