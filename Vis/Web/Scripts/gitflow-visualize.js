@@ -1,4 +1,4 @@
-﻿var AJS = AJS || {};
+var AJS = AJS || {};
 /* Override console.log() to avoid browser compatibility issues */
 if (!window.console) {
     var console = {};
@@ -61,6 +61,7 @@ var GitFlowVisualize =
             var $ = AJS.$ || window.$;
             var self = {};
             var data;
+            var displayState = {style:"none", root:null};
             var constants = {
                 rowHeight: 35
             };
@@ -651,12 +652,66 @@ var GitFlowVisualize =
                     if (drawElem) {
                         self.drawing.drawTable(drawElem);
                         self.drawing.drawGraph(drawElem);
+                        self.drawing.updateHighlight();
                     }
                 }, 10);
             }
             self.drawing = (function () {
                 var self = {};
                 var panel;
+                self.updateHighlight = function () {
+                  var highlightCommits = function (arrIds) {
+                    if (!arrIds || arrIds.length == 0) {
+                      $(".commit-msg").removeClass("dim").removeClass("highlight");
+                      $(".commit-dot").attr("class", "commit-dot");
+                      $(".arrow").css("opacity", "1");
+                      return;
+                    }
+                    for (var id in data.commits) {
+                      if ($.inArray(id, arrIds) > -1) {
+                        $("#msg-" + id).removeClass("dim").addClass("highlight");
+                        $("#commit-" + id).attr("class", "commit-dot");
+                        $(".arrow-to-" + id).css("opacity", "1");
+                      } else {
+                        $("#msg-" + id).addClass("dim").removeClass("highlight");
+                        $("#commit-" + id).attr("class", "commit-dot dim");
+                        $(".arrow-to-" + id).css("opacity", "0.2");
+
+                      }
+                    }
+                  };
+
+
+                  $('.commit-msg.selected').removeClass("selected");
+
+                  switch (displayState.style) {
+                    case "none":
+                      highlightCommits([]);
+                    break;
+                    case "ancestry":
+                      var root = $("#msg-" + displayState.root);
+                      var toHighlight = {};
+                      var addIdsAncestry = function (id) {
+                        var commit = data.commits[id];
+                        if (!commit) return;
+                        if (!toHighlight[id]) {
+                          toHighlight[id] = true;
+                          for (var i = 0; i < commit.parents.length; i++) {
+                            addIdsAncestry(commit.parents[i].id);
+                          }
+                        } else {
+                          // prevent cycles
+                        }
+                      };
+                      root.addClass("selected");
+                      addIdsAncestry(displayState.root);
+                      highlightCommits(Object.keys(toHighlight));
+                    break;
+                    default:
+
+                  }
+
+                }
                 self.drawTable = function (elem) {
                     if (options.drawTable) {
                         var table = $('<table/>');
@@ -871,28 +926,15 @@ var GitFlowVisualize =
                         .attr("class", "commit-msg")
                         .attr("id", function (c) { return "msg-" + c.id; })
                         .on('click', function (a) {
-                            var clicked = $("#msg-" + a.id);
-                            $('.commit-msg.selected').removeClass("selected");
-                            if (clicked.hasClass("highlight")) {
-                                highlightCommits([]);
-                            } else {
-                                var toHighlight = {};
-                                var addIdsAncestry = function (id) {
-                                    var commit = data.commits[id];
-                                    if (!commit) return;
-                                    if (!toHighlight[id]) {
-                                        toHighlight[id] = true;
-                                        for (var i = 0; i < commit.parents.length; i++) {
-                                            addIdsAncestry(commit.parents[i].id);
-                                        }
-                                    } else {
-                                        // prevent cycles
-                                    }
-                                };
-                                clicked.addClass("selected");
-                                addIdsAncestry(a.id);
-                                highlightCommits(Object.keys(toHighlight));
-                            }
+                          if(d3.event.target.tagName == 'A')return true;
+                          if(displayState.style == "ancestry" && a.id == displayState.root){
+                            displayState.style = "none";
+                            displayState.root = null;
+                          }else{
+                            displayState.style = "ancestry";
+                            displayState.root = a.id;
+                          }
+                          self.updateHighlight();
                         });
                     labelData.exit().remove();
                     labelData
@@ -1006,26 +1048,6 @@ var GitFlowVisualize =
                 };
                 var openEndsToBeDownloaded = {};
                 var openEndsBeingDownloaded = {};
-                var highlightCommits = function (arrIds) {
-                    if (!arrIds || arrIds.length == 0) {
-                        $(".commit-msg").removeClass("dim").removeClass("highlight");
-                        $(".commit-dot").attr("class", "commit-dot");
-                        $(".arrow").css("opacity", "1");
-                        return;
-                    }
-                    for (var id in data.commits) {
-                        if ($.inArray(id, arrIds) > -1) {
-                            $("#msg-" + id).removeClass("dim").addClass("highlight");
-                            $("#commit-" + id).attr("class", "commit-dot");
-                            $(".arrow-to-" + id).css("opacity", "1");
-                        } else {
-                            $("#msg-" + id).addClass("dim").removeClass("highlight");
-                            $("#commit-" + id).attr("class", "commit-dot dim");
-                            $(".arrow-to-" + id).css("opacity", "0.2");
-
-                        }
-                    }
-                };
                 var branchType = function (childId, parentId) {
                     var ct = function (id) {
                         var commit = data.commits[id];
