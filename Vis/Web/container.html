@@ -21,13 +21,17 @@
             ix = parseInt(ix);
             var sel = $("#dataset");
             var display = function(i, d){
-              if(d.meta && d.meta.desc)return d.meta.desc;
-              return "dataset " + i;
+              var stats = " (" + d.branches.values.length + " branches, " + d.tags.values.length + " tags, " + d.commits.reduce(function(pr, val){return pr + val.values.length}, 0) +  " commits)";
+              if(d.meta && d.meta.desc)return d.meta.desc + stats;
+              return "dataset " + i + stats;
             }
             $.each(Dummy.Data, function(i, d){
               if(d.meta && d.meta.skip) return;
-              var option = "<option value='" + i + "'>" + display(i, d) + "</option>";
+              var option = "<option " + (ix==i?"selected":"") + " value='" + i + "'>" + display(i, d) + "</option>";
               sel.append($(option));
+            });
+            sel.on('change', function(){
+              document.location.href = "container.html?ix=" + sel.val();
             })
 
             var element = document.getElementById('drawhere');
