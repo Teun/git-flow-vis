@@ -516,9 +516,9 @@ var GitFlowVisualize =
 
             function makePath(initialPath) {
                 var self = { score: 0 };
-                var arrayPath = [];
-                var length = 0;
-                var last = null;
+                var arrayPath = initialPath.slice(0);
+                var length = arrayPath.length;
+                var last = arrayPath[length-1];
                 self.push = function (newStep) {
                     var currLast = last;
                     self[newStep] = currLast;
@@ -538,9 +538,6 @@ var GitFlowVisualize =
                 self.asArray = function () {
                     return arrayPath.slice(0);
                 };
-                for (var i = 0; i < initialPath.length; i++) {
-                    self.push(initialPath[i]);
-                }
                 return self;
             }
 
