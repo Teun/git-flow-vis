@@ -521,7 +521,6 @@ var GitFlowVisualize =
                 var last = arrayPath[length-1];
                 self.push = function (newStep) {
                     var currLast = last;
-                    self[newStep] = currLast;
                     length++;
                     last = newStep;
                     arrayPath.push(newStep);
