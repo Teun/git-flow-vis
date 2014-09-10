@@ -521,6 +521,11 @@ var GitFlowVisualize =
                 var length = arrayPath.length;
                 var last = arrayPath[length - 1];
                 self.members = {};
+                var prev = null;
+                for (var i = 0; i < arrayPath.length; i++) {
+                	self.members[arrayPath[i]] = prev;
+                	prev = arrayPath[i];
+                }
                 self.push = function (newStep) {
                     var currLast = last;
                     length++;
@@ -535,10 +540,6 @@ var GitFlowVisualize =
                 self.clone = function () {
                     var clone = makePath(arrayPath);
                     clone.score = self.score;
-                    clone.members = {};
-                    for (var key in self.members) {
-                    	clone.members[key] = self.members[key];
-                    }
                     return clone;
                 };
                 self.asArray = function () {
@@ -555,7 +556,7 @@ var GitFlowVisualize =
                 var firstPath = makePath([from]);
                 var furthestPath = 0;
                 firstPath.score = 0;
-                bestPathToPoints[from.orderNr] = firstPath;
+                bestPathToPoints[fromCommit.orderNr] = firstPath;
                 furthestPath = fromCommit.orderNr;
                 openPaths.push(firstPath);
                 while (openPaths.length > 0) {
