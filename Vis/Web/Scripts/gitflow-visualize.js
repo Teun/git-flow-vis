@@ -516,13 +516,19 @@ var GitFlowVisualize =
 
             function makePath(initialPath) {
                 var self = { score: 0 };
-                var arrayPath = [];
-                var length = 0;
-                var last = null;
+                var arrayPath = initialPath.slice(0);
+                var length = arrayPath.length;
+                var last = arrayPath[length - 1];
+                self.members = {};
+                var prev = null;
+                for (var i = 0; i < arrayPath.length; i++) {
+                	self.members[arrayPath[i]] = prev;
+                	prev = arrayPath[i];
+                }
                 self.push = function (newStep) {
                     var currLast = last;
-                    self[newStep] = currLast;
                     length++;
+                    self.members[newStep] = currLast;
                     last = newStep;
                     arrayPath.push(newStep);
                 };
@@ -538,9 +544,6 @@ var GitFlowVisualize =
                 self.asArray = function () {
                     return arrayPath.slice(0);
                 };
-                for (var i = 0; i < initialPath.length; i++) {
-                    self.push(initialPath[i]);
-                }
                 return self;
             }
 
@@ -552,7 +555,7 @@ var GitFlowVisualize =
                 var firstPath = makePath([from]);
                 var furthestPath = 0;
                 firstPath.score = 0;
-                bestPathToPoints[from.orderNr] = firstPath;
+                bestPathToPoints[fromCommit.orderNr] = firstPath;
                 furthestPath = fromCommit.orderNr;
                 openPaths.push(firstPath);
                 while (openPaths.length > 0) {
@@ -602,7 +605,7 @@ var GitFlowVisualize =
                     if (c.columns && c.columns[0] == 'm') return false;
                     // next commit cannot have a child further down the line
                     var childrenInPath = c.children.filter(function(child) {
-                        return child in path;
+                        return child in path.members;
                     });
                     if (childrenInPath.length != 1) return false;
                     // merges of develop onto itself are neutral

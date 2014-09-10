@@ -32,7 +32,7 @@
             });
             sel.on('change', function(){
               document.location.href = "container.html?ix=" + sel.val();
-            })
+            });
 
             var element = document.getElementById('drawhere');
             var dataCallback = function (done) { window.setTimeout(function () { done(Dummy.Data[ix]); }, 100); };
