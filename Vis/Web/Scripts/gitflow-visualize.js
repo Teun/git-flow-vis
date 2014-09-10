@@ -515,7 +515,6 @@ var GitFlowVisualize =
             }
 
             function makePath(initialPath) {
-            	console.log(initialPath.reduce(function (a, b, c) { return a + ', ' + b;}));
                 var self = { score: 0 };
                 var arrayPath = initialPath.slice(0);
                 var length = arrayPath.length;
