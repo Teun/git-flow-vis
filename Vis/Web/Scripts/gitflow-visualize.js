@@ -515,13 +515,16 @@ var GitFlowVisualize =
             }
 
             function makePath(initialPath) {
+            	console.log(initialPath.reduce(function (a, b, c) { return a + ', ' + b;}));
                 var self = { score: 0 };
                 var arrayPath = initialPath.slice(0);
                 var length = arrayPath.length;
-                var last = arrayPath[length-1];
+                var last = arrayPath[length - 1];
+                self.members = {};
                 self.push = function (newStep) {
                     var currLast = last;
                     length++;
+                    self.members[newStep] = currLast;
                     last = newStep;
                     arrayPath.push(newStep);
                 };
@@ -532,6 +535,10 @@ var GitFlowVisualize =
                 self.clone = function () {
                     var clone = makePath(arrayPath);
                     clone.score = self.score;
+                    clone.members = {};
+                    for (var key in self.members) {
+                    	clone.members[key] = self.members[key];
+                    }
                     return clone;
                 };
                 self.asArray = function () {
@@ -598,7 +605,7 @@ var GitFlowVisualize =
                     if (c.columns && c.columns[0] == 'm') return false;
                     // next commit cannot have a child further down the line
                     var childrenInPath = c.children.filter(function(child) {
-                        return child in path;
+                        return child in path.members;
                     });
                     if (childrenInPath.length != 1) return false;
                     // merges of develop onto itself are neutral
