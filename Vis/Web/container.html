@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <script src="Scripts/jquery-2.0.2.min.js"></script>
@@ -9,8 +9,33 @@
     <script src="Scripts/gitflow-visualize.js"></script>
     <script>
         $(function () {
+            var ix = (function(s, v, d){
+                if(s == null || s.length == 0)return d;
+                var start = s.indexOf(v + "=");
+                if(start == -1)return d;
+                start += v.length + 1;
+                var end = s.indexOf('&', start+1);
+                if(end == -1)end = s.length;
+                return s.substring(start, end);
+              })(document.location.search, "ix", 0);
+            ix = parseInt(ix);
+            var sel = $("#dataset");
+            var display = function(i, d){
+              var stats = " (" + d.branches.values.length + " branches, " + d.tags.values.length + " tags, " + d.commits.reduce(function(pr, val){return pr + val.values.length}, 0) +  " commits)";
+              if(d.meta && d.meta.desc)return d.meta.desc + stats;
+              return "dataset " + i + stats;
+            }
+            $.each(Dummy.Data, function(i, d){
+              if(d.meta && d.meta.skip) return;
+              var option = "<option " + (ix==i?"selected":"") + " value='" + i + "'>" + display(i, d) + "</option>";
+              sel.append($(option));
+            });
+            sel.on('change', function(){
+              document.location.href = "container.html?ix=" + sel.val();
+            });
+
             var element = document.getElementById('drawhere');
-            var dataCallback = function (done) { window.setTimeout(function () { done(Dummy.Data[1]); }, 100); };
+            var dataCallback = function (done) { window.setTimeout(function () { done(Dummy.Data[ix]); }, 100); };
             var moreDataCallback = function (from, done) {
             	if (from == "4c1f8a4811e2798be63b5552ee3518e1b47be54f") {
             		done(Dummy.Data[3], from);
@@ -74,6 +99,8 @@
     <title></title>
 </head>
 <body>
+	<div id="nav"><select id="dataset"></select></div>
+
     <div id="drawhere"></div>
 </body>
 </html>
