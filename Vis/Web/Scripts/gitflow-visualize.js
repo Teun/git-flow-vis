@@ -597,7 +597,7 @@ var GitFlowVisualize =
                 var hotfixPrefix = options.hotfixPrefix.split('/')[2];
                 var regexSelfMerge = new RegExp("Merge branch '(" + developBranch + ")' of http:\\/\\/\\S+ into \\1");
                 var regexRealMerge = new RegExp("Merge branch '[^']+' into " + developBranch + "$");
-                var regexReleaseMerge = new RegExp("Merge branch '(" + releasePrefix + "|" + hotfixPrefix + ")[^']+' into " + developBranch + "$");
+                var regexReleaseMerge = new RegExp("Merge branch '(" + releasePrefix + "|" + hotfixPrefix + ")[^']+' into " + developBranch + "\\b");
                 var score = function (path, nextId) {
                     var c = data.commits[nextId];
                     var last = data.commits[path.last()];
@@ -1058,7 +1058,7 @@ var GitFlowVisualize =
                         var columns = commit.columns.map(function (d) { return data.columns[d]; });
                         return columns[0].name[0];
                     };
-                    var prioHash = { 'm': 1, 'd': 0, 'r': 2, 'f': 3 };
+                    var prioHash = { 'm': 0, 'd': 2, 'r': 1, 'f': 3 };
                     var cols = [ct(childId), ct(parentId)];
                     cols.sort(function (v1, v2) { return prioHash[v2] - prioHash[v1]; });
                     return cols[0] || "default";

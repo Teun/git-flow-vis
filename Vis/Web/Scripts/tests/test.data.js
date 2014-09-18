@@ -183,3 +183,28 @@ suite('Realistic dataset (5)', function () {
     
     
 });
+suite('Situation with feature branch as release branch', function () {
+    var data;
+    suiteSetup(function (done) {
+        var dataCallback = function (d) { d(Dummy.Data[6]); };
+        var dataClean = function (d) {
+            data = d;
+            done();
+        };
+        GitFlowVisualize.draw(null, {
+            dataCallback: dataCallback, dataProcessed: dataClean, showSpinner: function () { }
+        });
+    });
+    test('Commit 367bee should be on a feature column', function () {
+        var commit = data.commits['367bee2cb6a85217cb23d405cd9ac68a6039d096'];
+        var column = data.columns[commit.columns[0]];
+        assert(column.name[0] === 'f', "Commit " + commit.id + " (" + commit.message + ") should be on a feature column. Now on " + column.name);
+    });
+    test('Commit d125ab should be on the develop column', function () {
+        var commit = data.commits['d125ab84c422febd4dabca6012409848ca4a09bb'];
+        var column = data.columns[commit.columns[0]];
+        assert(column.name[0] === 'd', "Commit " + commit.id + " (" + commit.message + ") should be on the develop branch. Now on " + column.name);
+    });
+    
+    
+});
