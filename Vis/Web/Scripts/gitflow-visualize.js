@@ -806,10 +806,32 @@ var GitFlowVisualize =
                         legendaBlocks[key].first = groupColumns[0];
                         legendaBlocks[key].last = groupColumns[groupColumns.length - 1];
                     }
+					
+					var scaleCol = {
+						gutter: 0.7,
+						line: 1,
+						developLine: 0.5, 
+					};
+					var lastGroup = '';
+					var here = 0;
+					var basePositions = {};
+					for (var i = 0; i < columnsInOrder.length; i++) {
+						var thisCol = columnsInOrder[i];
+						var thisGroup = thisCol[0];
+						if(lastGroup != thisGroup) here += scaleCol.gutter;
+						here += thisGroup == 'd' ? scaleCol.developLine : scaleCol.line;
+						basePositions[thisCol] = here;
+						lastGroup = thisGroup;
+					}
 
-                    var x = d3.scale.ordinal()
-                                .domain(columnsInOrder)
-                                .rangePoints([0, Math.min(size.width, 20 * columnsInOrder.length)]);
+
+                    var baseLinear = d3.scale.linear()
+                                .domain([0,here])
+                                .range([0, Math.min(size.width, 20 * here)]);
+					var x = function(d){
+						return baseLinear(basePositions[d]);
+					};
+								
                     var y = d3.scale.linear()
                                 .domain([0, data.chronoCommits.length])
                                 .range([60, 60 + data.chronoCommits.length * constants.rowHeight]);
