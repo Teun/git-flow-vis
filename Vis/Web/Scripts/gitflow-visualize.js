@@ -68,6 +68,7 @@ var GitFlowVisualize =
             var options = {
                 drawElem: null,
                 drawTable: false,
+				combineGroupToOneLine: true,
 
                 // these are the exact names of the branches that should be drawn as stright lines master and develop
                 masterRef: "refs/heads/master",
@@ -772,6 +773,33 @@ var GitFlowVisualize =
                     }
                     return result;
                 };
+				var groupScale = function(cols, maxWidth){
+					var scaleCol = {
+						gutter: 0.7,
+						line: 1,
+						developLine: 0.5, 
+					};
+					var lastGroup = '';
+					var here = 0;
+					var basePositions = {};
+					for (var i = 0; i < cols.length; i++) {
+						var thisCol = cols[i];
+						var thisGroup = thisCol[0];
+						if(lastGroup != thisGroup) here += scaleCol.gutter;
+						here += thisGroup == 'd' ? scaleCol.developLine : scaleCol.line;
+						basePositions[thisCol] = here;
+						lastGroup = thisGroup;
+					}
+
+
+                    var baseLinear = d3.scale.linear()
+                                .domain([0,here])
+                                .range([0, Math.min(maxWidth, 20 * here)]);
+					return function(d){
+						return baseLinear(basePositions[d]);
+					};
+					
+				}
                 self.drawGraph = function (elem) {
                     var calcHeight = Math.max(800, data.chronoCommits.length * constants.rowHeight);
                     var size = { width: 500, height: calcHeight };
@@ -807,31 +835,8 @@ var GitFlowVisualize =
                         legendaBlocks[key].last = groupColumns[groupColumns.length - 1];
                     }
 					
-					var scaleCol = {
-						gutter: 0.7,
-						line: 1,
-						developLine: 0.5, 
-					};
-					var lastGroup = '';
-					var here = 0;
-					var basePositions = {};
-					for (var i = 0; i < columnsInOrder.length; i++) {
-						var thisCol = columnsInOrder[i];
-						var thisGroup = thisCol[0];
-						if(lastGroup != thisGroup) here += scaleCol.gutter;
-						here += thisGroup == 'd' ? scaleCol.developLine : scaleCol.line;
-						basePositions[thisCol] = here;
-						lastGroup = thisGroup;
-					}
-
-
-                    var baseLinear = d3.scale.linear()
-                                .domain([0,here])
-                                .range([0, Math.min(size.width, 20 * here)]);
-					var x = function(d){
-						return baseLinear(basePositions[d]);
-					};
 								
+					var x = groupScale(columnsInOrder, size.width);
                     var y = d3.scale.linear()
                                 .domain([0, data.chronoCommits.length])
                                 .range([60, 60 + data.chronoCommits.length * constants.rowHeight]);
