@@ -777,7 +777,7 @@ var GitFlowVisualize =
 					var scaleCol = {
 						gutter: 0.7,
 						line: 1,
-						developLine: 0.5, 
+						developLine: 0.4, 
 					};
 					var lastGroup = '';
 					var here = 0;
@@ -796,7 +796,12 @@ var GitFlowVisualize =
                                 .domain([0,here])
                                 .range([0, Math.min(maxWidth, 20 * here)]);
 					return function(d){
-						return baseLinear(basePositions[d]);
+						var offset = 0;
+						if(d[d.length-1] == "+"){
+							d = d.substring(0, d.length-1);
+							offset = 0.5;
+						}
+						return baseLinear(basePositions[d] + offset);
 					};
 					
 				}
@@ -851,10 +856,12 @@ var GitFlowVisualize =
                         if (!childCommit || !parentCommit) return null;
                         var intermediateRow = parentCommit.orderNr - .5;
                         var intermediatCol = childCommit.columns[0];
+						var intermediateRow2 = null;
+						var intermediateCol2 = null;
                         var childCol = data.columns[childCommit.columns[0]];
                         if (!childCol) return null;
                         var parentCol = data.columns[parentCommit.columns[0]];
-                        if (childCommit.parents.length > 1) { // merge
+                        if (childCol.id != parentCol.id) { // merge
                             var followingCommitOnParent = parentCol.commits[$.inArray(parentCommit.id, parentCol.commits) - 1];
                             if (!followingCommitOnParent || data.commits[followingCommitOnParent].orderNr < childCommit.orderNr) {
                                 intermediateRow = childCommit.orderNr + .5;
@@ -864,14 +871,20 @@ var GitFlowVisualize =
                                 if (!precedingCommitOnChild || data.commits[precedingCommitOnChild].orderNr > parentCommit.orderNr) {
                                     // do nothing, the sideways first model of the non-merge commit applies
                                 } else {
-                                    // worst case: draw diagonal line
-                                    intermediateRow = childCommit.orderNr;
+                                    // worst case: two bends
+                                    intermediateCol2 = childCommit.columns[0] + '+';
+                                    intermediateRow2 = parentCommit.orderNr - 0.5;
+                                    intermediatCol = childCommit.columns[0] + '+';
+                                    intermediateRow = childCommit.orderNr + 0.5;
                                 }
                             }
                         }
+						if(!intermediateCol2)intermediateCol2 = intermediatCol;
+						if(!intermediateRow2)intermediateRow2 = intermediateRow;
                         var points = [
                             { x: childCommit.columns[0], y: childCommit.orderNr },
                             { x: intermediatCol, y: intermediateRow },
+                            { x: intermediateCol2, y: intermediateRow2 },
                             { x: parentCommit.columns[0], y: parentCommit.orderNr }];
                         return line(points);
                     };
