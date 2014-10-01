@@ -176,7 +176,10 @@ var GitFlowVisualize =
                             done(d, from);
                         });
 
-                }
+                },
+				createCommitUrl: function(commit){
+					 return "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + commit.id
+				}
             };
 
             var cleanup = function (_data) {
@@ -986,7 +989,7 @@ var GitFlowVisualize =
                             return "top:" + (y(commit.orderNr) - constants.rowHeight / 2) + "px;";
                         })
                         .html(function (d) {
-                            var commitUrl = "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + d.id;
+                            var commitUrl = options.createCommitUrl(d);
                             var res = "<table class='commit-table aui'><tr><td class='msg'>";
                             if (d.labels) {
                                 $.each($(d.labels), function (k, v) {
