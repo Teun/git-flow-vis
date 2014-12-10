@@ -78,6 +78,7 @@ var GitFlowVisualize =
                 featurePrefix: "refs/heads/feature/",
                 releasePrefix: "refs/heads/release/",
                 hotfixPrefix: "refs/heads/hotfix/",
+                bugfixPrefix: "refs/heads/bugfix/",
 
                 // url params
                 urlPrefix: 'plugins/servlet/git-flow-graph/',
@@ -390,7 +391,7 @@ var GitFlowVisualize =
                             column.name = 'f' + column.name.substring(1);
                         }
                         // unmerged branch: if starts with releasePrefix or hotfixPrefix -> r
-                        if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.releasePrefix) == 0 || l.indexOf(options.hotfixPrefix) == 0; }).length > 0) {
+                        if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.releasePrefix) == 0 || l.indexOf(options.hotfixPrefix) == 0 || l.indexOf(options.bugfixPrefix) == 0; }).length > 0) {
                             column.name = 'r' + column.name.substring(1);
                         }
                     }
@@ -1101,7 +1102,7 @@ var GitFlowVisualize =
                         var columns = commit.columns.map(function (d) { return data.columns[d]; });
                         return columns[0].name[0];
                     };
-                    var prioHash = { 'm': 0, 'd': 2, 'r': 1, 'f': 3 };
+                    var prioHash = { 'm': 0, 'd': 1, 'r': 3, 'f': 2 };
                     var cols = [ct(childId), ct(parentId)];
                     cols.sort(function (v1, v2) { return prioHash[v2] - prioHash[v1]; });
                     return cols[0] || "default";
