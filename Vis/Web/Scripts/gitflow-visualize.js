@@ -1101,7 +1101,7 @@ var GitFlowVisualize =
                         var columns = commit.columns.map(function (d) { return data.columns[d]; });
                         return columns[0].name[0];
                     };
-                    var prioHash = { 'm': 0, 'd': 2, 'r': 1, 'f': 3 };
+                    var prioHash = { 'm': 0, 'd': 1, 'r': 3, 'f': 2 };
                     var cols = [ct(childId), ct(parentId)];
                     cols.sort(function (v1, v2) { return prioHash[v2] - prioHash[v1]; });
                     return cols[0] || "default";
