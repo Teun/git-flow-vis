@@ -35,6 +35,14 @@ suite('Data set 1', function () {
         });
         assert(featureColumns.length == 2, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
     });
+    test('Bugfix branch in same column as release', function() {
+        var commitBugfix = data.commits["771a7a651cf22f7390d547a8a28782530d191367"];
+        var commitR2 = data.commits["0aabee3cc5a668e1dffd3c464b18890caf98e6e9"];
+
+        assert(commitBugfix.columns[0] === commitR2.columns[0], "Bugfix commit and release tip should be on the same column");
+
+
+    });
 
 });
 suite('Data set 2', function() {
@@ -205,6 +213,6 @@ suite('Situation with feature branch as release branch', function () {
         var column = data.columns[commit.columns[0]];
         assert(column.name[0] === 'd', "Commit " + commit.id + " (" + commit.message + ") should be on the develop branch. Now on " + column.name);
     });
-    
+
     
 });
