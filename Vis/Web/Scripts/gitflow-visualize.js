@@ -179,7 +179,8 @@ var GitFlowVisualize =
 
                 },
 				createCommitUrl: function(commit){
-					 return "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + commit.id
+                    var root = AJS.contextPath ? AJS.contextPath() : "";
+					return root + "/projects/" + options.project + "/repos/" + options.repo + "/commits/" + commit.id
 				}
             };
 
