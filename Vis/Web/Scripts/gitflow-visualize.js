@@ -78,7 +78,8 @@ var GitFlowVisualize =
                 featurePrefix: "refs/heads/feature/",
                 releasePrefix: "refs/heads/release/",
                 hotfixPrefix: "refs/heads/hotfix/",
-                bugfixPrefix: "refs/heads/bugfix/",
+                // remaing branches will be tested to this regex: if match -> release, if not -> feature
+                releaseZonePattern: /^refs\/heads\/bugfix/,
 
                 // url params
                 urlPrefix: 'plugins/servlet/gfc/',
@@ -392,8 +393,14 @@ var GitFlowVisualize =
                             column.name = 'f' + column.name.substring(1);
                         }
                         // unmerged branch: if starts with releasePrefix or hotfixPrefix -> r
-                        if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.releasePrefix) == 0 || l.indexOf(options.hotfixPrefix) == 0 || l.indexOf(options.bugfixPrefix) == 0; }).length > 0) {
+                        if (lastCommit.labels && lastCommit.labels.filter(function (l) { 
+                            return l.indexOf(options.releasePrefix) == 0 
+                                || l.indexOf(options.hotfixPrefix) == 0 
+                                || options.releaseZonePattern.test(l); 
+                            }).length > 0) {
                             column.name = 'r' + column.name.substring(1);
+                        }else{
+                            column.name = 'f' + column.name.substring(1);
                         }
                     }
                 }
