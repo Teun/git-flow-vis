@@ -81,7 +81,7 @@ var GitFlowVisualize =
                 bugfixPrefix: "refs/heads/bugfix/",
 
                 // url params
-                urlPrefix: 'plugins/servlet/git-flow-graph/',
+                urlPrefix: 'plugins/servlet/gfc/',
                 project: null,
                 repo: null,
 
