@@ -1016,8 +1016,8 @@ var GitFlowVisualize =
                             }
                             res += " " + d.message;
                             res += "</td>";
-                            if (d.author && d.author.name) {
-                                res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm'/></span></span>" + (d.author.displayName || d.author.name) + "</td>";
+                            if (d.author) {
+                                res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + CryptoJS.MD5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm'/></span></span>" + (d.author.displayName || d.author.name || d.author.emailAddress) + "</td>";
                             } else {
                                 res += "<td class='author'> </td>";
                             }
