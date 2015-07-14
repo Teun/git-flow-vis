@@ -41,8 +41,12 @@
                         ); 
                 }, 100); 
             };
+            var moreDataCallback = function (from, done) {
+                done(from, null);
+            }
             var options = {
                 dataCallback: dataCallback,
+                moreDataCallback: moreDataCallback
             };
 
             GitFlowVisualize.draw(element, options);
