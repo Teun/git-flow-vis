@@ -1,0 +1,35 @@
+{
+  "name": "git-flow-vis",
+  "version": "0.0.1",
+  "description": "Visualize your commits when using the Git Flow branching strategy",
+  "main": "dist/gitflow-visualize.node.js",
+  "scripts": {
+    "dist": "gulp clean && gulp dist",
+    "prepublish": "gulp clean && gulp dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Teun/git-flow-vis.git"
+  },
+  "author": "Teun Duynstee",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/Teun/git-flow-vis/issues"
+  },
+  "homepage": "https://github.com/Teun/git-flow-vis#readme",
+  "dependencies": {
+    "crypto-js": "^3.1.9-1",
+    "d3": "^4.4.1",
+    "jquery": "^3.1.1",
+    "moment": "^2.17.1",
+    "thenby": "^1.2.3"
+  },
+  "devDependencies": {
+    "del": "^2.2.2",
+    "gulp": "^3.9.1",
+    "gulp-inject-file": "0.0.18",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^2.0.0",
+    "vinyl-paths": "^2.1.0"
+  }
+}
