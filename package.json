@@ -25,11 +25,15 @@
     "thenby": "^1.2.3"
   },
   "devDependencies": {
+    "browserify": "^13.3.0",
     "del": "^2.2.2",
     "gulp": "^3.9.1",
     "gulp-inject-file": "0.0.18",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^2.0.0",
-    "vinyl-paths": "^2.1.0"
-  }
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-paths": "^2.1.0",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.8.0"
+  },
 }
