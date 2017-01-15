@@ -11,11 +11,13 @@ const vinylPaths = require('vinyl-paths');
 const browserify = require('browserify');
 const source = require('vinyl-source-stream');
 const buffer = require('vinyl-buffer');
+const karma = require('karma').Server;
 
 // ------------------------------------------------------------------------------------------ Tasks
 
 gulp.task('dist', ['build']);
 gulp.task('build', ['standalone', 'commonjs', 'bundle']);
+gulp.task('test', ['karma']);
 
 // ------------------------------------------------------------------------------------------ Task Definitions
 
@@ -66,4 +68,11 @@ gulp.task('bundle', ['commonjs'], () =>
 		}))
 		.pipe(gulp.dest('dist'))
 )
+
+gulp.task('karma', ['dist'], (done) => {
+	new karma({
+		configFile: __dirname + '/test/karma.conf.js',
+		singleRun: true
+	}, done).start();
+})
 

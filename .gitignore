@@ -151,3 +151,4 @@ $RECYCLE.BIN/
 .DS_Store
 dist
 node_modules
+test/coverage
