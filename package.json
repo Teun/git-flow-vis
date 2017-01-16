@@ -53,6 +53,7 @@
     "dist",
     "lib",
     "test",
+    "!test/coverage",
     "gulpfile.js",
     "README.md"
   ]
