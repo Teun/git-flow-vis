@@ -72,7 +72,7 @@ GitFlowVisualize also has support for AMD and CommonJS dependency resolving. If 
 const GitFlowVisualize = require('git-flow-vis');
 ```
 
-## `GitFlowVisualize([elem], opts)`
+## `GitFlowVisualize.draw([elem], opts)`
 
 <dl>
 <dt>
@@ -92,11 +92,11 @@ Object.
 </dd>
 </dl>
 
-`elem` is an optional argument, `opts` is required. If `elem` is provided, it must be in the order shown. The `elem` can also be passed using the `opts.drawElem` option.
+`elem` is an optional argument, `opts` is required. If `elem` is provided, it must be in the order shown. The `elem` can also be passed using the `opts.drawElem` option. If neither `elem` nor `opts.drawElem` is provided, a `div` placeholder will be appended to the document `body` tag.
 
 ### `opts`
 
-`opts.drawElem` (required) is the DOM Element which is used as the placeholder in which the graph is drawn. 
+`opts.drawElem` is the DOM Element which is used as the placeholder in which the graph is drawn. 
 
 `opts.drawTable` is the DOM Element which is used as the placeholder to hold the commit data table. If not provided, the `opts.drawElem` element is used.
 

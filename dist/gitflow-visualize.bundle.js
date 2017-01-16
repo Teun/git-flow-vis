@@ -595,12 +595,26 @@ var md5 = require('crypto-js/md5');
 	
 		self.draw = function (elem, opt) {
 	
-			// Determine if placeholder element was provided
-			if(typeof elem == "object") {
-				opt = elem;
-				elem = null;
-			} else {
-				drawElem = elem;
+			// Check if we have a placeholder element
+			if(elem) {
+				// Determine if placeholder element was provided
+				try {
+					//Using W3 DOM2 (works for FF, Opera and Chrom)
+					if(!(elem instanceof HTMLElement)) {
+						opt = elem;
+						elem = null;
+					}
+				} catch(e) {
+					//Browsers not supporting W3 DOM2 don't have HTMLElement and
+					//an exception is thrown and we end up here. Testing some
+					//properties that all elements have. (works on IE7)
+					if(!((typeof elem==="object") &&
+					  (elem.nodeType===1) && (typeof elem.style === "object") &&
+					  (typeof elem.ownerDocument ==="object"))) {
+						opt = elem;
+						elem = null;
+					}
+				}
 			}
 	
 			// Merge options with defaults
@@ -609,15 +623,17 @@ var md5 = require('crypto-js/md5');
 	
 			// Check if we have a placeholder element
 			if(!options.drawElem) {
-				throw new Error('Please provide the placeholder element, either as the first parameter or by setting the "drawElem" option');
-			} else {
-				options.showSpinner();
-				options.dataCallback(function (data) {
-					rawData = data;
-					options.hideSpinner();
-					drawFromRaw();
-				});
+				options.drawElem = $('<div id="gitflow-visualize"></div>').appendTo('body')
+																		  .get(0);
 			}
+	
+			// Start drawing!
+			options.showSpinner();
+			options.dataCallback(function (data) {
+				rawData = data;
+				options.hideSpinner();
+				drawFromRaw();
+			});
 		};
 	
 		var appendData = function (newCommits) {
