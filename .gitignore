@@ -149,6 +149,7 @@ $RECYCLE.BIN/
 
 # Mac crap
 .DS_Store
-dist
+
+# custom ignores
 node_modules
 test/coverage
