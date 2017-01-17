@@ -596,9 +596,9 @@ var GitFlowVisualize = (function () {
 			cleanup(rawData);
 			options.hideSpinner();
 			options.dataProcessed(data);
-			if (drawElem) {
-				self.drawing.drawTable(drawElem);
-				self.drawing.drawGraph(drawElem);
+			if (options.drawElem) {
+				self.drawing.drawTable(options.drawElem);
+				self.drawing.drawGraph(options.drawElem);
 				self.drawing.updateHighlight();
 			}
 		}, 10);
