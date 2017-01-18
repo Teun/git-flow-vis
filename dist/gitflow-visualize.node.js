@@ -65,7 +65,7 @@ var md5 = require('crypto-js/md5');
 	You should have received a copy of the GNU General Public License
 	along with GitFlowVisualize. If not, see <http://www.gnu.org/licenses/>.
 	*/
-	
+	/* global jQuery:false, moment:false, firstBy:false, d3:false, CryptoJS:false */
 	var GitFlowVisualize = (function () {
 	
 		var self = {};
@@ -114,10 +114,10 @@ var md5 = require('crypto-js/md5');
 			},
 	
 			// function called after data hase been processed successfully and chart has been drawn
-			dataProcessed: function (d) { },
+			dataProcessed: function (/*data*/) { },
 	
 			// function to provide the appropriate url to the actual commit souce
-			createCommitUrl: function(commit){
+			createCommitUrl: function(/*commit*/){
 				return "#";
 			}
 		};
@@ -387,8 +387,8 @@ var md5 = require('crypto-js/md5');
 						var parentCommit = data.commits[firstCommit.parents[0].id];
 						if (parentCommit) {
 							var parentCol = data.columns[parentCommit.columns[0]];
-							if (data.columns[parentCommit.columns[0]].group)
-								thisCol.group = data.columns[parentCommit.columns[0]].group;
+							if (parentCol.group)
+								thisCol.group = parentCol.group;
 						}
 					}
 				}
@@ -396,7 +396,7 @@ var md5 = require('crypto-js/md5');
 		};
 	
 		var combineColumnsOfType = function (type) {
-			var columns = $.map(data.columns, function (v, k) { return v; }).filter(function (v) { return v.name[0] == type });
+			var columns = $.map(data.columns, function (v /*, k*/) { return v; }).filter(function (v) { return v.name[0] == type });
 			var groups = {};
 			for (var i = 0; i < columns.length; i++) {
 				if (columns[i].group) {
@@ -654,7 +654,7 @@ var md5 = require('crypto-js/md5');
 	
 		self.drawing = (function () {
 			var self = {};
-			var panel;
+	
 			self.updateHighlight = function () {
 			  var highlightCommits = function (arrIds) {
 				if (!arrIds || arrIds.length == 0) {
@@ -939,9 +939,9 @@ var md5 = require('crypto-js/md5');
 						var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
 						return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0) - 20) + ") rotate(-40)";
 					});
-				var rect = rotated.append("rect")
+				rotated.append("rect")
 					.attr("width", 60).attr("height", 15).attr("rx", "2");
-				var text = rotated.append("text").attr("y", "12").attr("x", "3")
+				rotated.append("text").attr("y", "12").attr("x", "3")
 					.text(function (d) { return d; });
 				blockLegenda.append("path").attr("d", function (d) {
 					var group = legendaBlocks[d];
