@@ -197,6 +197,8 @@ In this case, 'values' is an array of commits with the same JSON schema as the '
 
 `opts.createCommitUrl(commit)` is a function that is called for each commit which can be used to generate a URL reference to the commit source. The `commit` parameter has the same JSON schema as a commit in the `commits` property of the `opts.dataCallback()` function.
 
+`opts.createAuthorAvatarUrl(author)` is a function that is called for each commit which can be used to generate a URL reference to the author avatar/profile picture. The `author` parameter has the same JSON schema as the `author` object of a commit in the `commits` property of the `opts.dataCallback()` function. If this option is not specified, the default behavior is to use the MD5 hash of the author email address and retrieve the picture from [Gravatar](http://gravatar.com).
+
 ## Legal stuff
 
 GitFlowVisualize was created as part of the [Git Flow Chart](https://marketplace.atlassian.com/1212520) add-on for Atlassian Bitbucket. As such, this code has a mixed Commercial and Open Source license. It is released to GitHub to share and to accept contributions. The GitHub Terms of Service apply, so feel free to study the code, make forks and contribute. The project can also be used in Open Source projects that are made public using the GPLv3 license or for personal non-commercial use. Commercial exploitation of the code is explicitely prohibited.
