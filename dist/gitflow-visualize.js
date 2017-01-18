@@ -70,6 +70,11 @@ var GitFlowVisualize = (function () {
 		// function to provide the appropriate url to the actual commit souce
 		createCommitUrl: function(/*commit*/){
 			return "#";
+		},
+
+		// function to provide the appropriate url to the author avatar
+		createAuthorAvatarUrl: function(author) {
+			return "https://secure.gravatar.com/avatar/" + md5(author.emailAddress) + ".jpg?s=48&amp;d=mm";
 		}
 	};
 
@@ -754,7 +759,7 @@ var GitFlowVisualize = (function () {
 		self.drawGraph = function (elem) {
 			var calcHeight = Math.max(800, data.chronoCommits.length * constants.rowHeight);
 			var size = { width: 500, height: calcHeight };
-			var margin = 10;
+			var margin = 20;
 
 			var svg = d3.select(elem).select("svg>g");
 			if (svg[0][0] == null) {
@@ -958,7 +963,8 @@ var GitFlowVisualize = (function () {
 					res += " " + d.message;
 					res += "</td>";
 					if (d.author) {
-						res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + md5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm'/></span></span>" + (d.author.displayName || d.author.name || d.author.emailAddress) + "</td>";
+						var authorAvatarUrl = options.createAuthorAvatarUrl(d.author);
+						res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='" + authorAvatarUrl + "' width='48px' height='48px' /></span></span>" + (d.author.displayName || d.author.name || d.author.emailAddress) + "</td>";
 					} else {
 						res += "<td class='author'> </td>";
 					}
@@ -987,7 +993,7 @@ var GitFlowVisualize = (function () {
 						);
 			}
 
-			$(document).on("scroll resize", function () {
+			self.lazyLoad = function() {
 				//check for openEnded messages in view
 				var keyInView = null;
 				for (var key in data.openEnds) {
@@ -1031,10 +1037,8 @@ var GitFlowVisualize = (function () {
 						});
 					}
 					openEndsToBeDownloaded = {};
-
 				}
-			});
-
+			};
 		};
 
 		var openEndsToBeDownloaded = {};
@@ -1098,6 +1102,10 @@ var GitFlowVisualize = (function () {
 			;
 
 			$('<style>' + style + '</style>').appendTo('head');
+
+			$(document).on("scroll resize", function () {
+				GitFlowVisualize.drawing.lazyLoad();
+			});
 
 			$(document).keydown(function (event) {
 				if (event.ctrlKey && event.shiftKey && event.which == 221) {
