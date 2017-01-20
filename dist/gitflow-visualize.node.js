@@ -1108,6 +1108,10 @@ var md5 = require('crypto-js/md5');
 				};
 				var prioHash = { 'm': 0, 'd': 1, 'r': 3, 'f': 2 };
 				var cols = [ct(childId), ct(parentId)];
+	
+				// special case for back-merge
+				if(cols[0] === 'd' && cols[1] !== 'd')return cols[1] + ' back';
+				
 				cols.sort(function (v1, v2) { return prioHash[v2] - prioHash[v1]; });
 				return cols[0] || "default";
 			};
@@ -1129,6 +1133,7 @@ var md5 = require('crypto-js/md5');
 					'.arrow path.branch-type-d {stroke: #8eb021;}' +
 					'.arrow path.branch-type-m {stroke: #f6c342;}' +
 					'.arrow path.branch-type-default {stroke-width:1px;}' +
+					'.arrow path.back {opacity:0.5;}' +
 					'.commits-graph{}.messages{position:relative;}' +
 					'.commit-msg{position:absolute;white-space:nowrap;cursor:pointer;padding-left:30%;width:70%;overflow-x:hidden;}' +
 					'.commit-msg.dim{color:#aaa;}' +
