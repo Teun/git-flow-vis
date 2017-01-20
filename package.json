@@ -6,7 +6,9 @@
   "scripts": {
     "test": "gulp clean && gulp test",
     "dist": "gulp clean && gulp dist",
-    "prepublish": "gulp clean && gulp dist"
+    "prepublish": "npm test",
+    "precommit": "npm test",
+    "prepush": "npm test"
   },
   "repository": {
     "type": "git",
@@ -41,6 +43,7 @@
     "gulp-mocha": "^3.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^2.0.0",
+    "husky": "^0.12.0",
     "karma": "^1.4.0",
     "karma-browserify": "^5.1.0",
     "karma-chai": "^0.1.0",

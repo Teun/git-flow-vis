@@ -119,6 +119,11 @@ var md5 = require('crypto-js/md5');
 			// function to provide the appropriate url to the actual commit souce
 			createCommitUrl: function(/*commit*/){
 				return "#";
+			},
+	
+			// function to provide the appropriate url to the author avatar
+			createAuthorAvatarUrl: function(author) {
+				return "https://secure.gravatar.com/avatar/" + md5(author.emailAddress) + ".jpg?s=48&amp;d=mm";
 			}
 		};
 	
@@ -811,7 +816,7 @@ var md5 = require('crypto-js/md5');
 			self.drawGraph = function (elem) {
 				var calcHeight = Math.max(800, data.chronoCommits.length * constants.rowHeight);
 				var size = { width: 500, height: calcHeight };
-				var margin = 10;
+				var margin = 20;
 	
 				var svg = elem.select("svg>g");
 				if (svg.empty()) {
@@ -1015,7 +1020,8 @@ var md5 = require('crypto-js/md5');
 						res += " " + d.message;
 						res += "</td>";
 						if (d.author) {
-							res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='https://secure.gravatar.com/avatar/" + md5(d.author.emailAddress) + ".jpg?s=48&amp;d=mm'/></span></span>" + (d.author.displayName || d.author.name || d.author.emailAddress) + "</td>";
+							var authorAvatarUrl = options.createAuthorAvatarUrl(d.author);
+							res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='" + authorAvatarUrl + "' width='48px' height='48px' /></span></span>" + (d.author.displayName || d.author.name || d.author.emailAddress) + "</td>";
 						} else {
 							res += "<td class='author'> </td>";
 						}
@@ -1043,7 +1049,7 @@ var md5 = require('crypto-js/md5');
 							);
 				}
 	
-				d3.select(document).on("scroll resize", function () {
+				self.lazyLoad = function() {
 					//check for openEnded messages in view
 					var keyInView = null;
 					for (var key in data.openEnds) {
@@ -1087,10 +1093,8 @@ var md5 = require('crypto-js/md5');
 							});
 						}
 						openEndsToBeDownloaded = {};
-	
 					}
-				});
-	
+				};
 			};
 	
 			var openEndsToBeDownloaded = {};
@@ -1150,7 +1154,11 @@ var md5 = require('crypto-js/md5');
 					'#gfc-spinner.aui-is-docked .gfc-spinner-inner{margin-top:-45px;}' +
 					'#gfc-spinner .aui-progress-indicator{display:inline-block;margin-bottom:2px;}' + 
 					'#debug-output{width:600px;height:300px;position:absolute;left:300px;top:100px;z-index:100;}';
-					d3.select("head").append("style").html(style);
+				d3.select("head").append("style").html(style);
+	
+				d3.select(document).on("scroll resize", function () {
+					GitFlowVisualize.drawing.lazyLoad();
+				});
 	
 				d3.select(document).on("keydown", function () {
 					var event = d3.event;
@@ -1171,7 +1179,6 @@ var md5 = require('crypto-js/md5');
 	
 		return self;
 	})();
-	
 
 	return window.GitFlowVisualize = GitFlowVisualize;
 });
