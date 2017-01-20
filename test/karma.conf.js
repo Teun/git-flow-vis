@@ -13,12 +13,12 @@ module.exports = function (config) {
 
         //list of files / patterns to load in the browser
         files: [
-            { pattern: 'node_modules/jquery/dist/jquery.js' },
             { pattern: 'node_modules/d3/d3.js' },
             { pattern: 'node_modules/moment/moment.js' },
             { pattern: 'node_modules/thenby/thenBy.min.js' },
             { pattern: 'node_modules/crypto-js/crypto-js.js' },
             { pattern: 'lib/gitflow-visualize.js' },
+            { pattern: 'lib/lodash.custom.min.js' },
             { pattern: 'test/test.data.js' },
             { pattern: 'test/test.js' }
         ],

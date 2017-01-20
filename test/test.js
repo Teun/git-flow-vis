@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with GitFlowVisualize. If not, see <http://www.gnu.org/licenses/>.
 */
+/* global _:false , suite:false, test:false, suiteSetup:false, assert:false, GitFlowVisualize:false , Dummy:false*/
 
 // ------------------------------------------------------------------------------------------ Test Definitions
 
@@ -45,14 +46,14 @@ suite('Data set 1', function () {
         assert(data.columns[colF1].name[0] == "f", "open feature is on column " + data.columns[colF1].name);
     });
     test('Needs two release columns and two feature columns', function () {
-        var releaseColumns = $(Object.keys(data.columns)).filter(function(ix, c) {
+        var releaseColumns = _.filter(Object.keys(data.columns), function(c) {
             return data.columns[c].name[0] == "r";
         });
-        assert(releaseColumns.length == 2, "found " + $.makeArray( releaseColumns.map(function(ix, c) { return data.columns[c].name; })).join() );
-        var featureColumns = $(Object.keys(data.columns)).filter(function (ix, c) {
+        assert(releaseColumns.length == 2, "found " + _.map(releaseColumns, function(c) { return data.columns[c].name; }).join(',') );
+        var featureColumns = _.filter(Object.keys(data.columns), function (c) {
             return data.columns[c].name[0] == "f";
         });
-        assert(featureColumns.length == 2, "found " + $.makeArray(featureColumns.map(function (ix, c) { return data.columns[c].name; })).join());
+        assert(featureColumns.length == 2, "found " + _.map(featureColumns, function (c) { return data.columns[c].name; }).join(','));
     });
     test('Bugfix branch in same column as release', function() {
         var commitBugfix = data.commits["771a7a651cf22f7390d547a8a28782530d191367"];
@@ -79,7 +80,7 @@ suite('Data set 2', function() {
     });
     test('Last 5 commits were all on develop', function() {
         var latestShas = data.chronoCommits.slice(0, 5);
-        var latestCommits = $.map(latestShas, function(sha) {
+        var latestCommits = _.map(latestShas, function(sha) {
             return data.commits[sha];
         }).filter(function(c) {
             return c.columns[0][0] == "d";
@@ -96,14 +97,14 @@ suite('Data set 2', function() {
         assert(data.columns[colF1].name[0] == "f", "open feature is on column " + data.columns[colF1].name);
     });
     test('Needs two release columns and three feature columns', function() {
-        var releaseColumns = $(Object.keys(data.columns)).filter(function(ix, c) {
-            return data.columns[c].name[0] == "r";
-        });
-        assert(releaseColumns.length == 2, "found " + $.makeArray(releaseColumns.map(function(ix, c) { return data.columns[c].name; })).join());
-        var featureColumns = $(Object.keys(data.columns)).filter(function(ix, c) {
+        var releaseColumns = _.filter(Object.keys(data.columns), function(c) {
+                return data.columns[c].name[0] == "r";
+            });
+        assert(releaseColumns.length == 2, "found " + _.map(releaseColumns, function(c) { return data.columns[c].name; }).join(','));
+        var featureColumns = _.filter(Object.keys(data.columns), function(c) {
             return data.columns[c].name[0] == "f";
         });
-        assert(featureColumns.length == 3, "found " + $.makeArray(featureColumns.map(function(ix, c) { return data.columns[c].name; })).join());
+        assert(featureColumns.length == 3, "found " + _.map(featureColumns, function(c) { return data.columns[c].name; }).join(','));
     });
     test('Branches f3 and f1 should not be place on one column', function() {
         var commitF4 = data.commits["ee268f9d33d940722d974ac1c12cd20cb85bc768"];

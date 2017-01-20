@@ -2,52 +2,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="../node_modules/d3/d3.min.js"></script>
+    <script src="../lib/lodash.custom.min.js"></script>
     <script src="../dist/gitflow-visualize.bundle.js"></script>
     <script src="../test/test.data.js"></script>
-    <script>
-        $(function () {
-            var ix = (function(s, v, d){
-                if(s == null || s.length == 0)return d;
-                var start = s.indexOf(v + "=");
-                if(start == -1)return d;
-                start += v.length + 1;
-                var end = s.indexOf('&', start+1);
-                if(end == -1)end = s.length;
-                return s.substring(start, end);
-              })(document.location.search, "ix", 0);
-            ix = parseInt(ix);
-            var sel = $("#dataset");
-            var display = function(i, d){
-              var stats = " (" + d.branches.values.length + " branches, " + d.tags.values.length + " tags, " + d.commits.reduce(function(pr, val){return pr + val.values.length}, 0) +  " commits)";
-              if(d.meta && d.meta.desc)return d.meta.desc + stats;
-              return "dataset " + i + stats;
-            }
-            $.each(Dummy.Data, function(i, d){
-              if(d.meta && d.meta.skip) return;
-              var option = "<option " + (ix==i?"selected":"") + " value='" + i + "'>" + display(i, d) + "</option>";
-              sel.append($(option));
-            });
-            sel.on('change', function(){
-              document.location.href = "multiple_datasets.html?ix=" + sel.val();
-            });
-
-            var element = document.getElementById('drawhere');
-            var dataCallback = function (done) { window.setTimeout(function () { done(Dummy.Data[ix]); }, 100); };
-            var moreDataCallback = function (from, done) {
-            	if (from == "4c1f8a4811e2798be63b5552ee3518e1b47be54f") {
-            		done(Dummy.Data[3], from);
-            	} else {
-            		done(null, from);
-            	}
-            };
-            GitFlowVisualize.draw(element,
-							{
-								dataCallback: dataCallback,
-								moreDataCallback: moreDataCallback
-							});
-        });
-    </script>
     <style>
     	.aui-avatar-xsmall .aui-avatar-inner img {
     		max-height: 12px;
@@ -100,4 +58,46 @@
 	<div id="nav"><select id="dataset"></select></div>
     <div id="drawhere"></div>
 </body>
+    <script>
+		var ix = (function(s, v, d){
+			if(s == null || s.length == 0)return d;
+			var start = s.indexOf(v + "=");
+			if(start == -1)return d;
+			start += v.length + 1;
+			var end = s.indexOf('&', start+1);
+			if(end == -1)end = s.length;
+			return s.substring(start, end);
+			})(document.location.search, "ix", 0);
+		ix = parseInt(ix);
+		var sel = d3.select("#dataset");
+		var display = function(i, d){
+			var stats = " (" + d.branches.values.length + " branches, " + d.tags.values.length + " tags, " + d.commits.reduce(function(pr, val){return pr + val.values.length}, 0) +  " commits)";
+			if(d.meta && d.meta.desc)return d.meta.desc + stats;
+			return "dataset " + i + stats;
+		}
+		_.each(Dummy.Data, function(d, i){
+			if(d.meta && d.meta.skip) return;
+			var option = sel.append("option").attr("value", i).html(display(i, d));
+			if(ix===i)option.node().selected = true;
+		});
+		sel.on('change', function(){
+			document.location.href = "multiple_datasets.html?ix=" + sel.node().value;
+		});
+
+		var element = document.getElementById('drawhere');
+		var dataCallback = function (done) { window.setTimeout(function () { done(Dummy.Data[ix]); }, 100); };
+		var moreDataCallback = function (from, done) {
+			if (from == "4c1f8a4811e2798be63b5552ee3518e1b47be54f") {
+				done(Dummy.Data[3], from);
+			} else {
+				done(null, from);
+			}
+		};
+		GitFlowVisualize.draw(element,
+						{
+							dataCallback: dataCallback,
+							moreDataCallback: moreDataCallback
+						});
+    </script>
+
 </html>
