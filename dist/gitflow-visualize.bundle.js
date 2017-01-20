@@ -670,18 +670,18 @@ var md5 = require('crypto-js/md5');
 			  var highlightCommits = function (arrIds) {
 				if (!arrIds || arrIds.length == 0) {
 				  d3.selectAll(".commit-msg").classed("dim", false).classed("highlight", false);
-				  d3.selectAll(".commit-dot").classed("commit-dot", true);
+				  d3.selectAll(".commit-dot").classed("dim", false);
 				  d3.selectAll(".arrow").style("opacity", "1");
 				  return;
 				}
 				for (var id in data.commits) {
 				  if (arrIds.indexOf(id) > -1) {
 					d3.selectAll("#msg-" + id).classed("dim", false).classed("highlight", true);
-					d3.selectAll("#commit-" + id).classed("commit-dot", true);
+					d3.selectAll("#commit-" + id).classed("dim", false);
 					d3.selectAll(".arrow-to-" + id).style("opacity", "1");
 				  } else {
 					d3.selectAll("#msg-" + id).classed("dim", true).classed("highlight", false);
-					d3.selectAll("#commit-" + id).attr("class", "commit-dot dim");
+					d3.selectAll("#commit-" + id).classed("dim", true);
 					d3.selectAll(".arrow-to-" + id).style("opacity", "0.2");
 	
 				  }
