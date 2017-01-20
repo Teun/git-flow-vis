@@ -60,7 +60,7 @@ gulp.task('standalone', () =>
 gulp.task('commonjs', () =>
 	gulp.src('lib/wrapper.js')
 		.pipe(injectfile({
-			pattern: '<!--\\s*inject:<filename>-->'
+			pattern: '/\\*\\s*inject:<filename>\\*/'
 		}))
 		.pipe(rename({
 			basename: 'gitflow-visualize',
