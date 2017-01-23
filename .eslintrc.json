@@ -17,8 +17,11 @@
         "no-undef": "error",
         "no-unreachable": "warn",
         "no-unused-vars": "error",
+        "no-invalid-regexp": "error",
         "constructor-super": "warn",
-        "valid-typeof": "warn"
+        "valid-typeof": "warn",
+        "curly": ["warn", "multi-line"],
+        "no-irregular-whitespace": "error"
     },
     "globals": {
         "_": false,

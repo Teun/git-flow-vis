@@ -191,8 +191,7 @@ var flatMap = require('lodash/flatMap');
 				var me = result.commits[key];
 				for (var k = 0; k < me.parents.length; k++) {
 					var parent = result.commits[me.parents[k].id];
-					if (parent)
-						fixMyTimeRecursive(me, parent.orderTimestamp);
+					if (parent)	fixMyTimeRecursive(me, parent.orderTimestamp);
 				}
 			}
 	
@@ -399,16 +398,14 @@ var flatMap = require('lodash/flatMap');
 				var lastCommit = data.commits[thisCol.commits[0]];
 				if (lastCommit.children && lastCommit.children.length > 0) {
 					var childColumn = data.columns[data.commits[lastCommit.children[0]].columns[0]];
-					if (childColumn.group)
-						thisCol.group = childColumn.group;
+					if (childColumn.group) thisCol.group = childColumn.group;
 				} else {
 					var firstCommit = data.commits[thisCol.commits[thisCol.commits.length - 1]];
 					if (firstCommit.parents && firstCommit.parents.length > 0) {
 						var parentCommit = data.commits[firstCommit.parents[0].id];
 						if (parentCommit) {
 							var parentCol = data.columns[parentCommit.columns[0]];
-							if (parentCol.group)
-								thisCol.group = parentCol.group;
+							if (parentCol.group) thisCol.group = parentCol.group;
 						}
 					}
 				}
@@ -588,14 +585,11 @@ var flatMap = require('lodash/flatMap');
 				});
 				if (childrenInPath.length != 1) return false;
 				// merges of develop onto itself are neutral
-				if (regexSelfMerge.test(c.message))
-					return 0;
+				if (regexSelfMerge.test(c.message)) return 0;
 				//merges of a release branch onto develop are a big bonus (we want these on the primary develop branch)
-				if (regexReleaseMerge.test(c.message))
-					return 20;
+				if (regexReleaseMerge.test(c.message)) return 20;
 				//merges of a local branch onto develop are a bonus
-				if (regexRealMerge.test(c.message))
-					return 5;
+				if (regexRealMerge.test(c.message)) return 5;
 				// following first parent is a bonus
 				if (last.parents.length > 1 && c.id == last.parents[0].id) return 1;
 				return -.1;
