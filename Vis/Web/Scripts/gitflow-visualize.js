@@ -1,3 +1,4 @@
+/* eslint-disable */
 var AJS = AJS || {};
 /* Override console.log() to avoid browser compatibility issues */
 if (!window.console) {

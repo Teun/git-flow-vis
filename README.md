@@ -8,7 +8,6 @@ GitFlowVisualize is a javascript library to visualize git repositories that are 
 
 You can use GitFlowVisualize directly in your browser by including the `gitflow-visualize.js` file from the `dist/` folder. GitFlowVisualize is registered on the global namespace. Please note that you will also be required to include the following dependencies:
 
-- jQuery (v2+)
 - d3.js (v3)
 - Moment
 - ThenBy

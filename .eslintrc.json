@@ -14,10 +14,19 @@
     "rules": {
         "no-const-assign": "warn",
         "no-this-before-super": "warn",
-        "no-undef": "warn",
+        "no-undef": "error",
         "no-unreachable": "warn",
-        "no-unused-vars": "warn",
+        "no-unused-vars": "error",
         "constructor-super": "warn",
         "valid-typeof": "warn"
+    },
+    "globals": {
+        "_": false,
+        "d3":false, 
+        "moment": false,
+        "firstBy":false, 
+        "CryptoJS":false,
+        "define": false,
+        "GitFlowVisualize": true
     }
 }
