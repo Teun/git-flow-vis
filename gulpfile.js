@@ -29,11 +29,14 @@ const browserify = require('browserify');
 const source = require('vinyl-source-stream');
 const buffer = require('vinyl-buffer');
 const karma = require('karma').Server;
+const sass = require('gulp-sass');
+const postcss = require('gulp-postcss');
+const cssnano = require('cssnano');
 
 // ------------------------------------------------------------------------------------------ Tasks
 
 gulp.task('dist', ['build']);
-gulp.task('build', ['standalone', 'commonjs', 'bundle']);
+gulp.task('build', ['stylesheet', 'standalone', 'commonjs', 'bundle']);
 gulp.task('test', ['karma']);
 
 // ------------------------------------------------------------------------------------------ Task Definitions
@@ -41,6 +44,28 @@ gulp.task('test', ['karma']);
 gulp.task('clean', () =>
 	gulp.src('dist/*', {read: false})
 		.pipe(vinylPaths(del))
+)
+
+gulp.task('stylesheet', () => 
+	gulp.src('lib/gitflow-visualize.scss')
+		.pipe(sass({
+			outputStyle: 'nested'
+		}))
+		.pipe(gulp.dest('dist'))
+		.pipe(rename({
+			suffix: '.min'
+		}))
+		.pipe(postcss([
+			cssnano({
+				safe: true,
+				discardUnused: false,
+				discardEmpty: false,
+				discardDuplicates: false,
+				discardComments: { removeAll: true },
+				autoprefixer: false
+			})
+		]))
+		.pipe(gulp.dest('dist'))
 )
 
 gulp.task('standalone', () =>

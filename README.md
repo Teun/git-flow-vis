@@ -49,6 +49,7 @@ GitFlowVisualize is available on the global namespace and can be used directly i
 		You can also use 'gitflow-visualize.min.js' if you include all the required dependencies seperately.
 	-->
 	<script src="gitflow-visualize.bundle.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="gitflow-visualize.css">
 </head>
 <body>
 	<div id="drawhere"></div>
