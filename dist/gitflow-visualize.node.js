@@ -16,10 +16,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with GitFlowVisualize. If not, see <http://www.gnu.org/licenses/>.
 */
+/*eslint no-unused-vars: ["error", { "varsIgnorePattern": "_|d3|firstBy|moment|CryptoJS" }]*/
 
 // ------------------------------------------------------------------------------------------ Dependencies
 
-//var jQuery = require('jquery');
 var d3 = require('d3');
 var firstBy = require('thenby');
 var moment = require('moment');
@@ -80,7 +80,6 @@ var flatMap = require('lodash/flatMap');
 	You should have received a copy of the GNU General Public License
 	along with GitFlowVisualize. If not, see <http://www.gnu.org/licenses/>.
 	*/
-	/* global _:false, moment:false, firstBy:false, d3:false, CryptoJS:false */
 	var GitFlowVisualize = (function () {
 	
 		var self = {};
