@@ -153,3 +153,5 @@ $RECYCLE.BIN/
 # custom ignores
 node_modules
 test/coverage
+gitflowvis.sublime-workspace
+gitflowvis.sublime-project
