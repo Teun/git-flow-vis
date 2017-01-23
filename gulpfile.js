@@ -113,7 +113,12 @@ gulp.task('bundle', ['commonjs'], () =>
 )
 
 gulp.task('lint', () => 
-    gulp.src(['**/*.js','!**/coverage/**','!node_modules/**'])
+    gulp.src([
+    		'**/*.js',
+    		'!**/dist/**',
+    		'!**/coverage/**',
+    		'!node_modules/**'
+    	])
         .pipe(eslint())
         .pipe(eslint.format())
         .pipe(eslint.failAfterError())
