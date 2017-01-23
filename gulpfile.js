@@ -32,12 +32,13 @@ const karma = require('karma').Server;
 const sass = require('gulp-sass');
 const postcss = require('gulp-postcss');
 const cssnano = require('cssnano');
+const eslint = require('gulp-eslint');
 
 // ------------------------------------------------------------------------------------------ Tasks
 
 gulp.task('dist', ['build']);
 gulp.task('build', ['stylesheet', 'standalone', 'commonjs', 'bundle']);
-gulp.task('test', ['karma']);
+gulp.task('test', ['lint', 'karma']);
 
 // ------------------------------------------------------------------------------------------ Task Definitions
 
@@ -109,6 +110,13 @@ gulp.task('bundle', ['commonjs'], () =>
 			drop_console: true
 		}))
 		.pipe(gulp.dest('dist'))
+)
+
+gulp.task('lint', () => 
+    gulp.src(['**/*.js','!**/coverage/**','!node_modules/**'])
+        .pipe(eslint())
+        .pipe(eslint.format())
+        .pipe(eslint.failAfterError())
 )
 
 gulp.task('karma', ['dist'], (done) => {
