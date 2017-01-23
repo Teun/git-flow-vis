@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <script src="../node_modules/d3/d3.min.js"></script>
+    <script src="../node_modules/lodash/lodash.min.js"></script>
+    <script src="../dist/gitflow-visualize.bundle.js"></script>
+    <script src="../test/test.data.js"></script>
+    <link rel="stylesheet" type="text/css" href="../dist/gitflow-visualize.css" />
+    <style>
+    	.aui-avatar-xsmall .aui-avatar-inner img {
+    		max-height: 12px;
+    		max-width: 12px;
+    	}
+			.aui-lozenge {
+			background: #cccccc;
+			border: 1px solid #cccccc;
+			border-radius: 3px;
+			color: #333333;
+			display: inline-block;
+			font-size: 11px;
+			font-weight: bold;
+			line-height: 99%;
+			margin: 0;
+			padding: 2px 5px;
+			text-align: center;
+			text-decoration: none;
+			text-transform: uppercase;
+			}
+    	.aui-lozenge-subtle {
+			background-color: #ffffff;
+    	}
+			.aui-lozenge-complete{
+			border-color: #a5b3c2;
+			color: #4a6785;
+			}
+			.aui-lozenge-error {
+			border-color: #e8a29b;
+			color: #d04437;
+			}
+    	.aui-lozenge-current {
+    		border-color: #ffe9a8;
+    		color: #594300;
+    	}
+			.aui-lozenge-success{
+			border-color: #60b070;
+			color: #14892c;
+			}
+			body {
+			color: #333333;
+			font-family: Arial,sans-serif;
+			font-size: 14px;
+			line-height: 1.42857142857143;
+			}
+    </style>
+    <title></title>
+</head>
+<body>
+	<div id="nav"><select id="dataset"></select></div>
+    <div id="drawhere"></div>
+</body>
+    <script>
+		var ix = (function(s, v, d){
+			if(s == null || s.length == 0)return d;
+			var start = s.indexOf(v + "=");
+			if(start == -1)return d;
+			start += v.length + 1;
+			var end = s.indexOf('&', start+1);
+			if(end == -1)end = s.length;
+			return s.substring(start, end);
+			})(document.location.search, "ix", 0);
+		ix = parseInt(ix);
+		var sel = d3.select("#dataset");
+		var display = function(i, d){
+			var stats = " (" + d.branches.values.length + " branches, " + d.tags.values.length + " tags, " + d.commits.reduce(function(pr, val){return pr + val.values.length}, 0) +  " commits)";
+			if(d.meta && d.meta.desc)return d.meta.desc + stats;
+			return "dataset " + i + stats;
+		}
+		_.each(Dummy.Data, function(d, i){
+			if(d.meta && d.meta.skip) return;
+			var option = sel.append("option").attr("value", i).html(display(i, d));
+			if(ix===i)option.node().selected = true;
+		});
+		sel.on('change', function(){
+			document.location.href = "multiple_datasets.html?ix=" + sel.node().value;
+		});
+
+		var element = document.getElementById('drawhere');
+		var dataCallback = function (done) { window.setTimeout(function () { done(Dummy.Data[ix]); }, 100); };
+		var moreDataCallback = function (from, done) {
+			if (from == "4c1f8a4811e2798be63b5552ee3518e1b47be54f") {
+				done(Dummy.Data[3], from);
+			} else {
+				done(null, from);
+			}
+		};
+		GitFlowVisualize.draw(element,
+						{
+							dataCallback: dataCallback,
+							moreDataCallback: moreDataCallback
+						});
+    </script>
+
+</html>

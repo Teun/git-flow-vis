@@ -1,0 +1,35 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es6": false,
+        "node": true
+    },
+    "parserOptions": {
+        "ecmaFeatures": {
+            "jsx": true
+        },
+        "sourceType": "module"
+    },
+    "rules": {
+        "no-const-assign": "warn",
+        "no-this-before-super": "warn",
+        "no-undef": "error",
+        "no-unreachable": "warn",
+        "no-unused-vars": "error",
+        "no-invalid-regexp": "error",
+        "constructor-super": "warn",
+        "valid-typeof": "warn",
+        "curly": ["warn", "multi-line"],
+        "no-irregular-whitespace": "error"
+    },
+    "globals": {
+        "_": false,
+        "d3":false, 
+        "moment": false,
+        "firstBy":false, 
+        "CryptoJS":false,
+        "define": false,
+        "GitFlowVisualize": true
+    }
+}
