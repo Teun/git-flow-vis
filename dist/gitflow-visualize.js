@@ -996,9 +996,12 @@ var GitFlowVisualize = (function () {
 				//check for openEnded messages in view
 				var keyInView = null;
 				for (var key in data.openEnds) {
-					if (isElementInViewport(d3.select('#msg-' + key)[0][0])) {
-						keyInView = key;
-						break;
+					var elementSelection = d3.select('#msg-' + key);
+					if(!elementSelection.empty()) {
+						if (isElementInViewport(elementSelection.node())) {
+							keyInView = key;
+							break;
+						}
 					}
 				}
 				if (keyInView) {
