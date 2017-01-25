@@ -138,7 +138,8 @@ var flatMap = require('lodash/flatMap');
 			// function to provide the appropriate url to the author avatar
 			createAuthorAvatarUrl: function(author) {
 				return "https://secure.gravatar.com/avatar/" + md5(author.emailAddress) + ".jpg?s=48&amp;d=mm";
-			}
+			},
+			hiddenBranches:[]
 		};
 	
 		var cleanup = function (_data) {
@@ -176,12 +177,21 @@ var flatMap = require('lodash/flatMap');
 					}
 				}
 			}
+			result.branches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) === -1;});
+			for (var i = 0; i < result.branches.length; i++) {
+				var branch = result.branches[i];
+				var commit = result.commits[branch.latestChangeset];
+				if (commit) {
+					commit.labels = (commit.labels || []);
+					commit.labels.push(branch.id);
+				}
+			}
 	
 			// fixup orderTimestamp for cases of rebasing and cherrypicking, where the parent can be younger than the child
 			var fixMyTimeRecursive = function (c, after) {
 				if (!c) return;
 				if (c.orderTimestamp <= after) {
-					console.log("fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
+					//console.log("fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
 					c.orderTimestamp = after + 1;
 					for (var k = 0; k < c.children.length; k++) {
 						fixMyTimeRecursive(result.commits[c.children[k]], c.orderTimestamp);
@@ -196,15 +206,6 @@ var flatMap = require('lodash/flatMap');
 				}
 			}
 	
-			result.branches = _data.branches.values;
-			for (var i = 0; i < result.branches.length; i++) {
-				var branch = result.branches[i];
-				var commit = result.commits[branch.latestChangeset];
-				if (commit) {
-					commit.labels = (commit.labels || []);
-					commit.labels.push(branch.id);
-				}
-			}
 			result.tags = _data.tags.values;
 			for (var i = 0; i < result.tags.length; i++) {
 				var tag = result.tags[i];
@@ -414,6 +415,8 @@ var flatMap = require('lodash/flatMap');
 		};
 	
 		var combineColumnsOfType = function (type) {
+			data.columnMappings = data.columnMappings || {};
+			var mappedNow = {};
 			var columns = _.map(data.columns, function (v /*, k*/) { return v; }).filter(function (v) { return v.name[0] == type });
 			var groups = {};
 			for (var i = 0; i < columns.length; i++) {
@@ -435,30 +438,25 @@ var flatMap = require('lodash/flatMap');
 					var column = columnsToCombine[i];
 					for (var j = 0; j < i; j++) {
 						var earlierColumn = columnsToCombine[j];
-						if (!data.columns[earlierColumn.id]) {
+						if (earlierColumn.id in mappedNow) {
 							// this column has already been sweeped away before
 							continue;
 						}
+						// todo: here we must also search the columns already mapped to this one
 						var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
 						if (earliestCommitOfFirst.parents.length > 0 && data.commits[earliestCommitOfFirst.parents[0].id]) {
 							earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
 						}
-						// todo: iets doen met deze last child
 						var lastCommitOfSecond = data.commits[column.commits[0]];
 						if (lastCommitOfSecond.children.length > 0 && data.commits[lastCommitOfSecond.children[0]]) {
 							lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
 						}
 						if (lastCommitOfSecond.orderNr >= earliestCommitOfFirst.orderNr) {
 							// combine columns
-							for (var k = 0; k < column.commits.length; k++) {
-								var commitToMigrate = data.commits[column.commits[k]];
-								commitToMigrate.columns[0] = earlierColumn.id;
-								earlierColumn.commits.push(commitToMigrate.id);
-							}
-							delete data.columns[column.id];
+							data.columnMappings[column.id] = earlierColumn.id;
+							mappedNow[column.id] = true;
 							j = i;//next column
 						}
-	
 					}
 				}
 	
@@ -789,12 +787,13 @@ var flatMap = require('lodash/flatMap');
 				return result;
 			};
 	
-			var groupScale = function(cols, maxWidth){
+			var groupScale = function(cols, maxWidth, mappings){
 				var scaleCol = {
 					gutter: 0.7,
 					line: 1,
 					developLine: 0.4, 
 				};
+				console.log(cols, mappings);
 				var lastGroup = '';
 				var here = 0;
 				var basePositions = {};
@@ -811,6 +810,9 @@ var flatMap = require('lodash/flatMap');
 							.domain([0,here])
 							.range([0, Math.min(maxWidth, 20 * here)]);
 				return function(d){
+					if(d in mappings){
+						d = mappings[d];
+					}
 					var offset = 0;
 					if(d[d.length-1] == "+"){
 						d = d.substring(0, d.length-1);
@@ -856,7 +858,7 @@ var flatMap = require('lodash/flatMap');
 					legendaBlocks[key].last = groupColumns[groupColumns.length - 1];
 				}
 				
-				var x = groupScale(columnsInOrder, size.width);
+				var x = groupScale(columnsInOrder, size.width, data.columnMappings);
 				var y = d3.scale.linear()
 							.domain([0, data.chronoCommits.length])
 							.range([60, 60 + data.chronoCommits.length * constants.rowHeight]);

@@ -283,3 +283,25 @@ suite('Situation non-standard branch names with different config', function () {
         assert(column.name[0] === 'f', "Commit " + commit.id + " (" + commit.message + ") should be on the feature column. Now on " + column.name);
     });
 });
+suite('Showing and hiding', function () {
+    var data;
+    suiteSetup(function(done) {
+        var dataCallback = function(d) { d(Dummy.Data[2]); };
+        var dataClean = function(d) {
+            data = d;
+            done();
+        };
+        GitFlowVisualize.draw(null, { 
+            dataCallback: dataCallback, dataProcessed: dataClean, 
+            releaseTagPattern: /refs\/tags\/(r|h)\d$/, showSpinner: function () { } ,
+            hiddenBranches:["refs/heads/feature/F1"]
+        });
+    });
+    test('Commit on feature/f1 should not be on any column', function() {
+        // var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+        // assert(commit.columns.length === 0, "Hidden commit is visible on column " + commit.columns.join(','));
+        // assert(data.comlumns.length === 6, "Expected only 6 columns in chart");
+        assert(data !== null);
+
+    });
+});
