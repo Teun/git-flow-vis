@@ -47,11 +47,13 @@ suite('Data set 1', function () {
     });
     test('Needs two release columns and two feature columns', function () {
         var releaseColumns = _.filter(Object.keys(data.columns), function(c) {
-            return data.columns[c].name[0] == "r";
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "r";
         });
         assert(releaseColumns.length == 2, "found " + _.map(releaseColumns, function(c) { return data.columns[c].name; }).join(',') );
         var featureColumns = _.filter(Object.keys(data.columns), function (c) {
-            return data.columns[c].name[0] == "f";
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "f";
         });
         assert(featureColumns.length == 2, "found " + _.map(featureColumns, function (c) { return data.columns[c].name; }).join(','));
     });
@@ -98,11 +100,13 @@ suite('Data set 2', function() {
     });
     test('Needs two release columns and three feature columns', function() {
         var releaseColumns = _.filter(Object.keys(data.columns), function(c) {
-                return data.columns[c].name[0] == "r";
-            });
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "r";
+        });
         assert(releaseColumns.length == 2, "found " + _.map(releaseColumns, function(c) { return data.columns[c].name; }).join(','));
         var featureColumns = _.filter(Object.keys(data.columns), function(c) {
-            return data.columns[c].name[0] == "f";
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "f";
         });
         assert(featureColumns.length == 3, "found " + _.map(featureColumns, function(c) { return data.columns[c].name; }).join(','));
     });

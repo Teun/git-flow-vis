@@ -415,8 +415,6 @@ var flatMap = require('lodash/flatMap');
 		};
 	
 		var combineColumnsOfType = function (type) {
-			data.columnMappings = data.columnMappings || {};
-			var mappedNow = {};
 			var columns = _.map(data.columns, function (v /*, k*/) { return v; }).filter(function (v) { return v.name[0] == type });
 			var groups = {};
 			for (var i = 0; i < columns.length; i++) {
@@ -438,23 +436,21 @@ var flatMap = require('lodash/flatMap');
 					var column = columnsToCombine[i];
 					for (var j = 0; j < i; j++) {
 						var earlierColumn = columnsToCombine[j];
-						if (earlierColumn.id in mappedNow) {
-							// this column has already been sweeped away before
+						if (!earlierColumn.isVisible()) {
 							continue;
 						}
 						// todo: here we must also search the columns already mapped to this one
-						var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
+						var earliestCommitOfFirst = earlierColumn.firstRenderedCommit();
 						if (earliestCommitOfFirst.parents.length > 0 && data.commits[earliestCommitOfFirst.parents[0].id]) {
 							earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
 						}
-						var lastCommitOfSecond = data.commits[column.commits[0]];
+						var lastCommitOfSecond = column.lastRenderedCommit();
 						if (lastCommitOfSecond.children.length > 0 && data.commits[lastCommitOfSecond.children[0]]) {
 							lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
 						}
 						if (lastCommitOfSecond.orderNr >= earliestCommitOfFirst.orderNr) {
 							// combine columns
-							data.columnMappings[column.id] = earlierColumn.id;
-							mappedNow[column.id] = true;
+							column.combine(earlierColumn);
 							j = i;//next column
 						}
 					}
@@ -462,11 +458,49 @@ var flatMap = require('lodash/flatMap');
 	
 			}
 		};
+		function Column(name){
+			var self = this;
+			self.id = name;
+			self.name = name;
+			self.commits = [];
+			var renderedOn = null;
+			var renderingOthers = [];
+			self.combine = function(otherCol){
+				renderedOn = otherCol;
+				otherCol.receive(self);
+			}
+			self.receive = function(otherCol){
+				renderingOthers.push(otherCol);
+			}
+			self.isVisible = function(){return renderedOn === null;}
+			self.renderPos = function(){return renderedOn ? renderedOn.id : self.id;}
+			var allRendered = function(){
+				return renderingOthers.concat(self);
+			}
+			self.firstRenderedCommit = function(){
+				if(renderedOn)return null;
+				var all = allRendered();
+				return all.reduce(function(agg, col){
+					var first = data.commits[col.commits[col.commits.length-1]];
+					if(!agg || agg.orderNr < first.orderNr)return first;
+					return agg;
+				}, null);
+			}
+			self.lastRenderedCommit = function(){
+				if(renderedOn)return null;
+				var all = allRendered();
+				return all.reduce(function(agg, col){
+					var last = data.commits[col.commits[0]];
+					if(!agg || agg.orderNr > last.orderNr)return last;
+					return agg;
+				}, null);
+			}
+		}
 	
 		var putCommitInColumn = function (commitId, columnName) {
 			if (!data.columns) data.columns = {};
 			if (!(columnName in data.columns)) {
-				data.columns[columnName] = { commits: [], name: columnName, id: columnName };
+				data.columns[columnName] = new Column(columnName );
 			}
 			var commit = data.commits[commitId];
 			if (commit) {
@@ -787,22 +821,28 @@ var flatMap = require('lodash/flatMap');
 				return result;
 			};
 	
-			var groupScale = function(cols, maxWidth, mappings){
+			var groupScale = function(cols, maxWidth){
 				var scaleCol = {
 					gutter: 0.7,
 					line: 1,
 					developLine: 0.4, 
 				};
-				console.log(cols, mappings);
+				var mapping = {};
 				var lastGroup = '';
 				var here = 0;
 				var basePositions = {};
 				for (var i = 0; i < cols.length; i++) {
-					var thisCol = cols[i];
-					var thisGroup = thisCol[0];
+					var thisColId = cols[i];
+					var thisCol = data.columns[thisColId];
+					if(!thisCol.isVisible()){
+						// draws on other column
+						mapping[thisColId] = thisCol.renderPos();
+						continue;
+					}
+					var thisGroup = thisColId[0];
 					if(lastGroup != thisGroup) here += scaleCol.gutter;
 					here += thisGroup == 'd' ? scaleCol.developLine : scaleCol.line;
-					basePositions[thisCol] = here;
+					basePositions[thisColId] = here;
 					lastGroup = thisGroup;
 				}
 	
@@ -810,8 +850,8 @@ var flatMap = require('lodash/flatMap');
 							.domain([0,here])
 							.range([0, Math.min(maxWidth, 20 * here)]);
 				return function(d){
-					if(d in mappings){
-						d = mappings[d];
+					if(d in mapping){
+						d = mapping[d];
 					}
 					var offset = 0;
 					if(d[d.length-1] == "+"){
@@ -927,7 +967,7 @@ var flatMap = require('lodash/flatMap');
 	
 				svg.selectAll(".branch").remove();
 				var branchLine = svg.selectAll(".branch")
-					.data(d3.values(data.columns))
+					.data(d3.values(data.columns).filter(function(c){return c.isVisible();}))
 					.enter().append("g")
 					.attr("class", "branch");
 				branchLine
