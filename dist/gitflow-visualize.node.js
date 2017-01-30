@@ -220,8 +220,35 @@ var flatMap = require('lodash/flatMap');
 			for (var id in result.commits) {
 				result.chronoCommits.push(id);
 			}
+	
+			// evaluate visibility
+			for(var i = 0; i < result.chronoCommits.length; i++){
+				var commit = result.commits[result.chronoCommits[i]];
+				if(commit.labels && commit.labels.length){
+					commit.visible = true;
+				}else{
+					var visibleChildren = _.filter( 
+						_.map(commit.children, function(id){return result.commits[id];}),
+						function(child){return child.visible;});
+					commit.visible = (visibleChildren.length > 0);
+				}
+			}
+	
 			result.chronoCommits.sort(function (a, b) { return result.commits[b].orderTimestamp - result.commits[a].orderTimestamp; });
-			for (var i = 0; i < result.chronoCommits.length; i++) { result.commits[result.chronoCommits[i]].orderNr = i; }
+			result.visibleCommits = [];
+			for (var i = 0, counter = 0; i < result.chronoCommits.length; i++) 
+			{
+				var commit = result.commits[result.chronoCommits[i]];
+				if(commit.visible){
+					commit.orderNr = counter; 
+					result.visibleCommits.push(result.chronoCommits[i]);
+					counter++;
+				}else{
+					delete commit.orderNr;
+				}
+			}
+	
+	
 	
 	
 			setColumns(result);
@@ -863,7 +890,7 @@ var flatMap = require('lodash/flatMap');
 			}
 	
 			self.drawGraph = function (elem) {
-				var calcHeight = Math.max(800, data.chronoCommits.length * constants.rowHeight);
+				var calcHeight = Math.max(800, data.visibleCommits.length * constants.rowHeight);
 				var size = { width: 500, height: calcHeight };
 				var margin = 20;
 	
@@ -899,8 +926,8 @@ var flatMap = require('lodash/flatMap');
 				
 				var x = groupScale(columnsInOrder, size.width, data.columnMappings);
 				var y = d3.scale.linear()
-							.domain([0, data.chronoCommits.length])
-							.range([60, 60 + data.chronoCommits.length * constants.rowHeight]);
+							.domain([0, data.visibleCommits.length])
+							.range([60, 60 + data.visibleCommits.length * constants.rowHeight]);
 	
 				var line = d3.svg.line()
 							//.interpolate("bundle")
@@ -910,7 +937,7 @@ var flatMap = require('lodash/flatMap');
 				var connector = function (d) {
 					var childCommit = data.commits[d.c];
 					var parentCommit = data.commits[d.p];
-					if (!childCommit || !parentCommit) return null;
+					if (!childCommit || !parentCommit || !childCommit.visible) return null;
 					var intermediateRow = parentCommit.orderNr - .5;
 					var intermediatCol = childCommit.columns[0];
 					var intermediateRow2 = null;
@@ -979,7 +1006,7 @@ var flatMap = require('lodash/flatMap');
 	
 				svg.selectAll(".commit").remove();
 				var commit = svg.selectAll(".commit")
-					.data(d3.values(data.commits))
+					.data(d3.values(data.commits).filter(function(c){return c.visible;}))
 					.enter().append("g")
 					.attr("class", "commit");
 				commit
@@ -1018,9 +1045,8 @@ var flatMap = require('lodash/flatMap');
 	
 				//labels
 				var labelData = messages.selectAll(".commit-msg")
-					.data(d3.values(data.commits), function (c) {
-						return c.id + "-" + c.orderNr;
-					});
+					.data(d3.values(data.commits).filter(function(c){return c.visible;})
+					, function (c) {return c.id + "-" + c.orderNr;});
 				labelData
 					.enter().append("div")
 					.attr("class", "commit-msg")

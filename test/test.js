@@ -301,11 +301,12 @@ suite('Showing and hiding', function () {
             hiddenBranches:["refs/heads/feature/F1"]
         });
     });
-    test('Commit on feature/f1 should not be on any column', function() {
-        // var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
-        // assert(commit.columns.length === 0, "Hidden commit is visible on column " + commit.columns.join(','));
-        // assert(data.comlumns.length === 6, "Expected only 6 columns in chart");
-        assert(data !== null);
-
+    test('Commit on feature/f1 should not be visible', function() {
+        var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+        assert(commit.visible === false, "Commit should not be visible");
+    });
+    test('Commit on feature/f1 should not have an orderNr', function() {
+        var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+        assert(!('orderNr' in commit), "Hidden commit has an orderNr " + commit.orderNr);
     });
 });
