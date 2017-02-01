@@ -28,7 +28,9 @@ var forEach = require('lodash/forEach');
 var extend = require('lodash/extend');
 var filter = require('lodash/filter');
 var map = require('lodash/map');
-var flatMap = require('lodash/flatMap');
+var flatMap = require('lodash/flatmap');
+var find = require('lodash/find');
+var findLast = require('lodash/findlast');
 
 // ------------------------------------------------------------------------------------------ Wrapper
 
@@ -53,7 +55,9 @@ var flatMap = require('lodash/flatMap');
 		extend: extend,
 		filter: filter,
 		map: map,
-		flatMap: flatMap
+		flatMap: flatMap,
+		find: find,
+		findLast: findLast
 	}
 
 	// Creating a cherry-picked version of CryptoJS
@@ -467,14 +471,14 @@ var flatMap = require('lodash/flatMap');
 						}
 						// todo: here we must also search the columns already mapped to this one
 						var earliestCommitOfFirst = earlierColumn.firstRenderedCommit();
-						if (earliestCommitOfFirst.parents.length > 0 && data.commits[earliestCommitOfFirst.parents[0].id]) {
+						if (earliestCommitOfFirst && earliestCommitOfFirst.parents.length > 0 && data.commits[earliestCommitOfFirst.parents[0].id]) {
 							earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
 						}
 						var lastCommitOfSecond = column.lastRenderedCommit();
-						if (lastCommitOfSecond.children.length > 0 && data.commits[lastCommitOfSecond.children[0]]) {
+						if (lastCommitOfSecond && lastCommitOfSecond.children.length > 0 && data.commits[lastCommitOfSecond.children[0]]) {
 							lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
 						}
-						if (lastCommitOfSecond.orderNr >= earliestCommitOfFirst.orderNr) {
+						if ((!lastCommitOfSecond) || (!earliestCommitOfFirst) || lastCommitOfSecond.orderNr >= earliestCommitOfFirst.orderNr) {
 							// combine columns
 							column.combine(earlierColumn);
 							j = i;//next column
@@ -503,12 +507,24 @@ var flatMap = require('lodash/flatMap');
 			var allRendered = function(){
 				return renderingOthers.concat(self);
 			}
+			var visibleCommit = function(id){
+				var commit = data.commits[id];
+				return commit && commit.visible === true
+			}
+			self.firstVisible = function(){
+				var id = _.findLast(self.commits, visibleCommit);
+				return data.commits[id];
+			}
+			self.lastVisible = function(){
+				var id = _.find(self.commits, visibleCommit);
+				return data.commits[id];
+			}
 			self.firstRenderedCommit = function(){
 				if(renderedOn)return null;
 				var all = allRendered();
 				return all.reduce(function(agg, col){
-					var first = data.commits[col.commits[col.commits.length-1]];
-					if(!agg || agg.orderNr < first.orderNr)return first;
+					var first = col.firstVisible();
+					if(first && (!agg || agg.orderNr < first.orderNr))return first;
 					return agg;
 				}, null);
 			}
@@ -516,7 +532,7 @@ var flatMap = require('lodash/flatMap');
 				if(renderedOn)return null;
 				var all = allRendered();
 				return all.reduce(function(agg, col){
-					var last = data.commits[col.commits[0]];
+					var last = col.lastVisible();
 					if(!agg || agg.orderNr > last.orderNr)return last;
 					return agg;
 				}, null);
@@ -1004,21 +1020,21 @@ var flatMap = require('lodash/flatMap');
 						.attr("y1", y(0))
 						.attr("y2", size.height);
 	
-				svg.selectAll(".commit").remove();
+				//svg.selectAll(".commit").remove();
 				var commit = svg.selectAll(".commit")
-					.data(d3.values(data.commits).filter(function(c){return c.visible;}))
-					.enter().append("g")
-					.attr("class", "commit");
+					.data(d3.values(data.commits).filter(function(c){return c.visible;}));
 				commit
+					.enter().append("g")
+					.attr("class", "commit")
 					.append("circle")
 					.attr("class", "commit-dot")
 					.attr("r", 5)
 					.attr("cx", function (d) { return x(d.columns[0]); })
 					.attr("cy", function (d) { return y(d.orderNr); })
-					.attr("id", function (d) { return "commit-" + d.id; })
-				;
+					.attr("id", function (d) { return "commit-" + d.id; });
+				commit.exit().transition().duration(250);
 	
-				svg.selectAll(".legenda-label").remove();
+				//svg.selectAll(".legenda-label").remove();
 				var blockLegenda = svg.selectAll(".legenda-label")
 					.data(Object.keys(legendaBlocks))
 					.enter().append("g")
@@ -1053,6 +1069,11 @@ var flatMap = require('lodash/flatMap');
 					.attr("id", function (c) { return "msg-" + c.id; })
 					.on('click', function (a) {
 					  if(d3.event.target.tagName == 'A')return true;
+					  if(d3.event.target.tagName == 'SPAN'){
+						  options.hiddenBranches.push('refs/heads/' + d3.event.target.innerHTML);
+						  drawFromRaw();
+						  return true;
+					  }
 					  if(displayState.style == "ancestry" && a.id == displayState.root){
 						displayState.style = "none";
 						displayState.root = null;
