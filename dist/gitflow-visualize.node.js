@@ -181,6 +181,7 @@ var findLast = require('lodash/findlast');
 				}
 			}
 			result.branches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) === -1;});
+			result.hiddenBranches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) > -1;});
 			for (var i = 0; i < result.branches.length; i++) {
 				var branch = result.branches[i];
 				var commit = result.commits[branch.latestChangeset];
@@ -1068,10 +1069,29 @@ var findLast = require('lodash/findlast');
 						});
 	
 				var messages = elem.select("div.messages");
-				if (messages[0][0] == null) {
+				if (messages.empty()) {
 					messages = elem.append("div")
 						.attr("class", "messages");
+					messages
+						.append("div").attr("class", "context-menu");
 				}
+				var msgHeader = messages.select("div.msg-header");
+				if(msgHeader.empty()){
+					msgHeader = messages.append("div")
+						.attr("class", "msg-header");
+					msgHeader.append("span").attr("class", "branch-btn label aui-lozenge aui-lozenge-subtle")
+						.on("click", function(){
+							var pos = d3.mouse(messages.node());
+							menu.show([["Show all", function(){
+								options.hiddenBranches = [];
+								drawFromRaw();
+							}] ], pos[0], pos[1]);
+						});
+	
+				}
+				var branchLabelText = (data.branches.length + data.hiddenBranches.length) + " branches";
+				if(data.hiddenBranches.length > 0) branchLabelText += " (" + data.hiddenBranches.length + " hidden)";
+				msgHeader.select("span.branch-btn").text(branchLabelText);
 	
 				//labels
 				var labelData = messages.selectAll(".commit-msg")
@@ -1229,6 +1249,40 @@ var findLast = require('lodash/findlast');
 				cols.sort(function (v1, v2) { return prioHash[v2] - prioHash[v1]; });
 				return cols[0] || "default";
 			};
+	
+			var menu = function(){
+				var menu = {};
+				var theMenu = d3.select(".messages .context-menu");
+				var ensureRef = function(){
+					if(theMenu.empty()){theMenu = d3.select(".messages .context-menu");}
+				}
+	
+				menu.show = function(items, x, y){
+					ensureRef();
+					theMenu
+						.style("top", y + "px" )
+						.style("left", x + "px")
+						.style("visibility", "visible");
+					theMenu.selectAll("div.item").remove();
+					_.each(items, function(item){
+						theMenu.append("div")
+							.on("click", function(){
+								item[1]();
+								menu.hide();
+							})
+							.attr("class", "item")
+							.text(item[0]);
+					});
+					d3.event.stopPropagation();
+					d3.select("body").on("click", function(){menu.hide()});
+				}
+				menu.hide = function(){
+					ensureRef();
+					theMenu.style("visibility", "hidden");
+				}
+	
+				return menu;
+			}();
 	
 			return self;
 		})();

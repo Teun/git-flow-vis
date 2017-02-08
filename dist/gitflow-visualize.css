@@ -142,3 +142,24 @@ table.commit-table td {
   left: 300px;
   top: 100px;
   z-index: 100; }
+
+.branch-btn {
+  cursor: pointer; }
+
+.context-menu {
+  display: inline-block;
+  position: absolute;
+  visibility: hidden;
+  background-color: lightgray;
+  width: 100px;
+  z-index: 10;
+  border: 2px outset; }
+  .context-menu .item {
+    border-bottom: solid silver 1px;
+    background-color: #eee;
+    font-family: sans-serif;
+    height: 16px;
+    cursor: pointer; }
+    .context-menu .item:hover {
+      font-weight: bold;
+      background-color: #e8e8e8; }
