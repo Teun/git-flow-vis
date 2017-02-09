@@ -309,4 +309,8 @@ suite('Showing and hiding', function () {
         var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
         assert(!('orderNr' in commit), "Hidden commit has an orderNr " + commit.orderNr);
     });
+    test('Get all branches from outside', function() {
+        var branches = GitFlowVisualize.branches.getAll();
+        assert(branches.length > 0, "Branches should be available");
+    });
 });

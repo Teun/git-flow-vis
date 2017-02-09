@@ -151,7 +151,6 @@ table.commit-table td {
   position: absolute;
   visibility: hidden;
   background-color: lightgray;
-  width: 100px;
   z-index: 10;
   border: 2px outset; }
   .context-menu .item {
@@ -159,7 +158,9 @@ table.commit-table td {
     background-color: #eee;
     font-family: sans-serif;
     height: 16px;
-    cursor: pointer; }
+    padding: 3px;
+    cursor: pointer;
+    white-space: nowrap; }
     .context-menu .item:hover {
       font-weight: bold;
       background-color: #e8e8e8; }

@@ -189,6 +189,7 @@ var findLast = require('lodash/findlast');
 				if (commit) {
 					commit.labels = (commit.labels || []);
 					commit.labels.push(branch.id);
+					branch.lastActivity = commit.authorTimestamp;
 				}
 			}
 	
@@ -1104,19 +1105,32 @@ var findLast = require('lodash/findlast');
 					.attr("id", function (c) { return "msg-" + c.id; })
 					.on('click', function (a) {
 					  if(d3.event.target.tagName == 'A')return true;
+					  // will show menu. Collect items
+					  var items = [];
 					  if(d3.event.target.tagName == 'SPAN'){
-						  options.hiddenBranches.push('refs/heads/' + d3.event.target.innerHTML);
-						  drawFromRaw();
-						  return true;
+						  // on branch label
+						  var clickedBranch = 'refs/heads/' + d3.event.target.innerHTML;
+						  items.push(["Hide branch", function(){
+							options.hiddenBranches.push(clickedBranch);
+							drawFromRaw();
+						  }]);
 					  }
-					  if(displayState.style == "ancestry" && a.id == displayState.root){
-						displayState.style = "none";
-						displayState.root = null;
-					  }else{
-						displayState.style = "ancestry";
-						displayState.root = a.id;
+					  if(displayState.style == "ancestry"){
+						  items.push(["Stop highlighting", function(){
+							displayState.style = "none";
+							displayState.root = null;
+							self.updateHighlight();
+						  }]);
 					  }
-					  self.updateHighlight();
+					  if(displayState.style !== "ancestry" ||  a.id !== displayState.root){
+						  items.push(["Highlight ancestry from here", function(){
+							displayState.style = "ancestry";
+							displayState.root = a.id;
+							self.updateHighlight();
+						  }]);
+					  }
+					  var pos = d3.mouse(messages.node());
+					  menu.show(items, pos[0], pos[1]);
 					});
 				labelData.exit().remove();
 				labelData
@@ -1287,6 +1301,24 @@ var findLast = require('lodash/findlast');
 	
 			return self;
 		})();
+	
+		self.branches = {
+			makeHidden: function(refs){
+				if(!(refs instanceof Array)){
+					throw "pass in refs as an array of strings with full ref descriptors of the branches to hide (like 'refs/heads/develop')";
+				}
+				options.hiddenBranches = refs;
+				drawFromRaw();
+			},
+			getHidden: function(){
+				return options.hiddenBranches;
+			},
+			getAll: function(){
+				return _.map(data.branches, function(b){
+					return {id: b.id, name: b.displayId, lastActivity:b.lastActivity, lastActivityFormatted: moment(b.lastActivity).format("M/D/YY HH:mm:ss")};
+				});
+			}
+		};
 	
 		if (document) {
 			d3.select(document).on("scroll resize", function () {
