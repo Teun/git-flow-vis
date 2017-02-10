@@ -1234,7 +1234,7 @@ var GitFlowVisualize = (function () {
 	})();
 
 	self.branches = {
-		makeHidden: function(refs){
+		setHidden: function(refs){
 			if(!(refs instanceof Array)){
 				throw "pass in refs as an array of strings with full ref descriptors of the branches to hide (like 'refs/heads/develop')";
 			}
@@ -1245,8 +1245,11 @@ var GitFlowVisualize = (function () {
 			return options.hiddenBranches;
 		},
 		getAll: function(){
-			return _.map(data.branches, function(b){
-				return {id: b.id, name: b.displayId, lastActivity:b.lastActivity, lastActivityFormatted: moment(b.lastActivity).format("M/D/YY HH:mm:ss")};
+			return _.map(data.branches.concat(data.hiddenBranches), function(b){
+				return {id: b.id, name: b.displayId, 
+					lastActivity:b.lastActivity, lastActivityFormatted: moment(b.lastActivity).format("M/D/YY HH:mm:ss"),
+					visible: options.hiddenBranches.indexOf(b.id) === -1
+				};
 			});
 		}
 	};

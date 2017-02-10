@@ -290,10 +290,14 @@ suite('Situation non-standard branch names with different config', function () {
 suite('Showing and hiding', function () {
     var data;
     suiteSetup(function(done) {
-        var dataCallback = function(d) { d(Dummy.Data[2]); };
+        var dataCallback = function(d) { return d(Dummy.Data[2]); };
+        var setup = false;
         var dataClean = function(d) {
             data = d;
-            done();
+            if(!setup){
+                done();
+                setup = true;
+            }
         };
         GitFlowVisualize.draw(null, { 
             dataCallback: dataCallback, dataProcessed: dataClean, 
@@ -305,6 +309,10 @@ suite('Showing and hiding', function () {
         var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
         assert(commit.visible === false, "Commit should not be visible");
     });
+    test('Commit on feature/f3 should be visible', function() {
+        var commit = data.commits['fcda73616bf16fc0d4560c628ed3876ccc9762f5'];
+        assert(commit.visible === true, "Commit should be visible");
+    });
     test('Commit on feature/f1 should not have an orderNr', function() {
         var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
         assert(!('orderNr' in commit), "Hidden commit has an orderNr " + commit.orderNr);
@@ -312,5 +320,24 @@ suite('Showing and hiding', function () {
     test('Get all branches from outside', function() {
         var branches = GitFlowVisualize.branches.getAll();
         assert(branches.length > 0, "Branches should be available");
+        assert(branches.filter(b => b.visible).length === 6, "Not the right number of visible branches");
+    });
+    test('Branches can be unhidden from outside', function(d) {
+        GitFlowVisualize.branches.setHidden([]);
+        setTimeout(()=>{
+            var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+            assert(commit.visible === true, "Commit should be visible after unhiding");
+            d();
+        }, 11);
+    });
+    test('Branches can be hidden from outside', function(d) {
+        GitFlowVisualize.branches.setHidden(['refs/heads/feature/f3', 'refs/heads/feature/F1', ]);
+        setTimeout(()=>{
+            var commit = data.commits['fcda73616bf16fc0d4560c628ed3876ccc9762f5'];
+            assert(commit.visible === false, "Commit should not be visible after hiding");
+            commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+            assert(commit.visible === false, "Commit should not be visible after hiding");
+            d();
+        }, 11);
     });
 });
