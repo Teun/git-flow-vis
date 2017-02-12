@@ -1082,11 +1082,15 @@ var findLast = require('lodash/findlast');
 						.attr("class", "msg-header");
 					msgHeader.append("span").attr("class", "branch-btn label aui-lozenge aui-lozenge-subtle")
 						.on("click", function(){
-							var pos = d3.mouse(messages.node());
-							menu.show([["Show all", function(){
+							var items = [["Show all", function(){
 								options.hiddenBranches = [];
 								drawFromRaw();
-							}] ], pos[0], pos[1]);
+							}]];
+							if(branchVisibilityHandler !== null){
+								items.push(["Change...", branchVisibilityHandler]);
+							}
+							var pos = d3.mouse(messages.node());
+							menu.show(items, pos[0], pos[1]);
 						});
 	
 				}
@@ -1319,6 +1323,7 @@ var findLast = require('lodash/findlast');
 			return self;
 		})();
 	
+		var branchVisibilityHandler = null;
 		self.branches = {
 			setHidden: function(refs){
 				if(!(refs instanceof Array)){
@@ -1337,6 +1342,9 @@ var findLast = require('lodash/findlast');
 						visible: options.hiddenBranches.indexOf(b.id) === -1
 					};
 				});
+			}, 
+			registerHandler: function(handler){
+				branchVisibilityHandler = handler;
 			}
 		};
 	
