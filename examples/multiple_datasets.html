@@ -57,6 +57,7 @@
 </head>
 <body>
 	<div id="nav"><select id="dataset"></select></div>
+	<button id="showall" style="display:none">show all</button>
     <div id="drawhere"></div>
 </body>
     <script>
@@ -94,11 +95,15 @@
 				done(null, from);
 			}
 		};
+		
+		d3.select('#showall').on("click", function(){GitFlowVisualize.branches.setHidden([]);});
+		
 		GitFlowVisualize.draw(element,
 						{
 							dataCallback: dataCallback,
 							moreDataCallback: moreDataCallback
 						});
+						
     </script>
 
 </html>

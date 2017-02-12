@@ -199,6 +199,28 @@ In this case, 'values' is an array of commits with the same JSON schema as the '
 
 `opts.createAuthorAvatarUrl(author)` is a function that is called for each commit which can be used to generate a URL reference to the author avatar/profile picture. The `author` parameter has the same JSON schema as the `author` object of a commit in the `commits` property of the `opts.dataCallback()` function. If this option is not specified, the default behavior is to use the MD5 hash of the author email address and retrieve the picture from [Gravatar](http://gravatar.com).
 
+`opts.hiddenBranches` is an array of strings (full refs) that indicates which branches should NOT be shown in the diagram initially. 
+
+## `GitFlowVisualize.branches`
+The `branches` property of `GitFlowVisualize` exposes a few functions that allow the host to show/hide branches and provide a nicer UI for this.
+
+`branches.getAll()` returns a list of all branches in the chart, both visible and invisible. Each item comes with a few useful properties on it. An example:
+
+```
+{
+	id: 'refs/heads/feature/large-font', /*full git ref*/
+	name: 'feature/large-font',
+	lastActivity: 42274874226 /*milliseconds since UNIX epoch. Can be passed to javascript Date() constructor*/,
+	lastActivityFormatted: '3/22/2017 13:04:12',
+	visible: true
+}
+```
+`branches.setHidden(refs)` allows you to pass an array of refs (like what you can set on opts.hiddenBranches).
+
+`branches.getHidden()` returns an array of refs of branches that are currently hidden.
+
+`branches.registerHandler(handler)` allows you to pass an event handler. This handler will be called when users click the "Change..." item on the branches summary. To unregister, pass in `null`.
+
 ## Legal stuff
 
 GitFlowVisualize was created as part of the [Git Flow Chart](https://marketplace.atlassian.com/1212520) add-on for Atlassian Bitbucket. As such, this code has a mixed Commercial and Open Source license. It is released to GitHub to share and to accept contributions. The GitHub Terms of Service apply, so feel free to study the code, make forks and contribute. The project can also be used in Open Source projects that are made public using the GPLv3 license or for personal non-commercial use. Commercial exploitation of the code is explicitely prohibited.
