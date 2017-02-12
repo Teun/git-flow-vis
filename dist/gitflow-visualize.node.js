@@ -1109,7 +1109,7 @@ var findLast = require('lodash/findlast');
 					  if(d3.event.target.tagName == 'SPAN'){
 						  // on branch label
 						  var clickedBranch = 'refs/heads/' + d3.event.target.innerHTML;
-						  items.push(["Hide branch", function(){
+						  items.push(["Hide branch '" + d3.event.target.innerHTML + "'", function(){
 							options.hiddenBranches.push(clickedBranch);
 							drawFromRaw();
 						  }]);
@@ -1266,10 +1266,26 @@ var findLast = require('lodash/findlast');
 	
 			var menu = function(){
 				var menu = {};
-				var theMenu = d3.select(".messages .context-menu");
+				var theMenu = null;
 				var ensureRef = function(){
-					if(theMenu.empty()){theMenu = d3.select(".messages .context-menu");}
+					if(theMenu === null || theMenu.empty()){
+						theMenu = d3.select(".messages .context-menu");
+						theMenu.on("mousemove", function(){
+							console.log("mouse move");
+							timeLastSeen = Date.now();
+						});
+					}
 				}
+				var timeLastSeen = 0;
+				var timer;
+				var start = function(){
+					timeLastSeen = Date.now();
+					timer = setInterval(function(){
+						if(timeLastSeen + 10000 < Date.now()){
+							menu.hide();
+						}
+				}, 100);}
+				var stop = function(){clearInterval(timer);}
 	
 				menu.show = function(items, x, y){
 					ensureRef();
@@ -1289,10 +1305,12 @@ var findLast = require('lodash/findlast');
 					});
 					d3.event.stopPropagation();
 					d3.select("body").on("click", function(){menu.hide()});
+					start();
 				}
 				menu.hide = function(){
 					ensureRef();
 					theMenu.style("visibility", "hidden");
+					stop();
 				}
 	
 				return menu;

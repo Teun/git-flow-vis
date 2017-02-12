@@ -234,13 +234,13 @@ table {
 		border-bottom: solid silver 1px;
 		background-color:#eee;
 		font-family: sans-serif;
-		height:16px;
 		padding:3px;
 		cursor: pointer;
 		white-space: nowrap;
+		color: #333;
 		&:hover{
-			font-weight: bold;
-			background-color: #e8e8e8;
+			color: black;
+			background-color: #ddd;
 
 		}
 	}
