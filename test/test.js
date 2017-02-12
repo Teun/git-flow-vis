@@ -320,11 +320,11 @@ suite('Showing and hiding', function () {
     test('Get all branches from outside', function() {
         var branches = GitFlowVisualize.branches.getAll();
         assert(branches.length > 0, "Branches should be available");
-        assert(branches.filter(b => b.visible).length === 6, "Not the right number of visible branches");
+        assert(branches.filter(function(b){return b.visible}).length === 6, "Not the right number of visible branches");
     });
     test('Branches can be unhidden from outside', function(d) {
         GitFlowVisualize.branches.setHidden([]);
-        setTimeout(()=>{
+        setTimeout(function(){
             var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
             assert(commit.visible === true, "Commit should be visible after unhiding");
             d();
@@ -332,7 +332,7 @@ suite('Showing and hiding', function () {
     });
     test('Branches can be hidden from outside', function(d) {
         GitFlowVisualize.branches.setHidden(['refs/heads/feature/f3', 'refs/heads/feature/F1', ]);
-        setTimeout(()=>{
+        setTimeout(function(){
             var commit = data.commits['fcda73616bf16fc0d4560c628ed3876ccc9762f5'];
             assert(commit.visible === false, "Commit should not be visible after hiding");
             commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
