@@ -1350,14 +1350,15 @@ var findLast = require('lodash/findlast');
 		};
 	
 		if (document) {
-			d3.select(document).on("scroll resize", function () {
-				GitFlowVisualize.drawing.lazyLoad();
-			});
+			//d3.select(document).on("scroll resize", function () {
+			d3.select(document)
+				.on("scroll", function(){GitFlowVisualize.drawing.lazyLoad();})
+				.on("resize", function(){GitFlowVisualize.drawing.lazyLoad();});
 	
 			d3.select(document).on("keydown", function () {
 				var event = d3.event;
 				if (event.ctrlKey && event.shiftKey && event.which == 221) {
-					//prompt("Ctrl-C to copy the grap source", GitFlowVisualize.state());
+					//prompt("Ctrl-C to copy the graph source", GitFlowVisualize.state());
 					var out = d3.select("#debug-output");
 					if (out.empty()) {
 						out = d3.select("body").append("textarea").attr("id", "debug-output");
