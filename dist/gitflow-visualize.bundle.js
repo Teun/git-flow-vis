@@ -363,34 +363,35 @@ var findLast = require('lodash/findlast');
 			for (var col in data.columns) {
 				var column = data.columns[col];
 				if (col == 'm' || col[0] == 'd') continue;
-				var allParents = _.flatMap(column.commits, function (id) { return data.commits[id].children; });
-				var allParentsOnMaster = _.filter(allParents, function (id) {
+				var allChildren = _.flatMap(column.commits, function (id) { return data.commits[id].children; });
+				var allChildrenOnMaster = _.filter(allChildren, function (id) {
 					var parent = data.commits[id];
-					return parent.columns && parent.columns[0] == 'm';
+					return parent.visible && parent.columns && parent.columns[0] == 'm';
 				});
-				if (allParentsOnMaster.length > 0) {
+				if (allChildrenOnMaster.length > 0) {
 					//release branches are branches that are not master or develop, but some commit merges into master
 					column.name = 'r' + column.name.substring(1);
 					continue;
 				}
-				var lastCommit = data.commits[column.commits[0]];
-				if (lastCommit.children.length > 0) {
-					var developCommits = _.filter(lastCommit.children, function (id) { return data.commits[id].columns[0][0] == 'd'; });
+				var lastVisibleCommit = column.lastVisible(); // data.commits[column.commits[0]];
+				var visibleChildren = lastVisibleCommit ? _.filter(lastVisibleCommit.children, function(id){return data.commits[id].visible;}) : [];
+				if (visibleChildren.length > 0) {
+					var developCommits = _.filter(visibleChildren, function (id) { return data.commits[id].columns[0][0] == 'd'; });
 					if (developCommits.length > 0) {
 						// feature branches are branches that eventually merge into develop, not master
 						column.name = 'f' + column.name.substring(1);
 					} else {
 						// so we have a child, but not m or d: probably two branches merged together
 						// we'll figure this out later
-						column.firstChild = data.commits[lastCommit.children[0]];
+						column.firstChild = data.commits[lastVisibleCommit.children[0]];
 					}
-				} else {
+				} else if(lastVisibleCommit){
 					// unmerged branch: if starts with featurePrefix -> f
-					if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.featurePrefix) == 0; }).length > 0) {
+					if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { return l.indexOf(options.featurePrefix) == 0; }).length > 0) {
 						column.name = 'f' + column.name.substring(1);
 					}
 					// unmerged branch: if starts with releasePrefix or hotfixPrefix -> r
-					if (lastCommit.labels && lastCommit.labels.filter(function (l) { 
+					if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { 
 						return l.indexOf(options.releasePrefix) == 0 
 							|| l.indexOf(options.hotfixPrefix) == 0 
 							|| options.releaseZonePattern.test(l); 
@@ -399,6 +400,8 @@ var findLast = require('lodash/findlast');
 					}else{
 						column.name = 'f' + column.name.substring(1);
 					}
+				}else{
+					// no visible commits on column. Do nothing.
 				}
 			}
 			
@@ -430,9 +433,9 @@ var findLast = require('lodash/findlast');
 			// now loop through _all_ feature branches and group them together
 			for (var i = 0; i < featureBranches.length; i++) {
 				var thisCol = featureBranches[i];
-				var lastCommit = data.commits[thisCol.commits[0]];
-				if (lastCommit.children && lastCommit.children.length > 0) {
-					var childColumn = data.columns[data.commits[lastCommit.children[0]].columns[0]];
+				var lastVisibleCommit = data.commits[thisCol.commits[0]];
+				if (lastVisibleCommit.children && lastVisibleCommit.children.length > 0) {
+					var childColumn = data.columns[data.commits[lastVisibleCommit.children[0]].columns[0]];
 					if (childColumn.group) thisCol.group = childColumn.group;
 				} else {
 					var firstCommit = data.commits[thisCol.commits[thisCol.commits.length - 1]];

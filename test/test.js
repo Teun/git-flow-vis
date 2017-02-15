@@ -341,3 +341,31 @@ suite('Showing and hiding', function () {
         }, 11);
     });
 });
+suite('Reproduce several issues', function () {
+    var data;
+    suiteSetup(function (done) {
+        var dataCallback = function(d) { return d(Dummy.Data[2]); };
+        var setup = false;
+        var dataClean = function(d) {
+            data = d;
+            if(!setup){
+                done();
+                setup = true;
+            }
+        };
+        GitFlowVisualize.draw(null, {
+            dataCallback: dataCallback, dataProcessed: dataClean, showSpinner: function () { }
+        });
+    });
+    test('When bugfix branch hidden, release/r2 should be visible and in release zone', function (done) {
+        GitFlowVisualize.branches.setHidden(['refs/heads/bugfix/b1']);
+        setTimeout(function() {
+            var commit = data.commits['0aabee3cc5a668e1dffd3c464b18890caf98e6e9'];
+            assert(commit.visible, "Commit " + commit.id + " should be visible");
+            var column = data.columns[commit.columns[0]];
+            assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column. Now on " + column.name);
+            done();
+        }, 11);
+
+    });
+});
