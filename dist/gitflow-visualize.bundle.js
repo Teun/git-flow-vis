@@ -924,10 +924,19 @@ var findLast = require('lodash/findlast');
 								.attr("class", "commits-graph")
 								.append("g")
 								.attr("transform", "translate(" + margin + ",0)");
+					elem.select("svg")
+						.attr("width", size.width + 2 * margin)
+						.attr("height", size.height + 2 * margin);
+					var backgroundLayer = svg.append("g").attr("id", "bgLayer");
+					var arrowsLayer = svg.append("g").attr("id", "arrowsLayer");
+					var mainLinesLayer = svg.append("g").attr("id", "mainLinesLayer");
+					var commitsLayer = svg.append("g").attr("id", "commitsLayer");
 				}
-				elem.select("svg")
-					.attr("width", size.width + 2 * margin)
-					.attr("height", size.height + 2 * margin);
+				backgroundLayer = svg.select("g#bgLayer");
+				arrowsLayer = svg.select("g#arrowsLayer");
+				mainLinesLayer = svg.select("g#mainLinesLayer");
+				commitsLayer = svg.select("g#commitsLayer");
+	
 				var columnsInOrder = keysInOrder(data.columns);
 	
 				var legendaBlocks = {
@@ -996,13 +1005,12 @@ var findLast = require('lodash/findlast');
 				};
 	
 				// arrows
-				//§svg.selectAll(".arrow").remove();
 				var arrows = _.flatMap(
 					d3.values(data.commits).filter(function(c){return c.visible;})
 					, function (c) { 
 						return c.parents.map(function (p) { return { p: p.id, c: c.id }; }); 
 					});
-				var arrow = svg.selectAll(".arrow")
+				var arrow = arrowsLayer.selectAll(".arrow")
 					.data(arrows, function(d){return 'a-' + d.p + '-' + d.c;});
 				arrow
 					.enter().append("g")
@@ -1016,8 +1024,7 @@ var findLast = require('lodash/findlast');
 				arrow.exit().remove();
 	
 	
-				//svg.selectAll(".branch").remove();
-				var branchLine = svg.selectAll(".branch")
+				var branchLine = backgroundLayer.selectAll(".branch")
 					.data(d3.values(data.columns).filter(function(c){return c.isVisible();}));
 				branchLine
 					.enter().append("g")
@@ -1031,8 +1038,20 @@ var findLast = require('lodash/findlast');
 						.attr("y2", size.height);
 				branchLine.exit().remove();
 	
-				//svg.selectAll(".commit").remove();
-				var commit = svg.selectAll(".commit")
+				var branchLine = mainLinesLayer.selectAll(".branch")
+					.data(d3.values(data.columns).filter(function(c){return c.isVisible() && (c.id === "d0" || c.id === "m");}));
+				branchLine
+					.enter().append("g")
+					.attr("class", "branch")
+					.append("line");
+				branchLine.select("g>line").transition()
+						.attr("class", function (d) { return "branch-line " + d.name; })
+						.attr("x1", function (d) { return x(d.id); })
+						.attr("x2", function (d) { return x(d.id); })
+						.attr("y1", y(0))
+						.attr("y2", size.height);
+	
+				var commit = commitsLayer.selectAll(".commit")
 					.data(d3.values(data.commits).filter(function(c){return c.visible;}), function(c){return 'c-' + c.id;});
 				commit
 					.enter().append("g")
@@ -1049,8 +1068,7 @@ var findLast = require('lodash/findlast');
 					.attr("cy", function (d) { return y(d.orderNr); })
 					.attr("id", function (d) { return "commit-" + d.id; });
 	
-				//svg.selectAll(".legenda-label").remove();
-				var blockLegenda = svg.selectAll(".legenda-label")
+				var blockLegenda = backgroundLayer.selectAll(".legenda-label")
 					.data(Object.keys(legendaBlocks));
 				var entering = blockLegenda.enter();
 				var rotated = entering
