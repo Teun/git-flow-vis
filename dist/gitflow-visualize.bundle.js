@@ -32,6 +32,7 @@ var map = require('lodash/map');
 var flatMap = require('lodash/flatmap');
 var find = require('lodash/find');
 var findLast = require('lodash/findlast');
+var memoize = require('lodash/memoize');
 
 // ------------------------------------------------------------------------------------------ Wrapper
 
@@ -58,7 +59,8 @@ var findLast = require('lodash/findlast');
 		map: map,
 		flatMap: flatMap,
 		find: find,
-		findLast: findLast
+		findLast: findLast,
+		memoize: memoize
 	}
 
 	// Creating a cherry-picked version of CryptoJS
@@ -140,9 +142,9 @@ var findLast = require('lodash/findlast');
 			},
 	
 			// function to provide the appropriate url to the author avatar
-			createAuthorAvatarUrl: function(author) {
+			createAuthorAvatarUrl: _.memoize(function(author) {
 				return "https://secure.gravatar.com/avatar/" + md5(author.emailAddress) + ".jpg?s=48&amp;d=mm";
-			},
+			}, function(author){return author.emailAddress;}),
 			hiddenBranches:[]
 		};
 	
@@ -1399,7 +1401,7 @@ var findLast = require('lodash/findlast');
 	return window.GitFlowVisualize = GitFlowVisualize;
 });
 
-},{"crypto-js/md5":3,"d3":4,"lodash/extend":129,"lodash/filter":130,"lodash/find":131,"lodash/findlast":134,"lodash/flatmap":135,"lodash/forEach":136,"lodash/map":152,"moment":161,"thenby":162}],2:[function(require,module,exports){
+},{"crypto-js/md5":3,"d3":4,"lodash/extend":129,"lodash/filter":130,"lodash/find":131,"lodash/findlast":134,"lodash/flatmap":135,"lodash/forEach":136,"lodash/map":152,"lodash/memoize":153,"moment":161,"thenby":162}],2:[function(require,module,exports){
 ;(function (root, factory) {
 	if (typeof exports === "object") {
 		// CommonJS

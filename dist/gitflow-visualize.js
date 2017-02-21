@@ -71,9 +71,9 @@ var GitFlowVisualize = (function () {
 		},
 
 		// function to provide the appropriate url to the author avatar
-		createAuthorAvatarUrl: function(author) {
+		createAuthorAvatarUrl: _.memoize(function(author) {
 			return "https://secure.gravatar.com/avatar/" + md5(author.emailAddress) + ".jpg?s=48&amp;d=mm";
-		},
+		}, function(author){return author.emailAddress;}),
 		hiddenBranches:[]
 	};
 

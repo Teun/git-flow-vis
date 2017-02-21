@@ -31,6 +31,7 @@ var map = require('lodash/map');
 var flatMap = require('lodash/flatmap');
 var find = require('lodash/find');
 var findLast = require('lodash/findlast');
+var memoize = require('lodash/memoize');
 
 // ------------------------------------------------------------------------------------------ Wrapper
 
@@ -57,7 +58,8 @@ var findLast = require('lodash/findlast');
 		map: map,
 		flatMap: flatMap,
 		find: find,
-		findLast: findLast
+		findLast: findLast,
+		memoize: memoize
 	}
 
 	// Creating a cherry-picked version of CryptoJS
@@ -139,9 +141,9 @@ var findLast = require('lodash/findlast');
 			},
 	
 			// function to provide the appropriate url to the author avatar
-			createAuthorAvatarUrl: function(author) {
+			createAuthorAvatarUrl: _.memoize(function(author) {
 				return "https://secure.gravatar.com/avatar/" + md5(author.emailAddress) + ".jpg?s=48&amp;d=mm";
-			},
+			}, function(author){return author.emailAddress;}),
 			hiddenBranches:[]
 		};
 	
