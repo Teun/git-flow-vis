@@ -7,7 +7,6 @@
     "test": "gulp clean && gulp test",
     "dist": "gulp clean && gulp dist",
     "prepublish": "npm test",
-    "precommit": "npm test",
     "prepush": "npm test"
   },
   "repository": {

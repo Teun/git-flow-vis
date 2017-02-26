@@ -28,7 +28,10 @@ var forEach = require('lodash/forEach');
 var extend = require('lodash/extend');
 var filter = require('lodash/filter');
 var map = require('lodash/map');
-var flatMap = require('lodash/flatMap');
+var flatMap = require('lodash/flatmap');
+var find = require('lodash/find');
+var findLast = require('lodash/findlast');
+var memoize = require('lodash/memoize');
 
 // ------------------------------------------------------------------------------------------ Wrapper
 
@@ -53,7 +56,10 @@ var flatMap = require('lodash/flatMap');
 		extend: extend,
 		filter: filter,
 		map: map,
-		flatMap: flatMap
+		flatMap: flatMap,
+		find: find,
+		findLast: findLast,
+		memoize: memoize
 	}
 
 	// Creating a cherry-picked version of CryptoJS
@@ -135,9 +141,10 @@ var flatMap = require('lodash/flatMap');
 			},
 	
 			// function to provide the appropriate url to the author avatar
-			createAuthorAvatarUrl: function(author) {
+			createAuthorAvatarUrl: _.memoize(function(author) {
 				return "https://secure.gravatar.com/avatar/" + md5(author.emailAddress) + ".jpg?s=48&amp;d=mm";
-			}
+			}, function(author){return author.emailAddress;}),
+			hiddenBranches:[]
 		};
 	
 		var cleanup = function (_data) {
@@ -175,12 +182,23 @@ var flatMap = require('lodash/flatMap');
 					}
 				}
 			}
+			result.branches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) === -1;});
+			result.hiddenBranches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) > -1;});
+			for (var i = 0; i < result.branches.length; i++) {
+				var branch = result.branches[i];
+				var commit = result.commits[branch.latestChangeset];
+				if (commit) {
+					commit.labels = (commit.labels || []);
+					commit.labels.push(branch.id);
+					branch.lastActivity = commit.authorTimestamp;
+				}
+			}
 	
 			// fixup orderTimestamp for cases of rebasing and cherrypicking, where the parent can be younger than the child
 			var fixMyTimeRecursive = function (c, after) {
 				if (!c) return;
 				if (c.orderTimestamp <= after) {
-					console.log("fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
+					//console.log("fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
 					c.orderTimestamp = after + 1;
 					for (var k = 0; k < c.children.length; k++) {
 						fixMyTimeRecursive(result.commits[c.children[k]], c.orderTimestamp);
@@ -195,15 +213,6 @@ var flatMap = require('lodash/flatMap');
 				}
 			}
 	
-			result.branches = _data.branches.values;
-			for (var i = 0; i < result.branches.length; i++) {
-				var branch = result.branches[i];
-				var commit = result.commits[branch.latestChangeset];
-				if (commit) {
-					commit.labels = (commit.labels || []);
-					commit.labels.push(branch.id);
-				}
-			}
 			result.tags = _data.tags.values;
 			for (var i = 0; i < result.tags.length; i++) {
 				var tag = result.tags[i];
@@ -219,8 +228,35 @@ var flatMap = require('lodash/flatMap');
 			for (var id in result.commits) {
 				result.chronoCommits.push(id);
 			}
+	
+			// evaluate visibility
+			for(var i = 0; i < result.chronoCommits.length; i++){
+				var commit = result.commits[result.chronoCommits[i]];
+				if(commit.labels && commit.labels.length){
+					commit.visible = true;
+				}else{
+					var visibleChildren = _.filter( 
+						_.map(commit.children, function(id){return result.commits[id];}),
+						function(child){return child.visible;});
+					commit.visible = (visibleChildren.length > 0);
+				}
+			}
+	
 			result.chronoCommits.sort(function (a, b) { return result.commits[b].orderTimestamp - result.commits[a].orderTimestamp; });
-			for (var i = 0; i < result.chronoCommits.length; i++) { result.commits[result.chronoCommits[i]].orderNr = i; }
+			result.visibleCommits = [];
+			for (var i = 0, counter = 0; i < result.chronoCommits.length; i++) 
+			{
+				var commit = result.commits[result.chronoCommits[i]];
+				if(commit.visible){
+					commit.orderNr = counter; 
+					result.visibleCommits.push(result.chronoCommits[i]);
+					counter++;
+				}else{
+					delete commit.orderNr;
+				}
+			}
+	
+	
 	
 	
 			setColumns(result);
@@ -328,34 +364,35 @@ var flatMap = require('lodash/flatMap');
 			for (var col in data.columns) {
 				var column = data.columns[col];
 				if (col == 'm' || col[0] == 'd') continue;
-				var allParents = _.flatMap(column.commits, function (id) { return data.commits[id].children; });
-				var allParentsOnMaster = _.filter(allParents, function (id) {
+				var allChildren = _.flatMap(column.commits, function (id) { return data.commits[id].children; });
+				var allChildrenOnMaster = _.filter(allChildren, function (id) {
 					var parent = data.commits[id];
-					return parent.columns && parent.columns[0] == 'm';
+					return parent.visible && parent.columns && parent.columns[0] == 'm';
 				});
-				if (allParentsOnMaster.length > 0) {
+				if (allChildrenOnMaster.length > 0) {
 					//release branches are branches that are not master or develop, but some commit merges into master
 					column.name = 'r' + column.name.substring(1);
 					continue;
 				}
-				var lastCommit = data.commits[column.commits[0]];
-				if (lastCommit.children.length > 0) {
-					var developCommits = _.filter(lastCommit.children, function (id) { return data.commits[id].columns[0][0] == 'd'; });
+				var lastVisibleCommit = column.lastVisible(); // data.commits[column.commits[0]];
+				var visibleChildren = lastVisibleCommit ? _.filter(lastVisibleCommit.children, function(id){return data.commits[id].visible;}) : [];
+				if (visibleChildren.length > 0) {
+					var developCommits = _.filter(visibleChildren, function (id) { return data.commits[id].columns[0][0] == 'd'; });
 					if (developCommits.length > 0) {
 						// feature branches are branches that eventually merge into develop, not master
 						column.name = 'f' + column.name.substring(1);
 					} else {
 						// so we have a child, but not m or d: probably two branches merged together
 						// we'll figure this out later
-						column.firstChild = data.commits[lastCommit.children[0]];
+						column.firstChild = data.commits[lastVisibleCommit.children[0]];
 					}
-				} else {
+				} else if(lastVisibleCommit){
 					// unmerged branch: if starts with featurePrefix -> f
-					if (lastCommit.labels && lastCommit.labels.filter(function (l) { return l.indexOf(options.featurePrefix) == 0; }).length > 0) {
+					if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { return l.indexOf(options.featurePrefix) == 0; }).length > 0) {
 						column.name = 'f' + column.name.substring(1);
 					}
 					// unmerged branch: if starts with releasePrefix or hotfixPrefix -> r
-					if (lastCommit.labels && lastCommit.labels.filter(function (l) { 
+					if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { 
 						return l.indexOf(options.releasePrefix) == 0 
 							|| l.indexOf(options.hotfixPrefix) == 0 
 							|| options.releaseZonePattern.test(l); 
@@ -364,6 +401,8 @@ var flatMap = require('lodash/flatMap');
 					}else{
 						column.name = 'f' + column.name.substring(1);
 					}
+				}else{
+					// no visible commits on column. Do nothing.
 				}
 			}
 			
@@ -395,9 +434,9 @@ var flatMap = require('lodash/flatMap');
 			// now loop through _all_ feature branches and group them together
 			for (var i = 0; i < featureBranches.length; i++) {
 				var thisCol = featureBranches[i];
-				var lastCommit = data.commits[thisCol.commits[0]];
-				if (lastCommit.children && lastCommit.children.length > 0) {
-					var childColumn = data.columns[data.commits[lastCommit.children[0]].columns[0]];
+				var lastVisibleCommit = data.commits[thisCol.commits[0]];
+				if (lastVisibleCommit.children && lastVisibleCommit.children.length > 0) {
+					var childColumn = data.columns[data.commits[lastVisibleCommit.children[0]].columns[0]];
 					if (childColumn.group) thisCol.group = childColumn.group;
 				} else {
 					var firstCommit = data.commits[thisCol.commits[thisCol.commits.length - 1]];
@@ -434,40 +473,83 @@ var flatMap = require('lodash/flatMap');
 					var column = columnsToCombine[i];
 					for (var j = 0; j < i; j++) {
 						var earlierColumn = columnsToCombine[j];
-						if (!data.columns[earlierColumn.id]) {
-							// this column has already been sweeped away before
+						if (!earlierColumn.isVisible()) {
 							continue;
 						}
-						var earliestCommitOfFirst = data.commits[earlierColumn.commits[earlierColumn.commits.length - 1]];
-						if (earliestCommitOfFirst.parents.length > 0 && data.commits[earliestCommitOfFirst.parents[0].id]) {
+						// todo: here we must also search the columns already mapped to this one
+						var earliestCommitOfFirst = earlierColumn.firstRenderedCommit();
+						if (earliestCommitOfFirst && earliestCommitOfFirst.parents.length > 0 && data.commits[earliestCommitOfFirst.parents[0].id]) {
 							earliestCommitOfFirst = data.commits[earliestCommitOfFirst.parents[0].id];
 						}
-						// todo: iets doen met deze last child
-						var lastCommitOfSecond = data.commits[column.commits[0]];
-						if (lastCommitOfSecond.children.length > 0 && data.commits[lastCommitOfSecond.children[0]]) {
+						var lastCommitOfSecond = column.lastRenderedCommit();
+						if (lastCommitOfSecond && lastCommitOfSecond.children.length > 0 && data.commits[lastCommitOfSecond.children[0]]) {
 							lastCommitOfSecond = data.commits[lastCommitOfSecond.children[0]];
 						}
-						if (lastCommitOfSecond.orderNr >= earliestCommitOfFirst.orderNr) {
+						if ((!lastCommitOfSecond) || (!earliestCommitOfFirst) || lastCommitOfSecond.orderNr >= earliestCommitOfFirst.orderNr) {
 							// combine columns
-							for (var k = 0; k < column.commits.length; k++) {
-								var commitToMigrate = data.commits[column.commits[k]];
-								commitToMigrate.columns[0] = earlierColumn.id;
-								earlierColumn.commits.push(commitToMigrate.id);
-							}
-							delete data.columns[column.id];
+							column.combine(earlierColumn);
 							j = i;//next column
 						}
-	
 					}
 				}
 	
 			}
 		};
+		function Column(name){
+			var self = this;
+			self.id = name;
+			self.name = name;
+			self.commits = [];
+			var renderedOn = null;
+			var renderingOthers = [];
+			self.combine = function(otherCol){
+				renderedOn = otherCol;
+				otherCol.receive(self);
+			}
+			self.receive = function(otherCol){
+				renderingOthers.push(otherCol);
+			}
+			self.isVisible = function(){return renderedOn === null;}
+			self.renderPos = function(){return renderedOn ? renderedOn.id : self.id;}
+			var allRendered = function(){
+				return renderingOthers.concat(self);
+			}
+			var visibleCommit = function(id){
+				var commit = data.commits[id];
+				return commit && commit.visible === true
+			}
+			self.firstVisible = function(){
+				var id = _.findLast(self.commits, visibleCommit);
+				return data.commits[id];
+			}
+			self.lastVisible = function(){
+				var id = _.find(self.commits, visibleCommit);
+				return data.commits[id];
+			}
+			self.firstRenderedCommit = function(){
+				if(renderedOn)return null;
+				var all = allRendered();
+				return all.reduce(function(agg, col){
+					var first = col.firstVisible();
+					if(first && (!agg || agg.orderNr < first.orderNr))return first;
+					return agg;
+				}, null);
+			}
+			self.lastRenderedCommit = function(){
+				if(renderedOn)return null;
+				var all = allRendered();
+				return all.reduce(function(agg, col){
+					var last = col.lastVisible();
+					if(!agg || agg.orderNr > last.orderNr)return last;
+					return agg;
+				}, null);
+			}
+		}
 	
 		var putCommitInColumn = function (commitId, columnName) {
 			if (!data.columns) data.columns = {};
 			if (!(columnName in data.columns)) {
-				data.columns[columnName] = { commits: [], name: columnName, id: columnName };
+				data.columns[columnName] = new Column(columnName );
 			}
 			var commit = data.commits[commitId];
 			if (commit) {
@@ -794,15 +876,22 @@ var flatMap = require('lodash/flatMap');
 					line: 1,
 					developLine: 0.4, 
 				};
+				var mapping = {};
 				var lastGroup = '';
 				var here = 0;
 				var basePositions = {};
 				for (var i = 0; i < cols.length; i++) {
-					var thisCol = cols[i];
-					var thisGroup = thisCol[0];
+					var thisColId = cols[i];
+					var thisCol = data.columns[thisColId];
+					if(!thisCol.isVisible()){
+						// draws on other column
+						mapping[thisColId] = thisCol.renderPos();
+						continue;
+					}
+					var thisGroup = thisColId[0];
 					if(lastGroup != thisGroup) here += scaleCol.gutter;
 					here += thisGroup == 'd' ? scaleCol.developLine : scaleCol.line;
-					basePositions[thisCol] = here;
+					basePositions[thisColId] = here;
 					lastGroup = thisGroup;
 				}
 	
@@ -810,6 +899,9 @@ var flatMap = require('lodash/flatMap');
 							.domain([0,here])
 							.range([0, Math.min(maxWidth, 20 * here)]);
 				return function(d){
+					if(d in mapping){
+						d = mapping[d];
+					}
 					var offset = 0;
 					if(d[d.length-1] == "+"){
 						d = d.substring(0, d.length-1);
@@ -821,7 +913,7 @@ var flatMap = require('lodash/flatMap');
 			}
 	
 			self.drawGraph = function (elem) {
-				var calcHeight = Math.max(800, data.chronoCommits.length * constants.rowHeight);
+				var calcHeight = Math.max(800, data.visibleCommits.length * constants.rowHeight);
 				var size = { width: 500, height: calcHeight };
 				var margin = 20;
 	
@@ -833,10 +925,19 @@ var flatMap = require('lodash/flatMap');
 								.attr("class", "commits-graph")
 								.append("g")
 								.attr("transform", "translate(" + margin + ",0)");
+					elem.select("svg")
+						.attr("width", size.width + 2 * margin)
+						.attr("height", size.height + 2 * margin);
+					var backgroundLayer = svg.append("g").attr("id", "bgLayer");
+					var arrowsLayer = svg.append("g").attr("id", "arrowsLayer");
+					var mainLinesLayer = svg.append("g").attr("id", "mainLinesLayer");
+					var commitsLayer = svg.append("g").attr("id", "commitsLayer");
 				}
-				elem.select("svg")
-					.attr("width", size.width + 2 * margin)
-					.attr("height", size.height + 2 * margin);
+				backgroundLayer = svg.select("g#bgLayer");
+				arrowsLayer = svg.select("g#arrowsLayer");
+				mainLinesLayer = svg.select("g#mainLinesLayer");
+				commitsLayer = svg.select("g#commitsLayer");
+	
 				var columnsInOrder = keysInOrder(data.columns);
 	
 				var legendaBlocks = {
@@ -855,10 +956,10 @@ var flatMap = require('lodash/flatMap');
 					legendaBlocks[key].last = groupColumns[groupColumns.length - 1];
 				}
 				
-				var x = groupScale(columnsInOrder, size.width);
+				var x = groupScale(columnsInOrder, size.width, data.columnMappings);
 				var y = d3.scale.linear()
-							.domain([0, data.chronoCommits.length])
-							.range([60, 60 + data.chronoCommits.length * constants.rowHeight]);
+							.domain([0, data.visibleCommits.length])
+							.range([60, 60 + data.visibleCommits.length * constants.rowHeight]);
 	
 				var line = d3.svg.line()
 							//.interpolate("bundle")
@@ -868,7 +969,7 @@ var flatMap = require('lodash/flatMap');
 				var connector = function (d) {
 					var childCommit = data.commits[d.c];
 					var parentCommit = data.commits[d.p];
-					if (!childCommit || !parentCommit) return null;
+					if (!childCommit || !parentCommit || !childCommit.visible) return null;
 					var intermediateRow = parentCommit.orderNr - .5;
 					var intermediatCol = childCommit.columns[0];
 					var intermediateRow2 = null;
@@ -905,101 +1006,160 @@ var flatMap = require('lodash/flatMap');
 				};
 	
 				// arrows
-				svg.selectAll(".arrow").remove();
-				var arrows = _.flatMap(d3.values(data.commits), function (c) { return c.parents.map(function (p) { return { p: p.id, c: c.id }; }); });
-				var arrow = svg.selectAll(".arrow")
-					.data(arrows);
+				var arrows = _.flatMap(
+					d3.values(data.commits).filter(function(c){return c.visible;})
+					, function (c) { 
+						return c.parents.map(function (p) { return { p: p.id, c: c.id }; }); 
+					});
+				var arrow = arrowsLayer.selectAll(".arrow")
+					.data(arrows, function(d){return 'a-' + d.p + '-' + d.c;});
 				arrow
 					.enter().append("g")
-					.attr("class", function (d) { return "arrow arrow-to-" + d.c; });
-				arrow
+					.attr("class", function (d) { return "arrow arrow-to-" + d.c; })
 					.append("path")
-							.attr("d", connector)
-							.attr("class", "outline");
+						.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
 	
-				arrow.append("path")
-							.attr("d", connector)
-							.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
+				var path = arrow.select("g>path");			
+				path.transition().attr("d", connector)
+	
+				arrow.exit().remove();
 	
 	
-				svg.selectAll(".branch").remove();
-				var branchLine = svg.selectAll(".branch")
-					.data(d3.values(data.columns))
-					.enter().append("g")
-					.attr("class", "branch");
+				var branchLine = backgroundLayer.selectAll(".branch")
+					.data(d3.values(data.columns).filter(function(c){return c.isVisible();}));
 				branchLine
-						.append("line")
+					.enter().append("g")
+					.attr("class", "branch")
+					.append("line");
+				branchLine.select("g>line").transition()
+						.attr("class", function (d) { return "branch-line " + d.name; })
+						.attr("x1", function (d) { return x(d.id); })
+						.attr("x2", function (d) { return x(d.id); })
+						.attr("y1", y(0))
+						.attr("y2", size.height);
+				branchLine.exit().remove();
+	
+				var branchLine = mainLinesLayer.selectAll(".branch")
+					.data(d3.values(data.columns).filter(function(c){return c.isVisible() && (c.id === "d0" || c.id === "m");}));
+				branchLine
+					.enter().append("g")
+					.attr("class", "branch")
+					.append("line");
+				branchLine.select("g>line").transition()
 						.attr("class", function (d) { return "branch-line " + d.name; })
 						.attr("x1", function (d) { return x(d.id); })
 						.attr("x2", function (d) { return x(d.id); })
 						.attr("y1", y(0))
 						.attr("y2", size.height);
 	
-				svg.selectAll(".commit").remove();
-				var commit = svg.selectAll(".commit")
-					.data(d3.values(data.commits))
-					.enter().append("g")
-					.attr("class", "commit");
+				var commit = commitsLayer.selectAll(".commit")
+					.data(d3.values(data.commits).filter(function(c){return c.visible;}), function(c){return 'c-' + c.id;});
 				commit
+					.enter().append("g")
+					.attr("class", "commit")
 					.append("circle")
 					.attr("class", "commit-dot")
-					.attr("r", 5)
+					.attr("r", 5);
+				
+				commit.exit().remove();
+				commit
+					.transition()
+					.select("g>circle")
 					.attr("cx", function (d) { return x(d.columns[0]); })
 					.attr("cy", function (d) { return y(d.orderNr); })
-					.attr("id", function (d) { return "commit-" + d.id; })
-				;
+					.attr("id", function (d) { return "commit-" + d.id; });
 	
-				svg.selectAll(".legenda-label").remove();
-				var blockLegenda = svg.selectAll(".legenda-label")
-					.data(Object.keys(legendaBlocks))
-					.enter().append("g")
-					.attr("class", function (d) { return "legenda-label " + legendaBlocks[d].prefix; });
-				var rotated = blockLegenda.append("g")
-					.attr("transform", function (d) {
-						var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
-						return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0) - 20) + ") rotate(-40)";
-					});
+				var blockLegenda = backgroundLayer.selectAll(".legenda-label")
+					.data(Object.keys(legendaBlocks));
+				var entering = blockLegenda.enter();
+				var rotated = entering
+					.append("g")
+						.attr("class", function (d) { return "legenda-label " + legendaBlocks[d].prefix; })
+					.append("g")					
+						.attr("transform", function (d) {
+							var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
+							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0) - 20) + ") rotate(-40)";
+						});
 				rotated.append("rect")
 					.attr("width", 60).attr("height", 15).attr("rx", "2");
 				rotated.append("text").attr("y", "12").attr("x", "3")
 					.text(function (d) { return d; });
-				blockLegenda.append("path").attr("d", function (d) {
-					var group = legendaBlocks[d];
-					return line([{ x: group.first, y: -.3 }, { x: group.last, y: -.3 }]);
-				});
+				
+				blockLegenda
+					.select("g").transition()
+						.attr("transform", function (d) {
+							var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
+							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0) - 20) + ") rotate(-40)";
+						});
 	
 				var messages = elem.select("div.messages");
-				if (messages[0][0] == null) {
+				if (messages.empty()) {
 					messages = elem.append("div")
 						.attr("class", "messages");
+					messages
+						.append("div").attr("class", "context-menu");
 				}
+				var msgHeader = messages.select("div.msg-header");
+				if(msgHeader.empty()){
+					msgHeader = messages.append("div")
+						.attr("class", "msg-header");
+					msgHeader.append("span").attr("class", "branch-btn label aui-lozenge aui-lozenge-subtle")
+						.on("click", function(){
+							var items = [["Show all", function(){
+								options.hiddenBranches = [];
+								drawFromRaw();
+							}]];
+							if(branchVisibilityHandler !== null){
+								items.push(["Change...", branchVisibilityHandler]);
+							}
+							var pos = d3.mouse(messages.node());
+							menu.show(items, pos[0], pos[1]);
+						});
+	
+				}
+				var branchLabelText = (data.branches.length + data.hiddenBranches.length) + " branches";
+				if(data.hiddenBranches.length > 0) branchLabelText += " (" + data.hiddenBranches.length + " hidden)";
+				msgHeader.select("span.branch-btn").text(branchLabelText);
 	
 				//labels
 				var labelData = messages.selectAll(".commit-msg")
-					.data(d3.values(data.commits), function (c) {
-						return c.id + "-" + c.orderNr;
-					});
+					.data(d3.values(data.commits).filter(function(c){return c.visible;})
+					, function (c) {return c.id + "-" + c.orderNr;});
 				labelData
 					.enter().append("div")
 					.attr("class", "commit-msg")
 					.attr("id", function (c) { return "msg-" + c.id; })
 					.on('click', function (a) {
 					  if(d3.event.target.tagName == 'A')return true;
-					  if(displayState.style == "ancestry" && a.id == displayState.root){
-						displayState.style = "none";
-						displayState.root = null;
-					  }else{
-						displayState.style = "ancestry";
-						displayState.root = a.id;
+					  // will show menu. Collect items
+					  var items = [];
+					  if(d3.event.target.tagName == 'SPAN'){
+						  // on branch label
+						  var clickedBranch = 'refs/heads/' + d3.event.target.innerHTML;
+						  items.push(["Hide branch '" + d3.event.target.innerHTML + "'", function(){
+							options.hiddenBranches.push(clickedBranch);
+							drawFromRaw();
+						  }]);
 					  }
-					  self.updateHighlight();
+					  if(displayState.style == "ancestry"){
+						  items.push(["Stop highlighting", function(){
+							displayState.style = "none";
+							displayState.root = null;
+							self.updateHighlight();
+						  }]);
+					  }
+					  if(displayState.style !== "ancestry" ||  a.id !== displayState.root){
+						  items.push(["Highlight ancestry from here", function(){
+							displayState.style = "ancestry";
+							displayState.root = a.id;
+							self.updateHighlight();
+						  }]);
+					  }
+					  var pos = d3.mouse(messages.node());
+					  menu.show(items, pos[0], pos[1]);
 					});
 				labelData.exit().remove();
 				labelData
-					.attr("style", function (d) {
-						var commit = d;
-						return "top:" + (y(commit.orderNr) - constants.rowHeight / 2) + "px;";
-					})
 					.html(function (d) {
 						var commitUrl = options.createCommitUrl(d);
 						var res = "<table class='commit-table aui'><tr><td class='msg'>";
@@ -1044,6 +1204,11 @@ var flatMap = require('lodash/flatMap');
 						res += "<td class='sha'><a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a></td> ";
 						res += "</tr></table>";
 						return res;
+					})
+					.transition()
+					.attr("style", function (d) {
+						var commit = d;
+						return "top:" + (y(commit.orderNr) - constants.rowHeight / 2) + "px;";
 					});
 	
 				function isElementInViewport(el) {
@@ -1060,9 +1225,12 @@ var flatMap = require('lodash/flatMap');
 					//check for openEnded messages in view
 					var keyInView = null;
 					for (var key in data.openEnds) {
-						if (isElementInViewport(d3.select('#msg-' + key))) {
-							keyInView = key;
-							break;
+						var elementSelection = d3.select('#msg-' + key);
+						if(!elementSelection.empty()) {
+							if (isElementInViewport(elementSelection.node())) {
+								keyInView = key;
+								break;
+							}
 						}
 					}
 					if (keyInView) {
@@ -1123,18 +1291,96 @@ var flatMap = require('lodash/flatMap');
 				return cols[0] || "default";
 			};
 	
+			var menu = function(){
+				var menu = {};
+				var theMenu = null;
+				var ensureRef = function(){
+					if(theMenu === null || theMenu.empty()){
+						theMenu = d3.select(".messages .context-menu");
+						theMenu.on("mousemove", function(){
+							console.log("mouse move");
+							timeLastSeen = Date.now();
+						});
+					}
+				}
+				var timeLastSeen = 0;
+				var timer;
+				var start = function(){
+					timeLastSeen = Date.now();
+					timer = setInterval(function(){
+						if(timeLastSeen + 10000 < Date.now()){
+							menu.hide();
+						}
+				}, 100);}
+				var stop = function(){clearInterval(timer);}
+	
+				menu.show = function(items, x, y){
+					ensureRef();
+					theMenu
+						.style("top", y + "px" )
+						.style("left", x + "px")
+						.style("visibility", "visible");
+					theMenu.selectAll("div.item").remove();
+					_.each(items, function(item){
+						theMenu.append("div")
+							.on("click", function(){
+								item[1]();
+								menu.hide();
+							})
+							.attr("class", "item")
+							.text(item[0]);
+					});
+					d3.event.stopPropagation();
+					d3.select("body").on("click", function(){menu.hide()});
+					start();
+				}
+				menu.hide = function(){
+					ensureRef();
+					theMenu.style("visibility", "hidden");
+					stop();
+				}
+	
+				return menu;
+			}();
+	
 			return self;
 		})();
 	
+		var branchVisibilityHandler = null;
+		self.branches = {
+			setHidden: function(refs){
+				if(!(refs instanceof Array)){
+					throw "pass in refs as an array of strings with full ref descriptors of the branches to hide (like 'refs/heads/develop')";
+				}
+				options.hiddenBranches = refs;
+				drawFromRaw();
+			},
+			getHidden: function(){
+				return options.hiddenBranches;
+			},
+			getAll: function(){
+				return _.map(data.branches.concat(data.hiddenBranches), function(b){
+					return {id: b.id, name: b.displayId, 
+						lastActivity:b.lastActivity, lastActivityFormatted: moment(b.lastActivity).format("M/D/YY HH:mm:ss"),
+						visible: options.hiddenBranches.indexOf(b.id) === -1
+					};
+				});
+			}, 
+			registerHandler: function(handler){
+				branchVisibilityHandler = handler;
+			}
+		};
+	
 		if (document) {
-			d3.select(document).on("scroll resize", function () {
-				GitFlowVisualize.drawing.lazyLoad();
-			});
+			//d3.select(document).on("scroll resize", function () {
+			d3.select(document)
+				.on("scroll", function(){GitFlowVisualize.drawing.lazyLoad();})
+				.on("resize", function(){GitFlowVisualize.drawing.lazyLoad();});
 	
 			d3.select(document).on("keydown", function () {
 				var event = d3.event;
 				if (event.ctrlKey && event.shiftKey && event.which == 221) {
-					//prompt("Ctrl-C to copy the grap source", GitFlowVisualize.state());
+					//prompt("Ctrl-C to copy the graph source", GitFlowVisualize.state());
 					var out = d3.select("#debug-output");
 					if (out.empty()) {
 						out = d3.select("body").append("textarea").attr("id", "debug-output");

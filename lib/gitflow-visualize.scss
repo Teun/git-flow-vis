@@ -67,7 +67,7 @@ line {
 	}
 }
 
-.commits-graph {}
+// .commits-graph {}
 
 .messages {
 	position:relative;
@@ -218,5 +218,31 @@ table {
 	left:300px;
 	top:100px;
 	z-index:100;
+}
+.branch-btn{
+	cursor:pointer;
+}
+.context-menu{
+	display: inline-block;
+	position: absolute;
+	visibility: hidden;
+	background-color: lightgray;
+	//width:100px;
+	z-index: 10;
+	border: 2px outset;
+	.item{
+		border-bottom: solid silver 1px;
+		background-color:#eee;
+		font-family: sans-serif;
+		padding:3px;
+		cursor: pointer;
+		white-space: nowrap;
+		color: #333;
+		&:hover{
+			color: black;
+			background-color: #ddd;
+
+		}
+	}
 }
 

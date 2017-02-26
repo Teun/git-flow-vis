@@ -47,11 +47,13 @@ suite('Data set 1', function () {
     });
     test('Needs two release columns and two feature columns', function () {
         var releaseColumns = _.filter(Object.keys(data.columns), function(c) {
-            return data.columns[c].name[0] == "r";
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "r";
         });
         assert(releaseColumns.length == 2, "found " + _.map(releaseColumns, function(c) { return data.columns[c].name; }).join(',') );
         var featureColumns = _.filter(Object.keys(data.columns), function (c) {
-            return data.columns[c].name[0] == "f";
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "f";
         });
         assert(featureColumns.length == 2, "found " + _.map(featureColumns, function (c) { return data.columns[c].name; }).join(','));
     });
@@ -98,11 +100,13 @@ suite('Data set 2', function() {
     });
     test('Needs two release columns and three feature columns', function() {
         var releaseColumns = _.filter(Object.keys(data.columns), function(c) {
-                return data.columns[c].name[0] == "r";
-            });
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "r";
+        });
         assert(releaseColumns.length == 2, "found " + _.map(releaseColumns, function(c) { return data.columns[c].name; }).join(','));
         var featureColumns = _.filter(Object.keys(data.columns), function(c) {
-            return data.columns[c].name[0] == "f";
+            var col = data.columns[c];
+            return col.isVisible() && col.name[0] == "f";
         });
         assert(featureColumns.length == 3, "found " + _.map(featureColumns, function(c) { return data.columns[c].name; }).join(','));
     });
@@ -281,5 +285,87 @@ suite('Situation non-standard branch names with different config', function () {
         var commit = data.commits['aac09e5378cae08a4c52107ba58c0318577cf557'];
         var column = data.columns[commit.columns[0]];
         assert(column.name[0] === 'f', "Commit " + commit.id + " (" + commit.message + ") should be on the feature column. Now on " + column.name);
+    });
+});
+suite('Showing and hiding', function () {
+    var data;
+    suiteSetup(function(done) {
+        var dataCallback = function(d) { return d(Dummy.Data[2]); };
+        var setup = false;
+        var dataClean = function(d) {
+            data = d;
+            if(!setup){
+                done();
+                setup = true;
+            }
+        };
+        GitFlowVisualize.draw(null, { 
+            dataCallback: dataCallback, dataProcessed: dataClean, 
+            releaseTagPattern: /refs\/tags\/(r|h)\d$/, showSpinner: function () { } ,
+            hiddenBranches:["refs/heads/feature/F1"]
+        });
+    });
+    test('Commit on feature/f1 should not be visible', function() {
+        var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+        assert(commit.visible === false, "Commit should not be visible");
+    });
+    test('Commit on feature/f3 should be visible', function() {
+        var commit = data.commits['fcda73616bf16fc0d4560c628ed3876ccc9762f5'];
+        assert(commit.visible === true, "Commit should be visible");
+    });
+    test('Commit on feature/f1 should not have an orderNr', function() {
+        var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+        assert(!('orderNr' in commit), "Hidden commit has an orderNr " + commit.orderNr);
+    });
+    test('Get all branches from outside', function() {
+        var branches = GitFlowVisualize.branches.getAll();
+        assert(branches.length > 0, "Branches should be available");
+        assert(branches.filter(function(b){return b.visible}).length === 6, "Not the right number of visible branches");
+    });
+    test('Branches can be unhidden from outside', function(d) {
+        GitFlowVisualize.branches.setHidden([]);
+        setTimeout(function(){
+            var commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+            assert(commit.visible === true, "Commit should be visible after unhiding");
+            d();
+        }, 11);
+    });
+    test('Branches can be hidden from outside', function(d) {
+        GitFlowVisualize.branches.setHidden(['refs/heads/feature/f3', 'refs/heads/feature/F1', ]);
+        setTimeout(function(){
+            var commit = data.commits['fcda73616bf16fc0d4560c628ed3876ccc9762f5'];
+            assert(commit.visible === false, "Commit should not be visible after hiding");
+            commit = data.commits['ea08c2c5f4fa9778baec512b28603ff763ef9022'];
+            assert(commit.visible === false, "Commit should not be visible after hiding");
+            d();
+        }, 11);
+    });
+});
+suite('Reproduce several issues', function () {
+    var data;
+    suiteSetup(function (done) {
+        var dataCallback = function(d) { return d(Dummy.Data[2]); };
+        var setup = false;
+        var dataClean = function(d) {
+            data = d;
+            if(!setup){
+                done();
+                setup = true;
+            }
+        };
+        GitFlowVisualize.draw(null, {
+            dataCallback: dataCallback, dataProcessed: dataClean, showSpinner: function () { }
+        });
+    });
+    test('When bugfix branch hidden, release/r2 should be visible and in release zone', function (done) {
+        GitFlowVisualize.branches.setHidden(['refs/heads/bugfix/b1']);
+        setTimeout(function() {
+            var commit = data.commits['0aabee3cc5a668e1dffd3c464b18890caf98e6e9'];
+            assert(commit.visible, "Commit " + commit.id + " should be visible");
+            var column = data.columns[commit.columns[0]];
+            assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column. Now on " + column.name);
+            done();
+        }, 11);
+
     });
 });
