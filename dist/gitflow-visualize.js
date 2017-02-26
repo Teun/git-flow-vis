@@ -44,7 +44,6 @@ var GitFlowVisualize = (function () {
 		releaseZonePattern: /^refs\/heads\/bugfix/,
 
 		// this pattern should match the tags that are given to release commits on master 
-		releaseTagPattern: /refs\/tags\/release\/\d+/,
 
 		// UI interaction hooks for loading message
 		showSpinner: function () {},
@@ -344,11 +343,20 @@ var GitFlowVisualize = (function () {
 			var unassignedColumns = _.filter(_.map(Object.keys(data.columns), function (id) { return data.columns[id]; }), function (c) { return c.name[0] == 'c'; });
 			for (var j = 0; j < unassignedColumns.length; j++) {
 				var column = unassignedColumns[j];
-				var lastChild = column.lastVisible().children[0];
-				var childCol = data.columns[data.commits[lastChild].columns[0]];
-				if (!childCol) continue;
-				var firstLetter = childCol.name[0];
-				if (firstLetter == 'c') continue;
+				var lastCommit = column.lastVisible();
+				if(!lastCommit)continue;
+				var childrenOfLast = lastCommit.children;
+				var firstLetter;
+				if(childrenOfLast.length === 0){
+					firstLetter = 'f';
+				}else{
+					var childCol = data.columns[data.commits[childrenOfLast[0]].columns[0]];
+					if (!childCol) continue;
+					firstLetter = childCol.name[0];
+					if (firstLetter == 'c') continue;
+					if (firstLetter == 'd') firstLetter = 'f';
+
+				}
 				column.name = firstLetter + column.name.substring(1);
 				connected = true;
 			}
