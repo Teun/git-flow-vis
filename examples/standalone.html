@@ -4,53 +4,85 @@
     <meta charset="utf-8">
     <script src="../dist/gitflow-visualize.bundle.js"></script>
     <link rel="stylesheet" type="text/css" href="../dist/gitflow-visualize.css" />
-    <title></title>
+	    <style>
+    	.aui-avatar-xsmall .aui-avatar-inner img {
+    		max-height: 12px;
+    		max-width: 12px;
+    	}
+			.aui-lozenge {
+			background: #cccccc;
+			border: 1px solid #cccccc;
+			border-radius: 3px;
+			color: #333333;
+			display: inline-block;
+			font-size: 11px;
+			font-weight: bold;
+			line-height: 99%;
+			margin: 0;
+			padding: 2px 5px;
+			text-align: center;
+			text-decoration: none;
+			text-transform: uppercase;
+			}
+    	.aui-lozenge-subtle {
+			background-color: #ffffff;
+    	}
+			.aui-lozenge-complete{
+			border-color: #a5b3c2;
+			color: #4a6785;
+			}
+			.aui-lozenge-error {
+			border-color: #e8a29b;
+			color: #d04437;
+			}
+    	.aui-lozenge-current {
+    		border-color: #ffe9a8;
+    		color: #594300;
+    	}
+			.aui-lozenge-success{
+			border-color: #60b070;
+			color: #14892c;
+			}
+			body {
+			color: #333333;
+			font-family: Arial,sans-serif;
+			font-size: 14px;
+			line-height: 1.42857142857143;
+			}
+    </style>
+
 </head>
 <body>
     <div id="drawhere"></div>
 </body>
     <script>
-        var element = document.getElementById('drawhere');
-        var dataCallback = function (done) { 
-            window.setTimeout(function () { 
-                done(
-                {
-                    branches: { 
-                        values: [
-                            { "id": "refs/heads/develop", "displayId": "develop", "latestChangeset": "611d320cd97e40871a557fbb4308b9b1762b1f8f"}, 
-                            { "id": "refs/heads/master", "displayId": "master", "latestChangeset": "c7c09e5378cae08a4c52107ba58c0318577cf557"  }
-                            ] 
-                        }
-                    ,tags: { 
-                        values: [
-                            { "id": "refs/tags/r1", "displayId": "r1", "latestChangeset": "d3a4299520bc9e5b76ecec831553737982dd1b37"}
-                            ]
-                        }
-                    ,commits: 
-                        [
-                        {
-                            values: [
-                            { "id": "c7c09e5378cae08a4c52107ba58c0318577cf557", "displayId": "c7c09e5", "author": { "emailAddress": "github@duynstee.com", "displayName": "Teun Duynstee"}, "authorTimestamp": 1405595690000, "message": "Merge branch 'release/r2'\n\nConflicts:\n\ttest.txt", "parents": [{ "id": "d3a4299520bc9e5b76ecec831553737982dd1b37", "displayId": "d3a4299" }, { "id": "0aabee3cc5a668e1dffd3c464b18890caf98e6e9", "displayId": "0aabee3" }] }, 
+		var element = document.getElementById('drawhere');
+		var dataCallback = function (done) { 
+			debugger;
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState == XMLHttpRequest.DONE) {
+					done(JSON.parse(xhr.responseText));
+				}
+			}
+			xhr.open("GET", "commits.json")
+			xhr.send(null);
+		}
+		var moreDataCallback = function (from, done) {
+			console.log("moreDataCallback", from);
+			done(null, from);
+		};
+		
+		GitFlowVisualize.draw(element,
+						{
+							dataCallback: dataCallback,
+							moreDataCallback: moreDataCallback,
+							featurePrefix: "refs/heads/",
+							releasePrefix: "refs/heads/candidate",
+							releaseTagPattern: /refs\/tags\/release\/\d+/
 
-                            { "id": "d3a4299520bc9e5b76ecec831553737982dd1b37", "displayId": "d3a4299", "author": { "emailAddress": "github@duynstee.com", "displayName": "Teun Duynstee"}, "authorTimestamp": 1405596337000, "message": "merge to master'", "parents": [{ "id": "12a048fd7a67e4a1690e67cb242e589d7a2594f4", "displayId": "12a048f" }, { "id": "98d09ca2ea0dc6a0ab6397e5d85b54c1b7551a8d", "displayId": "98d09ca" }] }, 
-                            { "id": "611d320cd97e40871a557fbb4308b9b1762b1f8f", "displayId": "611d320", "author": { "emailAddress": "github@duynstee.com", "displayName": "Teun Duynstee"}, "authorTimestamp": 1405596347000, "message": "later commit on develop", "parents": [{ "id": "98d09ca2ea0dc6a0ab6397e5d85b54c1b7551a8d", "displayId": "98d09ca" }, { "id": "ee268f9d33d940722d974ac1c12cd20cb85bc768", "displayId": "ee268f9" }] }, 
-                            { "id": "98d09ca2ea0dc6a0ab6397e5d85b54c1b7551a8d", "displayId": "98d09ca", "author": { "emailAddress": "github@duynstee.com", "displayName": "Teun Duynstee"}, "authorTimestamp": 1405596328000, "message": "commit on develop", "parents": [{ "id": "19f5bebe9d537f56385f2e7a18f41358dba35013", "displayId": "19f5beb" }] }
-                            ]
-                            }
-                        ]
-                    
-                }
-                    ); 
-            }, 100); 
-        };
-        var moreDataCallback = function (from, done) {
-            done(from, null);
-        }
-        var options = {
-            dataCallback: dataCallback,
-            moreDataCallback: moreDataCallback
-        };
-
-        GitFlowVisualize.draw(element, options);
+						});
+						
     </script>
+
 </html>

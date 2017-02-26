@@ -114,7 +114,6 @@ var memoize = require('lodash/memoize');
 			releaseZonePattern: /^refs\/heads\/bugfix/,
 	
 			// this pattern should match the tags that are given to release commits on master 
-			releaseTagPattern: /refs\/tags\/\d+(\.\d+)+$/,
 	
 			// UI interaction hooks for loading message
 			showSpinner: function () {},
@@ -363,7 +362,7 @@ var memoize = require('lodash/memoize');
 		var separateReleaseFeatureBranches = function () {
 			for (var col in data.columns) {
 				var column = data.columns[col];
-				if (col == 'm' || col[0] == 'd') continue;
+				if (col == 'm' || col[0] == 'd' || col[0] == 'r') continue;
 				var allChildren = _.flatMap(column.commits, function (id) { return data.commits[id].children; });
 				var allChildrenOnMaster = _.filter(allChildren, function (id) {
 					var parent = data.commits[id];
@@ -375,48 +374,50 @@ var memoize = require('lodash/memoize');
 					continue;
 				}
 				var lastVisibleCommit = column.lastVisible(); // data.commits[column.commits[0]];
-				var visibleChildren = lastVisibleCommit ? _.filter(lastVisibleCommit.children, function(id){return data.commits[id].visible;}) : [];
-				if (visibleChildren.length > 0) {
-					var developCommits = _.filter(visibleChildren, function (id) { return data.commits[id].columns[0][0] == 'd'; });
-					if (developCommits.length > 0) {
-						// feature branches are branches that eventually merge into develop, not master
-						column.name = 'f' + column.name.substring(1);
-					} else {
-						// so we have a child, but not m or d: probably two branches merged together
-						// we'll figure this out later
-						column.firstChild = data.commits[lastVisibleCommit.children[0]];
-					}
-				} else if(lastVisibleCommit){
-					// unmerged branch: if starts with featurePrefix -> f
-					if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { return l.indexOf(options.featurePrefix) == 0; }).length > 0) {
-						column.name = 'f' + column.name.substring(1);
-					}
-					// unmerged branch: if starts with releasePrefix or hotfixPrefix -> r
-					if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { 
-						return l.indexOf(options.releasePrefix) == 0 
-							|| l.indexOf(options.hotfixPrefix) == 0 
-							|| options.releaseZonePattern.test(l); 
-						}).length > 0) {
-						column.name = 'r' + column.name.substring(1);
-					}else{
-						column.name = 'f' + column.name.substring(1);
-					}
-				}else{
-					// no visible commits on column. Do nothing.
+				if(!lastVisibleCommit){
+					continue;
 				}
+				// if starts with releasePrefix or hotfixPrefix -> r
+				if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { 
+					return l.indexOf(options.releasePrefix) == 0 
+						|| l.indexOf(options.hotfixPrefix) == 0 
+						|| options.releaseZonePattern.test(l); 
+					}).length > 0) {
+					column.name = 'r' + column.name.substring(1);
+					continue;
+				}
+				if (lastVisibleCommit.labels && lastVisibleCommit.labels.filter(function (l) { return l.indexOf(options.featurePrefix) == 0; }).length > 0) {
+					column.name = 'f' + column.name.substring(1);
+					continue;
+				}
+	
+				// var visibleChildren = lastVisibleCommit ? _.filter(lastVisibleCommit.children, function(id){return data.commits[id].visible;}) : [];
+				// if (visibleChildren.length > 0) {
+				// 	var developCommits = _.filter(visibleChildren, function (id) { return data.commits[id].columns[0][0] == 'd'; });
+				// 	if (developCommits.length > 0) {
+				// 		// feature branches are branches that eventually merge into develop, not master
+				// 		column.name = 'f' + column.name.substring(1);
+				// 	} else {
+				// 		// so we have a child, but not m or d: probably two branches merged together
+				// 		// we'll figure this out later
+				// 		column.firstChild = data.commits[lastVisibleCommit.children[0]];
+				// 	}
+				// } else {
+				// 	// unmerged branch without useful label. Assume feature branch
+				// 		column.name = 'f' + column.name.substring(1);
+				// }
 			}
 			
-			var unassignedColumns = _.filter(_.map(Object.keys(data.columns), function (id) { return data.columns[id]; }), function (c) { return c.name[0] == 'c'; });
 			while (true) {
 				var connected = false;
+				var unassignedColumns = _.filter(_.map(Object.keys(data.columns), function (id) { return data.columns[id]; }), function (c) { return c.name[0] == 'c'; });
 				for (var j = 0; j < unassignedColumns.length; j++) {
 					var column = unassignedColumns[j];
-					if (!column.firstChild) continue;
-					var childCol = data.columns[column.firstChild.columns[0]];
-					var firstLetter = childCol.name[0];
+					var childCol = column.finallyMergesToColumn();
+					var firstLetter = childCol ? childCol.name[0]: 'f';
 					if (firstLetter == 'c') continue;
+					if (firstLetter == 'd') firstLetter = 'f';
 					column.name = firstLetter + column.name.substring(1);
-					delete column.firstChild;
 					connected = true;
 				}
 				if(!connected)break;
@@ -461,8 +462,8 @@ var memoize = require('lodash/memoize');
 			}
 			groups = Object.keys(groups);
 			groups.unshift(null);
-			for (var i = 0; i < groups.length; i++) {
-				var nowGrouping = groups[i];
+			for (var groupCount = 0; groupCount < groups.length; groupCount++) {
+				var nowGrouping = groups[groupCount];
 				var columnsToCombine = _.filter(columns, function (c) {
 					if (nowGrouping === null) {
 						return (typeof c.group === "undefined");
@@ -543,6 +544,14 @@ var memoize = require('lodash/memoize');
 					if(!agg || agg.orderNr > last.orderNr)return last;
 					return agg;
 				}, null);
+			}
+			self.finallyMergesToColumn = function(){
+				var lastCommit = this.lastVisible();
+				if(!lastCommit)return null;
+				var childrenOfLast = lastCommit.children;
+				if(childrenOfLast.length === 0)return null;
+				var childCol = data.columns[data.commits[childrenOfLast[0]].columns[0]];
+				return childCol;
 			}
 		}
 	
@@ -686,6 +695,7 @@ var memoize = require('lodash/memoize');
 		};
 	
 		var rawData = null;
+		var downloadedStartPoints = [];
 	
 		self.draw = function (elem, opt) {
 	
@@ -1242,8 +1252,10 @@ var memoize = require('lodash/memoize');
 							}
 							for (var i = 0; i < data.openEnds[key].length; i++) {
 								var parentId = data.openEnds[key][i];
-								openEndsToBeDownloaded[parentId] = true;
-								console.log("scheduled: " + parentId);
+								if(downloadedStartPoints.indexOf(parentId) === -1){
+									openEndsToBeDownloaded[parentId] = true;
+									console.log("scheduled: " + parentId);
+								}
 							}
 							delete data.openEnds[key];
 						}
@@ -1253,6 +1265,7 @@ var memoize = require('lodash/memoize');
 							openEndsBeingDownloaded[key] = true;
 							options.moreDataCallback(key, function (commits, thisKey) {
 								delete openEndsBeingDownloaded[thisKey];
+								downloadedStartPoints.push(thisKey);
 								if (commits) appendData(commits);
 								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
 									console.log("queues empty, ready to draw");
