@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8">
+    <script src="../dist/gitflow-visualize.bundle.js"></script>
+    <link rel="stylesheet" type="text/css" href="../dist/gitflow-visualize.css" />
+	    <style>
+    	.aui-avatar-xsmall .aui-avatar-inner img {
+    		max-height: 12px;
+    		max-width: 12px;
+    	}
+			.aui-lozenge {
+			background: #cccccc;
+			border: 1px solid #cccccc;
+			border-radius: 3px;
+			color: #333333;
+			display: inline-block;
+			font-size: 11px;
+			font-weight: bold;
+			line-height: 99%;
+			margin: 0;
+			padding: 2px 5px;
+			text-align: center;
+			text-decoration: none;
+			text-transform: uppercase;
+			}
+    	.aui-lozenge-subtle {
+			background-color: #ffffff;
+    	}
+			.aui-lozenge-complete{
+			border-color: #a5b3c2;
+			color: #4a6785;
+			}
+			.aui-lozenge-error {
+			border-color: #e8a29b;
+			color: #d04437;
+			}
+    	.aui-lozenge-current {
+    		border-color: #ffe9a8;
+    		color: #594300;
+    	}
+			.aui-lozenge-success{
+			border-color: #60b070;
+			color: #14892c;
+			}
+			body {
+			color: #333333;
+			font-family: Arial,sans-serif;
+			font-size: 14px;
+			line-height: 1.42857142857143;
+			}
+    </style>
+
+</head>
+<body>
+    <div id="drawhere"></div>
+</body>
+    <script>
+		var element = document.getElementById('drawhere');
+		var dataCallback = function (done) { 
+			debugger;
+			var xhr = new XMLHttpRequest();
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState == XMLHttpRequest.DONE) {
+					done(JSON.parse(xhr.responseText));
+				}
+			}
+			xhr.open("GET", "commits.json")
+			xhr.send(null);
+		}
+		var moreDataCallback = function (from, done) {
+			console.log("moreDataCallback", from);
+			done(null, from);
+		};
+		
+		GitFlowVisualize.draw(element,
+						{
+							dataCallback: dataCallback,
+							moreDataCallback: moreDataCallback,
+							featurePrefix: "refs/heads/",
+							releasePrefix: "refs/heads/candidate",
+							releaseTagPattern: /refs\/tags\/release\/\d+/
+
+						});
+						
+    </script>
+
+</html>
