@@ -413,20 +413,10 @@ var memoize = require('lodash/memoize');
 				var unassignedColumns = _.filter(_.map(Object.keys(data.columns), function (id) { return data.columns[id]; }), function (c) { return c.name[0] == 'c'; });
 				for (var j = 0; j < unassignedColumns.length; j++) {
 					var column = unassignedColumns[j];
-					var lastCommit = column.lastVisible();
-					if(!lastCommit)continue;
-					var childrenOfLast = lastCommit.children;
-					var firstLetter;
-					if(childrenOfLast.length === 0){
-						firstLetter = 'f';
-					}else{
-						var childCol = data.columns[data.commits[childrenOfLast[0]].columns[0]];
-						if (!childCol) continue;
-						firstLetter = childCol.name[0];
-						if (firstLetter == 'c') continue;
-						if (firstLetter == 'd') firstLetter = 'f';
-	
-					}
+					var childCol = column.finallyMergesToColumn();
+					var firstLetter = childCol ? childCol.name[0]: 'f';
+					if (firstLetter == 'c') continue;
+					if (firstLetter == 'd') firstLetter = 'f';
 					column.name = firstLetter + column.name.substring(1);
 					connected = true;
 				}
@@ -554,6 +544,14 @@ var memoize = require('lodash/memoize');
 					if(!agg || agg.orderNr > last.orderNr)return last;
 					return agg;
 				}, null);
+			}
+			self.finallyMergesToColumn = function(){
+				var lastCommit = this.lastVisible();
+				if(!lastCommit)return null;
+				var childrenOfLast = lastCommit.children;
+				if(childrenOfLast.length === 0)return null;
+				var childCol = data.columns[data.commits[childrenOfLast[0]].columns[0]];
+				return childCol;
 			}
 		}
 	
