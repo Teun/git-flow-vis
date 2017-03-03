@@ -115,6 +115,7 @@ var memoize = require('lodash/memoize');
 			releaseZonePattern: /^refs\/heads\/bugfix/,
 	
 			// this pattern should match the tags that are given to release commits on master 
+			releaseTagPattern: /^refs\/tags\/\d+(\.\d+)+$/,
 	
 			// UI interaction hooks for loading message
 			showSpinner: function () {},
