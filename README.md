@@ -112,7 +112,7 @@ Object.
 
 `opts.releaseZonePattern` is a regular expression (RegExp) that can be used to include other branches in the colored 'Release' zone of the graph. Defaults to '/^refs\/heads\/bugfix/'. 
 
-`opts.releaseTagPattern` is a regular expression (RegExp) that can be used to identify release tags. Defaults to '/refs\/tags\/\d+(\.\d+)+$/'.
+`opts.releaseTagPattern` is a regular expression (RegExp) that can be used to identify release tags. Defaults to '^/refs\\/tags\\/\d+(\\.\d+)+$/'.
 
 `opts.showSpinner()` is a function that is called prior to starting processing of commit data and can be used to show a loading message.
 
