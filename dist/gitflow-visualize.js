@@ -954,13 +954,17 @@ var GitFlowVisualize = (function () {
 				});
 			var arrow = arrowsLayer.selectAll(".arrow")
 				.data(arrows, function(d){return 'a-' + d.p + '-' + d.c;});
-			arrow
+			var addedArrow = arrow
 				.enter().append("g")
-				.attr("class", function (d) { return "arrow arrow-to-" + d.c; })
+				.attr("class", function (d) { return "arrow arrow-to-" + d.c; });
+			addedArrow
+				.append("path")
+					.attr("class", "outline");
+			addedArrow
 				.append("path")
 					.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
 
-			var path = arrow.select("g>path");			
+			var path = arrow.selectAll("g>path");			
 			path.transition().attr("d", connector)
 
 			arrow.exit().remove();
