@@ -1029,9 +1029,11 @@ var memoize = require('lodash/memoize');
 					.attr("class", function (d) { return "arrow arrow-to-" + d.c; });
 				addedArrow
 					.append("path")
+						.attr("stroke-linejoin", "round")
 						.attr("class", "outline");
 				addedArrow
 					.append("path")
+						.attr("stroke-linejoin", "round")
 						.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
 	
 				var path = arrow.selectAll("g>path");			
