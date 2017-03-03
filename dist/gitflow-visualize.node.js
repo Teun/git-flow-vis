@@ -361,6 +361,37 @@ var memoize = require('lodash/memoize');
 		};
 	
 		var separateReleaseFeatureBranches = function () {
+			// first find all branches that match a release or bugfix and place columns in appropriate zone
+			for(var br = 0; br< data.branches.length; br++){
+				var branch = data.branches[br];
+				if(branch.id.indexOf(options.releasePrefix) === 0 
+					|| branch.id.indexOf(options.hotfixPrefix) === 0
+					|| branch.id.match(options.releaseZonePattern) === 0){
+						var head = data.commits[branch.latestChangeset];
+						if(head){
+							var column = data.columns[head.columns[0]];
+							if(column.name[0] === 'c'){
+								column.name = 'r' + column.name.substring(1);
+							}
+						} 
+					}
+			}
+	
+			// then do same with features for unplaced
+			for(var br = 0; br< data.branches.length; br++){
+				var branch = data.branches[br];
+				if(branch.id.indexOf(options.featurePrefix) === 0 ){
+						var head = data.commits[branch.latestChangeset];
+						if(head){
+							var column = data.columns[head.columns[0]];
+							if(column.name[0] === 'c'){
+								column.name = 'f' + column.name.substring(1);
+							}
+						} 
+					}
+			}
+	
+			// then start looking for topology hints
 			for (var col in data.columns) {
 				var column = data.columns[col];
 				if (col == 'm' || col[0] == 'd' || col[0] == 'r') continue;
