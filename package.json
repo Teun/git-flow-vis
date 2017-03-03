@@ -1,6 +1,6 @@
 {
   "name": "git-flow-vis",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Visualize your commits when using the Git Flow branching strategy",
   "main": "dist/gitflow-visualize.node.js",
   "scripts": {
