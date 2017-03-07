@@ -1342,8 +1342,8 @@ var memoize = require('lodash/memoize');
 									}, 50);
 								} else {
 									console.log("waiting, still downloads in progress");
-									console.log(openEndsToBeDownloaded);
-									console.log(openEndsBeingDownloaded);
+									// console.log(openEndsToBeDownloaded);
+									// console.log(openEndsBeingDownloaded);
 								}
 	
 							});
