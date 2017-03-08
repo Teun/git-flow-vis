@@ -191,6 +191,9 @@ var memoize = require('lodash/memoize');
 					commit.labels = (commit.labels || []);
 					commit.labels.push(branch.id);
 					branch.lastActivity = commit.authorTimestamp;
+				}else{
+					result.openEnds["asap"] = result.openEnds["asap"] ||[];
+					result.openEnds["asap"].push(branch.latestChangeset);
 				}
 			}
 	
@@ -229,7 +232,10 @@ var memoize = require('lodash/memoize');
 				result.chronoCommits.push(id);
 			}
 	
+			result.chronoCommits.sort(function (a, b) { return result.commits[b].orderTimestamp - result.commits[a].orderTimestamp; });
 			// evaluate visibility
+			result.visibleCommits = [];
+			var counter = 0;
 			for(var i = 0; i < result.chronoCommits.length; i++){
 				var commit = result.commits[result.chronoCommits[i]];
 				if(commit.labels && commit.labels.length){
@@ -240,13 +246,6 @@ var memoize = require('lodash/memoize');
 						function(child){return child.visible;});
 					commit.visible = (visibleChildren.length > 0);
 				}
-			}
-	
-			result.chronoCommits.sort(function (a, b) { return result.commits[b].orderTimestamp - result.commits[a].orderTimestamp; });
-			result.visibleCommits = [];
-			for (var i = 0, counter = 0; i < result.chronoCommits.length; i++) 
-			{
-				var commit = result.commits[result.chronoCommits[i]];
 				if(commit.visible){
 					commit.orderNr = counter; 
 					result.visibleCommits.push(result.chronoCommits[i]);
@@ -256,10 +255,13 @@ var memoize = require('lodash/memoize');
 				}
 			}
 	
-	
-	
-	
 			setColumns(result);
+	
+			if(result.openEnds.asap){
+				setTimeout(function() {
+					self.drawing.lazyLoad();
+				}, 1);
+			}
 			return result;
 		};
 	
@@ -778,6 +780,28 @@ var memoize = require('lodash/memoize');
 		var appendData = function (newCommits) {
 			rawData.commits.push(newCommits);
 		}
+		var updateBranches = function(branches){
+			// existing branches will only get their latestworkset updated, new braches will be added.
+			// no deletes (for now)
+			var existingBranches = rawData.branches.values.reduce(function(a, v){
+				a[v.id] = v;
+				return a;
+			},{});
+			var changes = false;
+			branches.values.forEach(function(b){
+				var ref = b.id;
+				if(ref in existingBranches){
+					if(existingBranches[ref].latestChangeset !== b.latestChangeset){
+						changes = true;
+						existingBranches[ref].latestChangeset = b.latestChangeset;
+					}
+				}else{
+					rawData.branches.values.push(b);
+					changes = true;
+				}
+			});
+			return changes;
+		}
 	
 		var drawFromRaw = function () {
 			options.showSpinner();
@@ -1273,6 +1297,10 @@ var memoize = require('lodash/memoize');
 					//check for openEnded messages in view
 					var keyInView = null;
 					for (var key in data.openEnds) {
+						if(key === "asap"){
+								keyInView = key;
+								break;
+						}
 						var elementSelection = d3.select('#msg-' + key);
 						if(!elementSelection.empty()) {
 							if (isElementInViewport(elementSelection.node())) {
@@ -1282,9 +1310,10 @@ var memoize = require('lodash/memoize');
 						}
 					}
 					if (keyInView) {
-						var ourOrderNr = data.commits[keyInView].orderNr;
+						var ourOrderNr = keyInView === "asap" ? 0 : data.commits[keyInView].orderNr;
 						for (var key in data.openEnds) {
-							if (data.commits[key].orderNr > ourOrderNr + 200) {
+							var thatOrderNr = key === "asap" ? 0 : data.commits[key].orderNr;
+							if (thatOrderNr > ourOrderNr + 200) {
 								// to far out, skip
 								continue;
 							}
@@ -1308,12 +1337,13 @@ var memoize = require('lodash/memoize');
 								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
 									console.log("queues empty, ready to draw");
 									setTimeout(function () {
+										console.log("start drawing");
 										drawFromRaw();
 									}, 50);
 								} else {
 									console.log("waiting, still downloads in progress");
-									console.log(openEndsToBeDownloaded);
-									console.log(openEndsBeingDownloaded);
+									// console.log(openEndsToBeDownloaded);
+									// console.log(openEndsBeingDownloaded);
 								}
 	
 							});
@@ -1405,6 +1435,13 @@ var memoize = require('lodash/memoize');
 				}
 				options.hiddenBranches = refs;
 				drawFromRaw();
+			},
+			setChanged: function(branches){
+				// same data as in init structure
+				if(updateBranches(branches)){
+					drawFromRaw();
+					self.drawing.lazyLoad();
+				}
 			},
 			getHidden: function(){
 				return options.hiddenBranches;
