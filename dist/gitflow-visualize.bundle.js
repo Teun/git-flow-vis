@@ -992,14 +992,14 @@ var memoize = require('lodash/memoize');
 								.attr("class", "commits-graph")
 								.append("g")
 								.attr("transform", "translate(" + margin + ",0)");
-					elem.select("svg")
-						.attr("width", size.width + 2 * margin)
-						.attr("height", size.height + 2 * margin);
 					var backgroundLayer = svg.append("g").attr("id", "bgLayer");
 					var arrowsLayer = svg.append("g").attr("id", "arrowsLayer");
 					var mainLinesLayer = svg.append("g").attr("id", "mainLinesLayer");
 					var commitsLayer = svg.append("g").attr("id", "commitsLayer");
 				}
+				elem.select("svg")
+					.attr("width", size.width + 2 * margin)
+					.attr("height", size.height + 2 * margin);
 				backgroundLayer = svg.select("g#bgLayer");
 				arrowsLayer = svg.select("g#arrowsLayer");
 				mainLinesLayer = svg.select("g#mainLinesLayer");
