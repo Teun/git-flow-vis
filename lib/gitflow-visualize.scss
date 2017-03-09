@@ -72,6 +72,16 @@ line {
 .messages {
 	position:relative;
 }
+.gutter {
+    position: absolute;
+    height: 7200px;
+    width: 2px;
+    background-color: grey;
+    margin-left: 298px;
+    box-shadow: -5px 0px 10px grey;
+    z-index: 100;
+	cursor: w-resize;
+}
 
 .commit-msg {
 	position:absolute;

@@ -354,22 +354,6 @@ var GitFlowVisualize = (function () {
 				column.name = 'f' + column.name.substring(1);
 				continue;
 			}
-
-			// var visibleChildren = lastVisibleCommit ? _.filter(lastVisibleCommit.children, function(id){return data.commits[id].visible;}) : [];
-			// if (visibleChildren.length > 0) {
-			// 	var developCommits = _.filter(visibleChildren, function (id) { return data.commits[id].columns[0][0] == 'd'; });
-			// 	if (developCommits.length > 0) {
-			// 		// feature branches are branches that eventually merge into develop, not master
-			// 		column.name = 'f' + column.name.substring(1);
-			// 	} else {
-			// 		// so we have a child, but not m or d: probably two branches merged together
-			// 		// we'll figure this out later
-			// 		column.firstChild = data.commits[lastVisibleCommit.children[0]];
-			// 	}
-			// } else {
-			// 	// unmerged branch without useful label. Assume feature branch
-			// 		column.name = 'f' + column.name.substring(1);
-			// }
 		}
 		
 		while (true) {
@@ -1100,6 +1084,34 @@ var GitFlowVisualize = (function () {
 					.attr("class", "messages");
 				messages
 					.append("div").attr("class", "context-menu");
+			}
+			var gutter = elem.select("div.gutter");
+			if (gutter.empty()) {
+				gutter = elem.append("div")
+					.attr("class", "gutter");
+				var dragging = false;
+				var dragStart = 0;
+				var dragStartLeft = null;
+				gutter.on("mousedown", function(){
+					dragging = true;
+					dragStart = d3.event.pageX;
+					dragStartLeft = gutter.offsetLeft - 8;
+					return false;
+				});
+				d3.select("body").on("mouseup", function(){
+					if(dragging){
+						var diff = d3.event.pageX - dragStart;
+						console.log(diff, d3.event.offsetX);
+					}
+					dragging = false;
+				});
+				d3.select("body").on("mousemove", function(){
+					if(dragging){
+						var diff = d3.event.pageX - dragStart;
+						gutter.style("left", (diff + dragStartLeft) + "px");
+
+					}
+				});
 			}
 			var msgHeader = messages.select("div.msg-header");
 			if(msgHeader.empty()){
