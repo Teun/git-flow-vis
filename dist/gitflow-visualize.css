@@ -41,25 +41,24 @@ line {
     opacity: 0.5; }
 
 .messages {
-  position: relative; }
+  position: relative;
+  padding-left: 300px; }
 
 .gutter {
   position: absolute;
-  height: 7200px;
   width: 2px;
   background-color: grey;
   margin-left: 298px;
-  box-shadow: -5px 0px 10px grey;
+  box-shadow: -5px 0px 5px grey;
   z-index: 100;
-  cursor: w-resize; }
+  cursor: ew-resize; }
 
 .commit-msg {
   position: absolute;
   white-space: nowrap;
   cursor: pointer;
-  padding-left: 30%;
-  width: 70%;
-  overflow-x: hidden; }
+  overflow-x: hidden;
+  padding-left: 10px; }
   .commit-msg.dim {
     color: #aaa; }
   .commit-msg.selected {
@@ -139,7 +138,7 @@ table.commit-table td {
   width: 120px; }
 
 .commits-graph-container {
-  width: 30%;
+  width: 300px;
   overflow-x: scroll;
   float: left;
   z-index: 5;

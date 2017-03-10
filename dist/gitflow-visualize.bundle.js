@@ -1164,26 +1164,35 @@ var memoize = require('lodash/memoize');
 					var dragStart = 0;
 					var dragStartLeft = null;
 					gutter.on("mousedown", function(){
-						dragging = true;
-						dragStart = d3.event.pageX;
-						dragStartLeft = gutter.offsetLeft - 8;
-						return false;
+						if(!dragging){
+							dragging = true;
+							dragStart = d3.event.pageX;
+							dragStartLeft = gutter.style("margin-left");
+							dragStartLeft = parseInt(dragStartLeft.substring(0, dragStartLeft.indexOf("px")));
+							d3.event.stopPropagation();
+							d3.event.preventDefault();
+						}
 					});
 					d3.select("body").on("mouseup", function(){
 						if(dragging){
 							var diff = d3.event.pageX - dragStart;
-							console.log(diff, d3.event.offsetX);
+							gutter.style("margin-left", (diff + dragStartLeft) + "px");
+							var cont = elem.selectAll(".commits-graph-container");
+							cont.style("width", (diff + dragStartLeft + 2) + "px" );
+							messages.style("padding-left", (diff + dragStartLeft + 2) + "px" );
 						}
 						dragging = false;
 					});
 					d3.select("body").on("mousemove", function(){
 						if(dragging){
 							var diff = d3.event.pageX - dragStart;
-							gutter.style("left", (diff + dragStartLeft) + "px");
+							gutter.style("margin-left", (diff + dragStartLeft) + "px");
+							d3.event.stopPropagation();
 	
 						}
 					});
 				}
+				gutter.style("height", size.height + "px");
 				var msgHeader = messages.select("div.msg-header");
 				if(msgHeader.empty()){
 					msgHeader = messages.append("div")
