@@ -971,6 +971,10 @@ var memoize = require('lodash/memoize');
 				if (svg.empty()) {
 					var cont = elem.append("div");
 					cont.attr("class", "commits-graph-container");
+					cont.append("div")
+						.attr("class", "scroll-container")
+						.append("div")
+						.attr("class", "scrollme");
 					var svg = cont.append("svg")
 								.attr("class", "commits-graph")
 								.append("g")
@@ -980,9 +984,17 @@ var memoize = require('lodash/memoize');
 					var mainLinesLayer = svg.append("g").attr("id", "mainLinesLayer");
 					var commitsLayer = svg.append("g").attr("id", "commitsLayer");
 				}
+	
 				elem.select("svg")
 					.attr("width", size.width + 2 * margin)
 					.attr("height", size.height + 2 * margin);
+				elem.select("div.scrollme").style("width", size.width + 2 * margin + "px");
+				
+				var scroll1 = elem.select(".commits-graph-container");
+				var scroll2 = elem.select(".scroll-container");
+				scroll1.on("scroll", function(){scroll2.node().scrollLeft = scroll1.node().scrollLeft;});
+				scroll2.on("scroll", function(){scroll1.node().scrollLeft = scroll2.node().scrollLeft;});
+	
 				backgroundLayer = svg.select("g#bgLayer");
 				arrowsLayer = svg.select("g#arrowsLayer");
 				mainLinesLayer = svg.select("g#mainLinesLayer");
@@ -1159,6 +1171,8 @@ var memoize = require('lodash/memoize');
 				if (gutter.empty()) {
 					gutter = elem.append("div")
 						.attr("class", "gutter");
+					gutter.append("div").attr("class", "gutterline");
+	
 					var dragging = false;
 					var dragStart = 0;
 					var dragStartLeft = null;
@@ -1176,9 +1190,11 @@ var memoize = require('lodash/memoize');
 						if(dragging){
 							var diff = d3.event.pageX - dragStart;
 							gutter.style("margin-left", (diff + dragStartLeft) + "px");
-							var cont = elem.selectAll(".commits-graph-container");
+							var cont = elem.select(".commits-graph-container");
 							cont.style("width", (diff + dragStartLeft + 2) + "px" );
-							messages.style("padding-left", (diff + dragStartLeft + 2) + "px" );
+							elem.select("div.scroll-container").style("width", diff + dragStartLeft + "px");
+	
+							messages.style("padding-left", (diff + dragStartLeft + 10) + "px" );
 						}
 						dragging = false;
 					});
