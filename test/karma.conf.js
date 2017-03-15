@@ -20,7 +20,9 @@ module.exports = function (config) {
             { pattern: 'node_modules/lodash/lodash.js' },
             { pattern: 'lib/gitflow-visualize.js' },
             { pattern: 'test/test.data.js' },
-            { pattern: 'test/test.js' }
+            { pattern: 'test/test.js' },
+            { pattern: 'test/test.data.2.js' },
+            { pattern: 'test/test.2.js' }
         ],
 
         // Configure Mocha client
