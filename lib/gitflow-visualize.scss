@@ -67,19 +67,46 @@ line {
 	}
 }
 
-// .commits-graph {}
+.commits-graph-container {
+	.scroll-container{
+			position: fixed;
+			bottom:0px;
+			height:10px;
+			width:290px;
+			overflow-x: scroll;
+		.scrollme{
+			background-color: transparent;
+			height:10px;
+		}
+	}
+}
 
 .messages {
 	position:relative;
+	padding-left:300px;
+}
+.gutter {
+	width: 12px;
+    position: absolute;
+    margin-left: 290px;
+    z-index: 100;
+	cursor: ew-resize;
+	.gutterline {
+		position:absolute;
+		width: 2px;
+		height:100%;
+		left:6px;
+		background-color: grey;
+		box-shadow: -5px 0px 5px grey;
+	}
 }
 
 .commit-msg {
 	position:absolute;
 	white-space:nowrap;
 	cursor:pointer;
-	padding-left:30%;
-	width:70%;
 	overflow-x:hidden;
+	padding-left:10px;
 
 	&.dim {
 		color:#aaa;
@@ -104,6 +131,9 @@ line {
 }
 
 td {
+	&.msg{
+		min-width: 8em;
+	}
 	&.author {
 		width:8em;
 	}
@@ -204,7 +234,7 @@ table {
 }
 
 .commits-graph-container {
-	width:30%;
+	width:300px;
 	overflow-x:scroll;
 	float:left;
 	z-index:5;
@@ -227,7 +257,6 @@ table {
 	position: absolute;
 	visibility: hidden;
 	background-color: lightgray;
-	//width:100px;
 	z-index: 10;
 	border: 2px outset;
 	.item{

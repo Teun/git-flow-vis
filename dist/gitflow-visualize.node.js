@@ -437,7 +437,6 @@ var memoize = require('lodash/memoize');
 					column.name = 'f' + column.name.substring(1);
 					continue;
 				}
-	
 			}
 			
 			while (true) {
@@ -985,6 +984,10 @@ var memoize = require('lodash/memoize');
 				if (svg.empty()) {
 					var cont = elem.append("div");
 					cont.attr("class", "commits-graph-container");
+					cont.append("div")
+						.attr("class", "scroll-container")
+						.append("div")
+						.attr("class", "scrollme");
 					var svg = cont.append("svg")
 								.attr("class", "commits-graph")
 								.append("g")
@@ -994,9 +997,17 @@ var memoize = require('lodash/memoize');
 					var mainLinesLayer = svg.append("g").attr("id", "mainLinesLayer");
 					var commitsLayer = svg.append("g").attr("id", "commitsLayer");
 				}
+	
 				elem.select("svg")
 					.attr("width", size.width + 2 * margin)
 					.attr("height", size.height + 2 * margin);
+				elem.select("div.scrollme").style("width", size.width + 2 * margin + "px");
+				
+				var scroll1 = elem.select(".commits-graph-container");
+				var scroll2 = elem.select(".scroll-container");
+				scroll1.on("scroll", function(){scroll2.node().scrollLeft = scroll1.node().scrollLeft;});
+				scroll2.on("scroll", function(){scroll1.node().scrollLeft = scroll2.node().scrollLeft;});
+	
 				backgroundLayer = svg.select("g#bgLayer");
 				arrowsLayer = svg.select("g#arrowsLayer");
 				mainLinesLayer = svg.select("g#mainLinesLayer");
@@ -1169,6 +1180,47 @@ var memoize = require('lodash/memoize');
 					messages
 						.append("div").attr("class", "context-menu");
 				}
+				var gutter = elem.select("div.gutter");
+				if (gutter.empty()) {
+					gutter = elem.append("div")
+						.attr("class", "gutter");
+					gutter.append("div").attr("class", "gutterline");
+	
+					var dragging = false;
+					var dragStart = 0;
+					var dragStartLeft = null;
+					gutter.on("mousedown", function(){
+						if(!dragging){
+							dragging = true;
+							dragStart = d3.event.pageX;
+							dragStartLeft = gutter.style("margin-left");
+							dragStartLeft = parseInt(dragStartLeft.substring(0, dragStartLeft.indexOf("px")));
+							d3.event.stopPropagation();
+							d3.event.preventDefault();
+						}
+					});
+					d3.select("body").on("mouseup", function(){
+						if(dragging){
+							var diff = d3.event.pageX - dragStart;
+							gutter.style("margin-left", (diff + dragStartLeft) + "px");
+							var cont = elem.select(".commits-graph-container");
+							cont.style("width", (diff + dragStartLeft + 2) + "px" );
+							elem.select("div.scroll-container").style("width", diff + dragStartLeft + "px");
+	
+							messages.style("padding-left", (diff + dragStartLeft + 10) + "px" );
+						}
+						dragging = false;
+					});
+					d3.select("body").on("mousemove", function(){
+						if(dragging){
+							var diff = d3.event.pageX - dragStart;
+							gutter.style("margin-left", (diff + dragStartLeft) + "px");
+							d3.event.stopPropagation();
+	
+						}
+					});
+				}
+				gutter.style("height", size.height + "px");
 				var msgHeader = messages.select("div.msg-header");
 				if(msgHeader.empty()){
 					msgHeader = messages.append("div")
