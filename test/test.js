@@ -252,15 +252,20 @@ suite('Situation non-standard branch names', function () {
             dataCallback: dataCallback, dataProcessed: dataClean, showSpinner: function () { }
         });
     });
-    test('Commit bac09e5 should be on a feature column', function () {
+    test('Commit cac09e5 should be on a feature column', function () {
+        var commit = data.commits['cac09e5378cae08a4c52107ba58c0318577cf557'];
+        var column = data.columns[commit.columns[0]];
+        assert(column.name[0] === 'f', "Commit " + commit.id + " (" + commit.message + ") should be on a feature column as it branches from develop. Now on " + column.name);
+    });
+    test('Commit bac09e5 should be on a release column', function () {
         var commit = data.commits['bac09e5378cae08a4c52107ba58c0318577cf557'];
         var column = data.columns[commit.columns[0]];
-        assert(column.name[0] === 'f', "Commit " + commit.id + " (" + commit.message + ") should be on a feature column. Now on " + column.name);
+        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column as it branches from master. Now on " + column.name);
     });
     test('Commit aac09e5 should be on a release column', function () {
         var commit = data.commits['aac09e5378cae08a4c52107ba58c0318577cf557'];
         var column = data.columns[commit.columns[0]];
-        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on the release column. Now on " + column.name);
+        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on the release column as it has a bugfix label. Now on " + column.name);
     });
 });
 suite('Situation non-standard branch names with different config', function () {
@@ -276,15 +281,20 @@ suite('Situation non-standard branch names with different config', function () {
             releaseZonePattern: /^(?!.*bugfix)/  /* switch the meaning using a negative lookahaed expression*/
         });
     });
+    test('Commit cac09e5 should be on a release column', function () {
+        var commit = data.commits['cac09e5378cae08a4c52107ba58c0318577cf557'];
+        var column = data.columns[commit.columns[0]];
+        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column as its label does not have bugfix in it and thus matches releaseZonePattern. Now on " + column.name);
+    });
     test('Commit bac09e5 should be on a release column', function () {
         var commit = data.commits['bac09e5378cae08a4c52107ba58c0318577cf557'];
         var column = data.columns[commit.columns[0]];
-        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column. Now on " + column.name);
+        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column as it branches from master. Now on " + column.name);
     });
-    test('Commit aac09e5 should be on a feature column', function () {
+    test('Commit aac09e5 should be on a release column', function () {
         var commit = data.commits['aac09e5378cae08a4c52107ba58c0318577cf557'];
         var column = data.columns[commit.columns[0]];
-        assert(column.name[0] === 'f', "Commit " + commit.id + " (" + commit.message + ") should be on the feature column. Now on " + column.name);
+        assert(column.name[0] === 'r', "Commit " + commit.id + " (" + commit.message + ") should be on a release column, even though it is not matching the releaseZonePattern. It branches from master. Now on " + column.name);
     });
 });
 suite('Showing and hiding', function () {

@@ -399,14 +399,27 @@ var memoize = require('lodash/memoize');
 				if (col == 'm' || col[0] == 'd' || col[0] == 'r') continue;
 				var allChildren = _.flatMap(column.commits, function (id) { return data.commits[id].children; });
 				var allChildrenOnMaster = _.filter(allChildren, function (id) {
-					var parent = data.commits[id];
-					return parent.visible && parent.columns && parent.columns[0] == 'm';
+					var child = data.commits[id];
+					return child.visible && child.columns && child.columns[0] == 'm';
 				});
 				if (allChildrenOnMaster.length > 0) {
 					//release branches are branches that are not master or develop, but some commit merges into master
 					column.name = 'r' + column.name.substring(1);
 					continue;
 				}
+	
+				var allParents = _.flatMap(column.commits, function (id) { return data.commits[id].parents; });
+				var allParentsOnMaster = _.filter(allParents, function (p) {
+					var parent = data.commits[p.id];
+					if(!parent)return false;
+					return parent.visible && parent.columns && parent.columns[0] == 'm';
+				});
+				if (allParentsOnMaster.length > 0) {
+					//release branches are branches that are not master or develop, but some commit merges into master
+					column.name = 'r' + column.name.substring(1);
+					continue;
+				}
+	
 				var lastVisibleCommit = column.lastVisible(); // data.commits[column.commits[0]];
 				if(!lastVisibleCommit){
 					continue;

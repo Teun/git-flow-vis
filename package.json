@@ -6,7 +6,8 @@
   "scripts": {
     "test": "gulp clean && gulp test",
     "dist": "gulp clean && gulp dist",
-    "prepublish": "npm test"
+    "prepublish": "npm test",
+    "prepush": "npm test"
   },
   "repository": {
     "type": "git",
