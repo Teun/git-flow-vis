@@ -399,14 +399,27 @@ var memoize = require('lodash/memoize');
 				if (col == 'm' || col[0] == 'd' || col[0] == 'r') continue;
 				var allChildren = _.flatMap(column.commits, function (id) { return data.commits[id].children; });
 				var allChildrenOnMaster = _.filter(allChildren, function (id) {
-					var parent = data.commits[id];
-					return parent.visible && parent.columns && parent.columns[0] == 'm';
+					var child = data.commits[id];
+					return child.visible && child.columns && child.columns[0] == 'm';
 				});
 				if (allChildrenOnMaster.length > 0) {
 					//release branches are branches that are not master or develop, but some commit merges into master
 					column.name = 'r' + column.name.substring(1);
 					continue;
 				}
+	
+				var allParents = _.flatMap(column.commits, function (id) { return data.commits[id].parents; });
+				var allParentsOnMaster = _.filter(allParents, function (p) {
+					var parent = data.commits[p.id];
+					if(!parent)return false;
+					return parent.visible && parent.columns && parent.columns[0] == 'm';
+				});
+				if (allParentsOnMaster.length > 0) {
+					//release branches are branches that are not master or develop, but some commit merges into master
+					column.name = 'r' + column.name.substring(1);
+					continue;
+				}
+	
 				var lastVisibleCommit = column.lastVisible(); // data.commits[column.commits[0]];
 				if(!lastVisibleCommit){
 					continue;
@@ -425,21 +438,6 @@ var memoize = require('lodash/memoize');
 					continue;
 				}
 	
-				// var visibleChildren = lastVisibleCommit ? _.filter(lastVisibleCommit.children, function(id){return data.commits[id].visible;}) : [];
-				// if (visibleChildren.length > 0) {
-				// 	var developCommits = _.filter(visibleChildren, function (id) { return data.commits[id].columns[0][0] == 'd'; });
-				// 	if (developCommits.length > 0) {
-				// 		// feature branches are branches that eventually merge into develop, not master
-				// 		column.name = 'f' + column.name.substring(1);
-				// 	} else {
-				// 		// so we have a child, but not m or d: probably two branches merged together
-				// 		// we'll figure this out later
-				// 		column.firstChild = data.commits[lastVisibleCommit.children[0]];
-				// 	}
-				// } else {
-				// 	// unmerged branch without useful label. Assume feature branch
-				// 		column.name = 'f' + column.name.substring(1);
-				// }
 			}
 			
 			while (true) {

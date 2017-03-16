@@ -130,3 +130,28 @@ suite('Data set 1', function () {
 
 
 });
+suite('Data set 2', function () {
+    var data;
+    suiteSetup(function(done) {
+
+        var dataCallback = function(d) { d(Dummy2.Data[2]); };
+        var moreCallback = function (sha, d) {
+            d(null);
+        }
+
+        var dataClean = function(d) {
+            data = d;
+            done();
+        };
+        GitFlowVisualize.draw(null, { dataCallback: dataCallback, moreDataCallback: moreCallback, dataProcessed: dataClean, releaseTagPattern: /refs\/tags\/candidate/, showSpinner: function () { } });
+    });
+    test('Adding a new head commit should move everything down a line', function() {
+        var commit = data.commits["0eb7952f4a56e500afd08405cd6123f7ccf21d49"];
+
+        assert(data.columns[commit.columns[0]].name[0] === "r", "Wrong column: should be release column");
+
+
+    });
+
+
+});
