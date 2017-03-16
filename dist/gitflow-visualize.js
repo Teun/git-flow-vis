@@ -892,13 +892,13 @@ var GitFlowVisualize = (function () {
 						.domain([0,here])
 						.range([0, Math.min(maxWidth, 20 * here)]);
 			return function(d){
-				if(d in mapping){
-					d = mapping[d];
-				}
 				var offset = 0;
 				if(d[d.length-1] == "+"){
 					d = d.substring(0, d.length-1);
 					offset = 0.5;
+				}
+				if(d in mapping){
+					d = mapping[d];
 				}
 				return baseLinear(basePositions[d] + offset);
 			};
