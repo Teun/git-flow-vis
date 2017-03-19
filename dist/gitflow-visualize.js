@@ -24,6 +24,7 @@ var GitFlowVisualize = (function () {
 	var constants = {
 		rowHeight: 35
 	};
+	var LOG = {DEBUG: "DEBUG", INFO: "INFO", WARN:"WARN", ERROR:"ERROR"}
 
 	var md5 = CryptoJS.MD5;
 
@@ -52,18 +53,21 @@ var GitFlowVisualize = (function () {
 
 		// function to provide commit data
 		dataCallback: function (done) {
-			console.log("The required option 'dataCallback' is missing, please provide a method to retrieve commit data");
+			console.log(LOG.WARN, "The required option 'dataCallback' is missing, please provide a method to retrieve commit data");
 			done({});
 		},
 
 		// function to retrieve additional commit data on scroll
 		moreDataCallback: function (from, done) {
-			console.log("The required option 'moreDataCallback' is missing, please provide a method to retrieve commit data");
+			console.log(LOG.WARN, "The required option 'moreDataCallback' is missing, please provide a method to retrieve commit data");
 			done({});
 		},
 
 		// function called after data hase been processed successfully and chart has been drawn
 		dataProcessed: function (/*data*/) { },
+
+		// function called for debug logging
+		log: function(level, message){},
 
 		// function to provide the appropriate url to the actual commit souce
 		createCommitUrl: function(/*commit*/){
@@ -131,7 +135,7 @@ var GitFlowVisualize = (function () {
 		var fixMyTimeRecursive = function (c, after) {
 			if (!c) return;
 			if (c.orderTimestamp <= after) {
-				//console.log("fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
+				options.log(LOG.DEBUG, "fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
 				c.orderTimestamp = after + 1;
 				for (var k = 0; k < c.children.length; k++) {
 					fixMyTimeRecursive(result.commits[c.children[k]], c.orderTimestamp);
@@ -270,7 +274,7 @@ var GitFlowVisualize = (function () {
 					var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0][0] == "d");
 					if (isOnMasterOrDevelop) return false;
 					if (!data.columns[child.columns[0]]) {
-						console.log('huh');
+						options.log(LOG.WARN, 'huh');
 					}
 					var commitsInColumn = data.columns[child.columns[0]].commits;
 					return child.id == commitsInColumn[commitsInColumn.length - 1];
@@ -285,7 +289,7 @@ var GitFlowVisualize = (function () {
 						putCommitInColumn(commit.id, firstChild.columns[0], data);
 						firstChild._hasColumnChild = true;
 					} else {
-						console.log("Couldn't find appropriate parent");
+						options.log(LOG.INFO, "Couldn't find appropriate parent");
 					}
 				}
 			}
@@ -733,7 +737,9 @@ var GitFlowVisualize = (function () {
 	var drawFromRaw = function () {
 		options.showSpinner();
 		data = setTimeout(function () {
+			options.log(LOG.INFO, "Starting full new draw");
 			cleanup(rawData);
+			options.log(LOG.INFO, "Done cleaning/transforming data");
 			options.hideSpinner();
 			options.dataProcessed(data);
 			if (options.drawElem) {
@@ -741,6 +747,7 @@ var GitFlowVisualize = (function () {
 				self.drawing.drawGraph(options.drawElem);
 				self.drawing.updateHighlight();
 			}
+			options.log(LOG.INFO, "Done drawing (animations still in progress)");
 		}, 10);
 	}
 
@@ -1301,13 +1308,13 @@ var GitFlowVisualize = (function () {
 							var parentId = data.openEnds[key][i];
 							if(downloadedStartPoints.indexOf(parentId) === -1){
 								openEndsToBeDownloaded[parentId] = true;
-								console.log("scheduled: " + parentId);
+								options.log(LOG.DEBUG, "scheduled: " + parentId);
 							}
 						}
 						delete data.openEnds[key];
 					}
 					for (var key in openEndsToBeDownloaded) {
-						console.log("downloading: " + key);
+						options.log(LOG.DEBUG, "downloading: " + key);
 						delete openEndsToBeDownloaded[key];
 						openEndsBeingDownloaded[key] = true;
 						options.moreDataCallback(key, function (commits, thisKey) {
@@ -1315,15 +1322,13 @@ var GitFlowVisualize = (function () {
 							downloadedStartPoints.push(thisKey);
 							if (commits) appendData(commits);
 							if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
-								console.log("queues empty, ready to draw");
+								options.log(LOG.DEBUG, "queues empty, ready to draw");
 								setTimeout(function () {
-									console.log("start drawing");
+									options.log(LOG.DEBUG, "start drawing");
 									drawFromRaw();
 								}, 50);
 							} else {
-								console.log("waiting, still downloads in progress");
-								// console.log(openEndsToBeDownloaded);
-								// console.log(openEndsBeingDownloaded);
+								options.log(LOG.DEBUG, "waiting, still downloads in progress");
 							}
 
 						});
@@ -1359,7 +1364,6 @@ var GitFlowVisualize = (function () {
 				if(theMenu === null || theMenu.empty()){
 					theMenu = d3.select(".messages .context-menu");
 					theMenu.on("mousemove", function(){
-						console.log("mouse move");
 						timeLastSeen = Date.now();
 					});
 				}
