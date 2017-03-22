@@ -95,13 +95,26 @@
 				done(null, from);
 			}
 		};
+		var log = function(level, msg){
+			switch (level) {
+				case "ERROR":
+					console.error(msg);
+					break;
+				case "WARN":
+					console.warn(msg);
+					break;
+				default:
+					console.log(level + ": ", msg);
+			}
+		}
 		
 		d3.select('#showall').on("click", function(){GitFlowVisualize.branches.setHidden([]);});
 		
 		GitFlowVisualize.draw(element,
 						{
 							dataCallback: dataCallback,
-							moreDataCallback: moreDataCallback
+							moreDataCallback: moreDataCallback,
+							log:log
 						});
 						
     </script>

@@ -616,36 +616,42 @@ var memoize = require('lodash/memoize');
 			return mostAlong.asArray();
 		}
 	
-		function makePath(initialPath) {
-			var self = { score: 0 };
-			var arrayPath = initialPath.slice(0);
-			var length = arrayPath.length;
-			var last = arrayPath[length - 1];
+		var NullPath = {
+			length:function(){return 0;},
+			score:function(){return 0;},
+			asArray:function(){return [];},
+			contains:function(){return false;},
+			members: {}
+		};
+		function ImmutablePath(parentPath, nextStep) {
+			var self = this;
+			parentPath = parentPath || NullPath;
+			var length = parentPath.length() + 1;
+			var stepScore = 0;
+			self.setStepScore = function(value){stepScore = value;}
 			self.members = {};
-			var prev = null;
-			for (var i = 0; i < arrayPath.length; i++) {
-				self.members[arrayPath[i]] = prev;
-				prev = arrayPath[i];
+			self.members.prototype = parentPath.members;
+			self.members[nextStep] = true;
+			
+			self.last = function () {return nextStep;};
+			var parentScore = null;
+			self.score = function(){
+				if(parentScore === null){
+					parentScore = parentPath.score();
+				}
+				return parentScore + stepScore;
 			}
-			self.push = function (newStep) {
-				var currLast = last;
-				length++;
-				self.members[newStep] = currLast;
-				last = newStep;
-				arrayPath.push(newStep);
-			};
-	
-			self.last = function () {
-				return last;
-			};
-			self.clone = function () {
-				var clone = makePath(arrayPath);
-				clone.score = self.score;
-				return clone;
-			};
+			self.length = function(){return length;}
 			self.asArray = function () {
-				return arrayPath.slice(0);
+				var arr = parentPath.asArray().slice(0);
+				arr.push(nextStep);
+				return arr;
 			};
+			self.contains = function(id){
+				// if(id === nextStep)return true;
+				// return parentPath.contains(id);
+				return (id in self.members);
+			}
 			return self;
 		}
 	
@@ -654,9 +660,8 @@ var memoize = require('lodash/memoize');
 			var openPaths = [];
 			var bestPathToPoints = {};
 			var fromCommit = data.commits[from];
-			var firstPath = makePath([from]);
+			var firstPath = new ImmutablePath(null, from);
 			var furthestPath = 0;
-			firstPath.score = 0;
 			bestPathToPoints[fromCommit.orderNr] = firstPath;
 			furthestPath = fromCommit.orderNr;
 			openPaths.push(firstPath);
@@ -672,14 +677,13 @@ var memoize = require('lodash/memoize');
 						continue;
 					}
 					if (bestPathToPoints[nextChild.orderNr]) {
-						if (bestPathToPoints[nextChild.orderNr].score > basePath.score + stepScore) {
+						if (bestPathToPoints[nextChild.orderNr].score() > basePath.score() + stepScore) {
 							// this is not the best path. We do not place it in the open paths
 							continue;
 						}
 					}
-					var newPath = basePath.clone();
-					newPath.push(nextChild.id);
-					newPath.score = basePath.score + stepScore;
+					var newPath = new ImmutablePath(basePath, nextChild.id);
+					newPath.setStepScore(stepScore);
 					openPaths.push(newPath);
 					bestPathToPoints[nextChild.orderNr] = newPath;
 					if (furthestPath < nextChild.orderNr) furthestPath = nextChild.orderNr;
@@ -689,7 +693,7 @@ var memoize = require('lodash/memoize');
 			allDistances.sort(function (p1, p2) {
 				if (!p1) return 0;
 				if (!p2) return 0;
-				return bestPathToPoints[p2].score - bestPathToPoints[p1].score;
+				return bestPathToPoints[p2].score() - bestPathToPoints[p1].score();
 			});
 			return bestPathToPoints[allDistances[0]];
 		}
@@ -708,7 +712,7 @@ var memoize = require('lodash/memoize');
 				if (c.columns && c.columns[0] == 'm') return false;
 				// next commit cannot have a child further down the line
 				var childrenInPath = c.children.filter(function(child) {
-					return child in path.members;
+					return path.contains(child);
 				});
 				if (childrenInPath.length != 1) return false;
 				// merges of develop onto itself are neutral
