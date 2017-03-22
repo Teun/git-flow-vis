@@ -101,7 +101,6 @@ var memoize = require('lodash/memoize');
 	
 		var options = {
 			drawElem: null,
-			drawTable: false,
 	
 			// these are the exact names of the branches that should be drawn as stright lines master and develop
 			masterRef: "refs/heads/master",
@@ -818,7 +817,6 @@ var memoize = require('lodash/memoize');
 				options.hideSpinner();
 				options.dataProcessed(data);
 				if (options.drawElem) {
-					self.drawing.drawTable(options.drawElem);
 					self.drawing.drawGraph(options.drawElem);
 					self.drawing.updateHighlight();
 				}
@@ -881,26 +879,6 @@ var memoize = require('lodash/memoize');
 	
 			}
 	
-			self.drawTable = function (elem) {
-				if (options.drawTable) {
-					var table = d3.select(document.createElement('table'));
-					table.append('tr').html( drawColumnsAsHeaders() + '<td>sha</td><td>parent</td><td>author</td><td>at</td><td>msg</td></tr>');
-					for (var i = 0 ; i < data.chronoCommits.length; i++) {
-						var commit = data.commits[data.chronoCommits[i]];
-						var time = new Date(commit.authorTimestamp);
-						table.append('tr').html(drawColumnsAsCells(commit) 
-							+ '<td>' + commit.displayId + '</td><td>' + showCommaSeparated(commit.parents) + 
-							'</td><td>' + commit.author.name + '</td><td>' + moment(time).format("M/D/YY HH:mm:ss") + 
-							'</td><td>' + commit.message + '</td>');
-					}
-					d3.select(elem).append(table);
-				}
-			};
-	
-			var showCommaSeparated = function (arr) {
-				return _.map(arr, function (i) { return i.displayId; }).join(", ");
-			}
-	
 			var keysInOrder = function (obj) {
 				var keys = _.map(obj, function (v, k) { return k; });
 				keys.sort(firstBy(function (k1, k2) {
@@ -919,30 +897,6 @@ var memoize = require('lodash/memoize');
 					return k2 > k1 ? -1 : 1;
 				}));
 				return keys;
-			};
-	
-			var drawColumnsAsCells = function (commit) {
-				var result = "";
-				var keys = keysInOrder(data.columns);
-				for (var i = 0; i < keys.length; i++) {
-					var col = keys[i];
-					result += "<td>";
-					if (commit.columns.indexOf(col) > -1) {
-						result += "o";
-					}
-					result += "</td>";
-				}
-				return result;
-			};
-	
-			var drawColumnsAsHeaders = function () {
-				var result = "";
-				var keys = keysInOrder(data.columns);
-				for (var i = 0; i < keys.length; i++) {
-					var col = keys[i];
-					result += "<td>" + data.columns[col].name + "</td>";
-				}
-				return result;
 			};
 	
 			var groupScale = function(cols, maxWidth){
