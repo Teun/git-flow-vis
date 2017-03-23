@@ -733,6 +733,9 @@ var memoize = require('lodash/memoize');
 		};
 	
 		var rawData = null;
+		var dirty = {
+			commits:true
+		};
 		var downloadedStartPoints = [];
 	
 		self.draw = function (elem, opt) {
@@ -782,7 +785,11 @@ var memoize = require('lodash/memoize');
 		};
 	
 		var appendData = function (newCommits) {
-			rawData.commits.push(newCommits);
+			var unknownCommits = _.filter(newCommits, function(c){return !(c in data.commits);})
+			if(unknownCommits.length > 0){
+				rawData.commits.push(newCommits);
+				dirty.commits = true;
+			}
 		}
 		var updateBranches = function(branches){
 			// existing branches will only get their latestworkset updated, new braches will be added.
@@ -812,6 +819,7 @@ var memoize = require('lodash/memoize');
 			data = setTimeout(function () {
 				options.log(LOG.INFO, "Starting full new draw");
 				cleanup(rawData);
+				dirty.commits = false;
 				options.log(LOG.INFO, "Done cleaning/transforming data");
 				options.hideSpinner();
 				options.dataProcessed(data);
@@ -1220,8 +1228,9 @@ var memoize = require('lodash/memoize');
 					  if(d3.event.target.tagName == 'A')return true;
 					  // will show menu. Collect items
 					  var items = [];
-					  if(d3.event.target.tagName == 'SPAN'){
+					  if(d3.event.target.tagName == 'SPAN' && d3.event.target.className.startsWith("label ")){
 						  // on branch label
+						  options.log(LOG.DEBUG, d3.event.target.className);
 						  var clickedBranch = 'refs/heads/' + d3.event.target.innerHTML;
 						  items.push(["Hide branch '" + d3.event.target.innerHTML + "'", function(){
 							options.hiddenBranches.push(clickedBranch);
@@ -1371,11 +1380,15 @@ var memoize = require('lodash/memoize');
 								downloadedStartPoints.push(thisKey);
 								if (commits) appendData(commits);
 								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
-									options.log(LOG.DEBUG, "queues empty, ready to draw");
-									setTimeout(function () {
-										options.log(LOG.DEBUG, "start drawing");
-										drawFromRaw();
-									}, 50);
+									if(dirty.commits){
+										options.log(LOG.DEBUG, "queues empty, ready to draw");
+										setTimeout(function () {
+											options.log(LOG.DEBUG, "start drawing");
+											drawFromRaw();
+										}, 50);
+									}else{
+										options.log(LOG.DEBUG, "no new commits loaded, no need to redraw");
+									}
 								} else {
 									options.log(LOG.DEBUG, "waiting, still downloads in progress");
 								}
