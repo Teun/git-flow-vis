@@ -96,6 +96,7 @@ var memoize = require('lodash/memoize');
 			rowHeight: 35
 		};
 		var LOG = {DEBUG: "DEBUG", INFO: "INFO", WARN:"WARN", ERROR:"ERROR"}
+		var logged = {};
 	
 		var md5 = CryptoJS.MD5;
 	
@@ -123,13 +124,19 @@ var memoize = require('lodash/memoize');
 	
 			// function to provide commit data
 			dataCallback: function (done) {
-				console.log(LOG.WARN, "The required option 'dataCallback' is missing, please provide a method to retrieve commit data");
+				if(!logged.dataCallback){
+					console.log(LOG.WARN, "The required option 'dataCallback' is missing, please provide a method to retrieve commit data");
+					logged.dataCallback = true;
+				}
 				done({});
 			},
 	
 			// function to retrieve additional commit data on scroll
 			moreDataCallback: function (from, done) {
-				console.log(LOG.WARN, "The required option 'moreDataCallback' is missing, please provide a method to retrieve commit data");
+				if(!logged.moreDataCallback){
+					console.log(LOG.WARN, "The required option 'moreDataCallback' is missing, please provide a method to retrieve commit data");
+					logged.moreDataCallback = true;
+				}
 				done({});
 			},
 	
