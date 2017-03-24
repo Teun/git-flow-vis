@@ -94,12 +94,12 @@ var memoize = require('lodash/memoize');
 		var constants = {
 			rowHeight: 35
 		};
+		var LOG = {DEBUG: "DEBUG", INFO: "INFO", WARN:"WARN", ERROR:"ERROR"}
 	
 		var md5 = CryptoJS.MD5;
 	
 		var options = {
 			drawElem: null,
-			drawTable: false,
 	
 			// these are the exact names of the branches that should be drawn as stright lines master and develop
 			masterRef: "refs/heads/master",
@@ -122,18 +122,21 @@ var memoize = require('lodash/memoize');
 	
 			// function to provide commit data
 			dataCallback: function (done) {
-				console.log("The required option 'dataCallback' is missing, please provide a method to retrieve commit data");
+				console.log(LOG.WARN, "The required option 'dataCallback' is missing, please provide a method to retrieve commit data");
 				done({});
 			},
 	
 			// function to retrieve additional commit data on scroll
 			moreDataCallback: function (from, done) {
-				console.log("The required option 'moreDataCallback' is missing, please provide a method to retrieve commit data");
+				console.log(LOG.WARN, "The required option 'moreDataCallback' is missing, please provide a method to retrieve commit data");
 				done({});
 			},
 	
 			// function called after data hase been processed successfully and chart has been drawn
 			dataProcessed: function (/*data*/) { },
+	
+			// function called for debug logging
+			log: function(level, message){},
 	
 			// function to provide the appropriate url to the actual commit souce
 			createCommitUrl: function(/*commit*/){
@@ -201,7 +204,7 @@ var memoize = require('lodash/memoize');
 			var fixMyTimeRecursive = function (c, after) {
 				if (!c) return;
 				if (c.orderTimestamp <= after) {
-					//console.log("fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
+					options.log(LOG.DEBUG, "fixing orderTimestamp for " + c.displayId + " " + c.orderTimestamp + " -> " + after + 1);
 					c.orderTimestamp = after + 1;
 					for (var k = 0; k < c.children.length; k++) {
 						fixMyTimeRecursive(result.commits[c.children[k]], c.orderTimestamp);
@@ -340,7 +343,7 @@ var memoize = require('lodash/memoize');
 						var isOnMasterOrDevelop = child.columns && (child.columns[0] == "m" || child.columns[0][0] == "d");
 						if (isOnMasterOrDevelop) return false;
 						if (!data.columns[child.columns[0]]) {
-							console.log('huh');
+							options.log(LOG.WARN, 'huh');
 						}
 						var commitsInColumn = data.columns[child.columns[0]].commits;
 						return child.id == commitsInColumn[commitsInColumn.length - 1];
@@ -355,7 +358,7 @@ var memoize = require('lodash/memoize');
 							putCommitInColumn(commit.id, firstChild.columns[0], data);
 							firstChild._hasColumnChild = true;
 						} else {
-							console.log("Couldn't find appropriate parent");
+							options.log(LOG.INFO, "Couldn't find appropriate parent");
 						}
 					}
 				}
@@ -611,36 +614,42 @@ var memoize = require('lodash/memoize');
 			return mostAlong.asArray();
 		}
 	
-		function makePath(initialPath) {
-			var self = { score: 0 };
-			var arrayPath = initialPath.slice(0);
-			var length = arrayPath.length;
-			var last = arrayPath[length - 1];
+		var NullPath = {
+			length:function(){return 0;},
+			score:function(){return 0;},
+			asArray:function(){return [];},
+			contains:function(){return false;},
+			members: {}
+		};
+		function ImmutablePath(parentPath, nextStep) {
+			var self = this;
+			parentPath = parentPath || NullPath;
+			var length = parentPath.length() + 1;
+			var stepScore = 0;
+			self.setStepScore = function(value){stepScore = value;}
 			self.members = {};
-			var prev = null;
-			for (var i = 0; i < arrayPath.length; i++) {
-				self.members[arrayPath[i]] = prev;
-				prev = arrayPath[i];
+			self.members.prototype = parentPath.members;
+			self.members[nextStep] = true;
+			
+			self.last = function () {return nextStep;};
+			var parentScore = null;
+			self.score = function(){
+				if(parentScore === null){
+					parentScore = parentPath.score();
+				}
+				return parentScore + stepScore;
 			}
-			self.push = function (newStep) {
-				var currLast = last;
-				length++;
-				self.members[newStep] = currLast;
-				last = newStep;
-				arrayPath.push(newStep);
-			};
-	
-			self.last = function () {
-				return last;
-			};
-			self.clone = function () {
-				var clone = makePath(arrayPath);
-				clone.score = self.score;
-				return clone;
-			};
+			self.length = function(){return length;}
 			self.asArray = function () {
-				return arrayPath.slice(0);
+				var arr = parentPath.asArray().slice(0);
+				arr.push(nextStep);
+				return arr;
 			};
+			self.contains = function(id){
+				// if(id === nextStep)return true;
+				// return parentPath.contains(id);
+				return (id in self.members);
+			}
 			return self;
 		}
 	
@@ -649,9 +658,8 @@ var memoize = require('lodash/memoize');
 			var openPaths = [];
 			var bestPathToPoints = {};
 			var fromCommit = data.commits[from];
-			var firstPath = makePath([from]);
+			var firstPath = new ImmutablePath(null, from);
 			var furthestPath = 0;
-			firstPath.score = 0;
 			bestPathToPoints[fromCommit.orderNr] = firstPath;
 			furthestPath = fromCommit.orderNr;
 			openPaths.push(firstPath);
@@ -667,14 +675,13 @@ var memoize = require('lodash/memoize');
 						continue;
 					}
 					if (bestPathToPoints[nextChild.orderNr]) {
-						if (bestPathToPoints[nextChild.orderNr].score > basePath.score + stepScore) {
+						if (bestPathToPoints[nextChild.orderNr].score() > basePath.score() + stepScore) {
 							// this is not the best path. We do not place it in the open paths
 							continue;
 						}
 					}
-					var newPath = basePath.clone();
-					newPath.push(nextChild.id);
-					newPath.score = basePath.score + stepScore;
+					var newPath = new ImmutablePath(basePath, nextChild.id);
+					newPath.setStepScore(stepScore);
 					openPaths.push(newPath);
 					bestPathToPoints[nextChild.orderNr] = newPath;
 					if (furthestPath < nextChild.orderNr) furthestPath = nextChild.orderNr;
@@ -684,7 +691,7 @@ var memoize = require('lodash/memoize');
 			allDistances.sort(function (p1, p2) {
 				if (!p1) return 0;
 				if (!p2) return 0;
-				return bestPathToPoints[p2].score - bestPathToPoints[p1].score;
+				return bestPathToPoints[p2].score() - bestPathToPoints[p1].score();
 			});
 			return bestPathToPoints[allDistances[0]];
 		}
@@ -703,7 +710,7 @@ var memoize = require('lodash/memoize');
 				if (c.columns && c.columns[0] == 'm') return false;
 				// next commit cannot have a child further down the line
 				var childrenInPath = c.children.filter(function(child) {
-					return child in path.members;
+					return path.contains(child);
 				});
 				if (childrenInPath.length != 1) return false;
 				// merges of develop onto itself are neutral
@@ -726,6 +733,9 @@ var memoize = require('lodash/memoize');
 		};
 	
 		var rawData = null;
+		var dirty = {
+			commits:true
+		};
 		var downloadedStartPoints = [];
 	
 		self.draw = function (elem, opt) {
@@ -775,7 +785,11 @@ var memoize = require('lodash/memoize');
 		};
 	
 		var appendData = function (newCommits) {
-			rawData.commits.push(newCommits);
+			var unknownCommits = _.filter(newCommits, function(c){return !(c in data.commits);})
+			if(unknownCommits.length > 0){
+				rawData.commits.push(newCommits);
+				dirty.commits = true;
+			}
 		}
 		var updateBranches = function(branches){
 			// existing branches will only get their latestworkset updated, new braches will be added.
@@ -803,14 +817,17 @@ var memoize = require('lodash/memoize');
 		var drawFromRaw = function () {
 			options.showSpinner();
 			data = setTimeout(function () {
+				options.log(LOG.INFO, "Starting full new draw");
 				cleanup(rawData);
+				dirty.commits = false;
+				options.log(LOG.INFO, "Done cleaning/transforming data");
 				options.hideSpinner();
 				options.dataProcessed(data);
 				if (options.drawElem) {
-					self.drawing.drawTable(options.drawElem);
 					self.drawing.drawGraph(options.drawElem);
 					self.drawing.updateHighlight();
 				}
+				options.log(LOG.INFO, "Done drawing (animations still in progress)");
 			}, 10);
 		}
 	
@@ -869,26 +886,6 @@ var memoize = require('lodash/memoize');
 	
 			}
 	
-			self.drawTable = function (elem) {
-				if (options.drawTable) {
-					var table = d3.select(document.createElement('table'));
-					table.append('tr').html( drawColumnsAsHeaders() + '<td>sha</td><td>parent</td><td>author</td><td>at</td><td>msg</td></tr>');
-					for (var i = 0 ; i < data.chronoCommits.length; i++) {
-						var commit = data.commits[data.chronoCommits[i]];
-						var time = new Date(commit.authorTimestamp);
-						table.append('tr').html(drawColumnsAsCells(commit) 
-							+ '<td>' + commit.displayId + '</td><td>' + showCommaSeparated(commit.parents) + 
-							'</td><td>' + commit.author.name + '</td><td>' + moment(time).format("M/D/YY HH:mm:ss") + 
-							'</td><td>' + commit.message + '</td>');
-					}
-					d3.select(elem).append(table);
-				}
-			};
-	
-			var showCommaSeparated = function (arr) {
-				return _.map(arr, function (i) { return i.displayId; }).join(", ");
-			}
-	
 			var keysInOrder = function (obj) {
 				var keys = _.map(obj, function (v, k) { return k; });
 				keys.sort(firstBy(function (k1, k2) {
@@ -907,30 +904,6 @@ var memoize = require('lodash/memoize');
 					return k2 > k1 ? -1 : 1;
 				}));
 				return keys;
-			};
-	
-			var drawColumnsAsCells = function (commit) {
-				var result = "";
-				var keys = keysInOrder(data.columns);
-				for (var i = 0; i < keys.length; i++) {
-					var col = keys[i];
-					result += "<td>";
-					if (commit.columns.indexOf(col) > -1) {
-						result += "o";
-					}
-					result += "</td>";
-				}
-				return result;
-			};
-	
-			var drawColumnsAsHeaders = function () {
-				var result = "";
-				var keys = keysInOrder(data.columns);
-				for (var i = 0; i < keys.length; i++) {
-					var col = keys[i];
-					result += "<td>" + data.columns[col].name + "</td>";
-				}
-				return result;
 			};
 	
 			var groupScale = function(cols, maxWidth){
@@ -1144,8 +1117,8 @@ var memoize = require('lodash/memoize');
 				
 				commit.exit().remove();
 				commit
-					.transition()
 					.select("g>circle")
+					.transition().duration(800)
 					.attr("cx", function (d) { return x(d.columns[0]); })
 					.attr("cy", function (d) { return y(d.orderNr); })
 					.attr("id", function (d) { return "commit-" + d.id; });
@@ -1246,8 +1219,8 @@ var memoize = require('lodash/memoize');
 				//labels
 				var labelData = messages.selectAll(".commit-msg")
 					.data(d3.values(data.commits).filter(function(c){return c.visible;})
-					, function (c) {return c.id + "-" + c.orderNr;});
-				labelData
+					, function (c) {return "msg-" + c.id;});
+				var trEntered = labelData
 					.enter().append("div")
 					.attr("class", "commit-msg")
 					.attr("id", function (c) { return "msg-" + c.id; })
@@ -1255,8 +1228,9 @@ var memoize = require('lodash/memoize');
 					  if(d3.event.target.tagName == 'A')return true;
 					  // will show menu. Collect items
 					  var items = [];
-					  if(d3.event.target.tagName == 'SPAN'){
+					  if(d3.event.target.tagName == 'SPAN' && d3.event.target.className.startsWith("label ")){
 						  // on branch label
+						  options.log(LOG.DEBUG, d3.event.target.className);
 						  var clickedBranch = 'refs/heads/' + d3.event.target.innerHTML;
 						  items.push(["Hide branch '" + d3.event.target.innerHTML + "'", function(){
 							options.hiddenBranches.push(clickedBranch);
@@ -1279,55 +1253,76 @@ var memoize = require('lodash/memoize');
 					  }
 					  var pos = d3.mouse(messages.node());
 					  menu.show(items, pos[0], pos[1]);
-					});
-				labelData.exit().remove();
-				labelData
-					.html(function (d) {
-						var commitUrl = options.createCommitUrl(d);
-						var res = "<table class='commit-table aui'><tr><td class='msg'>";
-						if (d.labels) {
-							_.each(d.labels, function (v /*, k*/) {
-								if (v.indexOf('refs/heads/') == 0) {
-									if (v.indexOf(options.masterRef) == 0) {
-										res += "<span class='label aui-lozenge aui-lozenge-error aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-									} else if (v.indexOf(options.developRef) == 0) {
-										res += "<span class='label aui-lozenge aui-lozenge-success aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-									} else if (v.indexOf(options.featurePrefix) == 0) {
-										res += "<span class='label aui-lozenge aui-lozenge-complete aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-									} else if (v.indexOf(options.releasePrefix) == 0 || v.indexOf(options.hotfixPrefix) == 0) {
-										res += "<span class='label aui-lozenge aui-lozenge-current aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+					})
+					.append("table").attr("class", "commit-table aui")
+					.append("tr");
+					var msg = trEntered.append("td").attr("class", "msg");
+					msg.append("span").attr("class", "labels");
+					msg.append("span").attr("class", "txt").text(function(d){return d.message;});
+					var author = trEntered.append("td").attr("class", "author");
+					author
+						.append("span").attr("class", "aui-avatar aui-avatar-xsmall user-avatar").style("display", function(d){return d.author ? "" : "none";})
+						.append("span").attr("class", "aui-avatar-inner")
+						.append("img").attr("width", "48px").attr("height", "48px").attr("src", function(d){
+							if(!d.author) return "";
+							return options.createAuthorAvatarUrl(d.author);
+						});
+					author
+						.append("span").text(function(d){
+							return (d.author.displayName || d.author.name || d.author.emailAddress)});
+					trEntered
+						.append("td").attr("class", "date")
+							.attr("title", function(d){
+								if (d.authorTimestamp) {
+									var dt = new Date(d.authorTimestamp);
+									return moment(dt).format("dd YYYY-MM-DD");
+								}
+							})
+							.text(function(d){
+								if (d.authorTimestamp) {
+									var dt = new Date(d.authorTimestamp);
+									var today = (new Date().toDateString() === dt.toDateString());
+									if (today) {
+										return moment(dt).format("HH:mm:ss") + " today";
 									} else {
-										res += "<span class='label aui-lozenge aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+										return moment(dt).format("dd YYYY-MM-DD");
 									}
-								} else if (v.indexOf('refs/tags/') == 0) {
-									res += "<span class='label aui-lozenge aui-lozenge-moved aui-lozenge-subtle'>" + v.substring(10) + "</span>";
-								} else {
-									res += "<span class='label aui-lozenge aui-lozenge-subtle'>" + v + "</span>";
 								}
 							});
-						}
-						res += " " + d.message;
-						res += "</td>";
-						if (d.author) {
-							var authorAvatarUrl = options.createAuthorAvatarUrl(d.author);
-							res += "<td class='author'><span class='aui-avatar aui-avatar-xsmall user-avatar'><span class='aui-avatar-inner'><img src='" + authorAvatarUrl + "' width='48px' height='48px' /></span></span>" + (d.author.displayName || d.author.name || d.author.emailAddress) + "</td>";
-						} else {
-							res += "<td class='author'> </td>";
-						}
-						if (d.authorTimestamp) {
-							var dt = new Date(d.authorTimestamp);
-							var today = (new Date().toDateString() === dt.toDateString());
-							if (today) {
-								res += "<td class='date'>" + moment(dt).format("HH:mm:ss") + " today</td> ";
+					trEntered
+						.append("td").attr("class", "sha")
+						.append("a").attr("class", "commit-link")
+							.attr("href", function(d){
+								return options.createCommitUrl(d);
+							})
+							.text(function(d){return d.displayId});
+	
+				labelData.exit().remove();
+				var lblContainer = labelData.select("table>tr>td.msg>span.labels");
+				lblContainer.html(function(d){
+					var res = "";
+					_.each(d.labels || [], function (v /*, k*/) {
+						if (v.indexOf('refs/heads/') == 0) {
+							if (v.indexOf(options.masterRef) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-error aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							} else if (v.indexOf(options.developRef) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-success aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							} else if (v.indexOf(options.featurePrefix) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-complete aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							} else if (v.indexOf(options.releasePrefix) == 0 || v.indexOf(options.hotfixPrefix) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-current aui-lozenge-subtle'>" + v.substring(11) + "</span>";
 							} else {
-								res += "<td class='date' title='" + moment(dt).format("dddd YYYY-MM-DD HH:mm:ss") + "'>" + moment(dt).format("dd YYYY-MM-DD") + "</td> ";
+								res += "<span class='label aui-lozenge aui-lozenge-subtle'>" + v.substring(11) + "</span>";
 							}
+						} else if (v.indexOf('refs/tags/') == 0) {
+							res += "<span class='label aui-lozenge aui-lozenge-moved aui-lozenge-subtle'>" + v.substring(10) + "</span>";
 						}
-						res += "<td class='sha'><a class='commit-link' href='" + commitUrl + "' target='_blank'>" + d.displayId + "</a></td> ";
-						res += "</tr></table>";
-						return res;
-					})
-					.transition()
+					});
+					return res;
+				});
+					
+				labelData
+					.transition().duration(800)
 					.attr("style", function (d) {
 						var commit = d;
 						return "top:" + (y(commit.orderNr) - constants.rowHeight / 2) + "px;";
@@ -1371,13 +1366,13 @@ var memoize = require('lodash/memoize');
 								var parentId = data.openEnds[key][i];
 								if(downloadedStartPoints.indexOf(parentId) === -1){
 									openEndsToBeDownloaded[parentId] = true;
-									console.log("scheduled: " + parentId);
+									options.log(LOG.DEBUG, "scheduled: " + parentId);
 								}
 							}
 							delete data.openEnds[key];
 						}
 						for (var key in openEndsToBeDownloaded) {
-							console.log("downloading: " + key);
+							options.log(LOG.DEBUG, "downloading: " + key);
 							delete openEndsToBeDownloaded[key];
 							openEndsBeingDownloaded[key] = true;
 							options.moreDataCallback(key, function (commits, thisKey) {
@@ -1385,15 +1380,17 @@ var memoize = require('lodash/memoize');
 								downloadedStartPoints.push(thisKey);
 								if (commits) appendData(commits);
 								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
-									console.log("queues empty, ready to draw");
-									setTimeout(function () {
-										console.log("start drawing");
-										drawFromRaw();
-									}, 50);
+									if(dirty.commits){
+										options.log(LOG.DEBUG, "queues empty, ready to draw");
+										setTimeout(function () {
+											options.log(LOG.DEBUG, "start drawing");
+											drawFromRaw();
+										}, 50);
+									}else{
+										options.log(LOG.DEBUG, "no new commits loaded, no need to redraw");
+									}
 								} else {
-									console.log("waiting, still downloads in progress");
-									// console.log(openEndsToBeDownloaded);
-									// console.log(openEndsBeingDownloaded);
+									options.log(LOG.DEBUG, "waiting, still downloads in progress");
 								}
 	
 							});
@@ -1429,7 +1426,6 @@ var memoize = require('lodash/memoize');
 					if(theMenu === null || theMenu.empty()){
 						theMenu = d3.select(".messages .context-menu");
 						theMenu.on("mousemove", function(){
-							console.log("mouse move");
 							timeLastSeen = Date.now();
 						});
 					}

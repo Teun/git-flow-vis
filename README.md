@@ -98,8 +98,6 @@ Object.
 
 `opts.drawElem` is the DOM Element which is used as the placeholder in which the graph is drawn. 
 
-`opts.drawTable` is the DOM Element which is used as the placeholder to hold the commit data table. If not provided, the `opts.drawElem` element is used.
-
 `opts.masterRef` is the git reference to the master branch. Defaults to 'refs/heads/master'.
 
 `opts.developRef` is the git reference to the develop branch. Defaults to 'refs/heads/develop'.
