@@ -45,7 +45,7 @@ suite('Data set 1', function () {
         var colF1 = data.commits["ea08c2c5f4fa9778baec512b28603ff763ef9022"].columns[0];
         assert(data.columns[colF1].name[0] == "f", "open feature is on column " + data.columns[colF1].name);
     });
-    test('Needs two release columns and two feature columns', function () {
+    test('Needs two release columns and one feature column', function () {
         var releaseColumns = _.filter(Object.keys(data.columns), function(c) {
             var col = data.columns[c];
             return col.isVisible() && col.name[0] == "r";
@@ -55,7 +55,7 @@ suite('Data set 1', function () {
             var col = data.columns[c];
             return col.isVisible() && col.name[0] == "f";
         });
-        assert(featureColumns.length == 2, "found " + _.map(featureColumns, function (c) { return data.columns[c].name; }).join(','));
+        assert(featureColumns.length == 1, "found " + _.map(featureColumns, function (c) { return data.columns[c].name; }).join(','));
     });
     test('Bugfix branch in same column as release', function() {
         var commitBugfix = data.commits["771a7a651cf22f7390d547a8a28782530d191367"];

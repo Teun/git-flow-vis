@@ -735,7 +735,8 @@ var memoize = require('lodash/memoize');
 	
 		var rawData = null;
 		var dirty = {
-			commits:true
+			commits:true,
+			labels:true
 		};
 		var downloadedStartPoints = [];
 	
@@ -812,6 +813,7 @@ var memoize = require('lodash/memoize');
 					changes = true;
 				}
 			});
+			if(changes){dirty.labels = true;}
 			return changes;
 		}
 	
@@ -821,6 +823,7 @@ var memoize = require('lodash/memoize');
 				options.log(LOG.INFO, "Starting full new draw");
 				cleanup(rawData);
 				dirty.commits = false;
+				dirty.labels = false;
 				options.log(LOG.INFO, "Done cleaning/transforming data");
 				options.hideSpinner();
 				options.dataProcessed(data);
@@ -1486,6 +1489,7 @@ var memoize = require('lodash/memoize');
 			setChanged: function(branches){
 				// same data as in init structure
 				if(updateBranches(branches)){
+					// maybe here only update changed labels
 					drawFromRaw();
 					self.drawing.lazyLoad();
 				}
