@@ -72,14 +72,25 @@ line {
   position: absolute;
   white-space: nowrap;
   cursor: pointer;
-  overflow-x: hidden;
-  padding-left: 10px; }
-  .commit-msg.dim {
-    color: #aaa; }
+  padding-left: 10px;
+  height: 35px; }
   .commit-msg.selected {
     background-color: #ccd9ea; }
   .commit-msg:hover {
     background-color: #f5f5f5; }
+  .commit-msg.dim {
+    color: #aaa; }
+
+.commit-msg > .bck {
+  display: none; }
+
+.commit-msg:hover > .bck {
+  display: block;
+  background-color: #f5f5f5;
+  margin-left: -1000px;
+  margin-top: -25px;
+  width: 1000px;
+  height: 35px; }
 
 .commit-link {
   font-family: courier; }

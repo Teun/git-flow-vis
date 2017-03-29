@@ -100,17 +100,12 @@ line {
 		box-shadow: -5px 0px 5px grey;
 	}
 }
-
 .commit-msg {
 	position:absolute;
 	white-space:nowrap;
 	cursor:pointer;
-	overflow-x:hidden;
 	padding-left:10px;
-
-	&.dim {
-		color:#aaa;
-	}
+	height:35px;
 
 	&.selected {
 		background-color:#ccd9ea;
@@ -119,6 +114,20 @@ line {
 	&:hover {
 		background-color:#f5f5f5;
 	}
+	&.dim {
+		color:#aaa;
+	}
+}
+.commit-msg > .bck{
+	display:none;
+}
+.commit-msg:hover > .bck{
+	display:block;
+	background-color: #f5f5f5;
+	margin-left:-1000px;
+	margin-top:-25px;
+	width:1000px;
+	height:35px;
 }
 
 .commit-link {

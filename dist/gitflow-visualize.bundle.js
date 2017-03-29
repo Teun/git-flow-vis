@@ -1231,7 +1231,7 @@ var memoize = require('lodash/memoize');
 				var labelData = messages.selectAll(".commit-msg")
 					.data(d3.values(data.commits).filter(function(c){return c.visible;})
 					, function (c) {return "msg-" + c.id;});
-				var trEntered = labelData
+				var commitMsgEntered = labelData
 					.enter().append("div")
 					.attr("class", "commit-msg")
 					.attr("id", function (c) { return "msg-" + c.id; })
@@ -1264,49 +1264,52 @@ var memoize = require('lodash/memoize');
 					  }
 					  var pos = d3.mouse(messages.node());
 					  menu.show(items, pos[0], pos[1]);
-					})
+					});
+				var trEntered = commitMsgEntered
 					.append("table").attr("class", "commit-table aui")
 					.append("tr");
-					var msg = trEntered.append("td").attr("class", "msg");
-					msg.append("span").attr("class", "labels");
-					msg.append("span").attr("class", "txt").text(function(d){return d.message;});
-					var author = trEntered.append("td").attr("class", "author");
-					author
-						.append("span").attr("class", "aui-avatar aui-avatar-xsmall user-avatar").style("display", function(d){return d.author ? "" : "none";})
-						.append("span").attr("class", "aui-avatar-inner")
-						.append("img").attr("width", "48px").attr("height", "48px").attr("src", function(d){
-							if(!d.author) return "";
-							return options.createAuthorAvatarUrl(d.author);
-						});
-					author
-						.append("span").text(function(d){
-							return (d.author.displayName || d.author.name || d.author.emailAddress)});
-					trEntered
-						.append("td").attr("class", "date")
-							.attr("title", function(d){
-								if (d.authorTimestamp) {
-									var dt = new Date(d.authorTimestamp);
+				commitMsgEntered.append("div").attr("class", "bck");
+	
+				var msg = trEntered.append("td").attr("class", "msg");
+				msg.append("span").attr("class", "labels");
+				msg.append("span").attr("class", "txt").text(function(d){return d.message;});
+				var author = trEntered.append("td").attr("class", "author");
+				author
+					.append("span").attr("class", "aui-avatar aui-avatar-xsmall user-avatar").style("display", function(d){return d.author ? "" : "none";})
+					.append("span").attr("class", "aui-avatar-inner")
+					.append("img").attr("width", "48px").attr("height", "48px").attr("src", function(d){
+						if(!d.author) return "";
+						return options.createAuthorAvatarUrl(d.author);
+					});
+				author
+					.append("span").text(function(d){
+						return (d.author.displayName || d.author.name || d.author.emailAddress)});
+				trEntered
+					.append("td").attr("class", "date")
+						.attr("title", function(d){
+							if (d.authorTimestamp) {
+								var dt = new Date(d.authorTimestamp);
+								return moment(dt).format("dd YYYY-MM-DD");
+							}
+						})
+						.text(function(d){
+							if (d.authorTimestamp) {
+								var dt = new Date(d.authorTimestamp);
+								var today = (new Date().toDateString() === dt.toDateString());
+								if (today) {
+									return moment(dt).format("HH:mm:ss") + " today";
+								} else {
 									return moment(dt).format("dd YYYY-MM-DD");
 								}
-							})
-							.text(function(d){
-								if (d.authorTimestamp) {
-									var dt = new Date(d.authorTimestamp);
-									var today = (new Date().toDateString() === dt.toDateString());
-									if (today) {
-										return moment(dt).format("HH:mm:ss") + " today";
-									} else {
-										return moment(dt).format("dd YYYY-MM-DD");
-									}
-								}
-							});
-					trEntered
-						.append("td").attr("class", "sha")
-						.append("a").attr("class", "commit-link")
-							.attr("href", function(d){
-								return options.createCommitUrl(d);
-							})
-							.text(function(d){return d.displayId});
+							}
+						});
+				trEntered
+					.append("td").attr("class", "sha")
+					.append("a").attr("class", "commit-link")
+						.attr("href", function(d){
+							return options.createCommitUrl(d);
+						})
+						.text(function(d){return d.displayId});
 	
 				labelData.exit().remove();
 				var lblContainer = labelData.select("table>tr>td.msg>span.labels");
@@ -1334,9 +1337,9 @@ var memoize = require('lodash/memoize');
 					
 				labelData
 					.transition().duration(800)
-					.attr("style", function (d) {
+					.style("top", function (d) {
 						var commit = d;
-						return "top:" + (y(commit.orderNr) - constants.rowHeight / 2) + "px;";
+						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
 					});
 	
 				function isElementInViewport(el) {
