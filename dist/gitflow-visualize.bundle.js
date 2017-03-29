@@ -1085,7 +1085,7 @@ var memoize = require('lodash/memoize');
 						.attr("class", function (d) { return "branch-type-" + branchType(d.c, d.p); });
 	
 				var path = arrow.selectAll("g>path");			
-				path.transition().attr("d", connector)
+				path.transition().duration(800).attr("d", connector)
 	
 				arrow.exit().remove();
 	
@@ -1235,6 +1235,10 @@ var memoize = require('lodash/memoize');
 					.enter().append("div")
 					.attr("class", "commit-msg")
 					.attr("id", function (c) { return "msg-" + c.id; })
+					.style("top", function (d) {
+						var commit = d;
+						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
+					})
 					.on('click', function (a) {
 					  if(d3.event.target.tagName == 'A')return true;
 					  // will show menu. Collect items
