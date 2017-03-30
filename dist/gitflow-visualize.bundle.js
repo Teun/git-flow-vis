@@ -666,6 +666,8 @@ var memoize = require('lodash/memoize');
 			var openPaths = [];
 			var bestPathToPoints = {};
 			var fromCommit = data.commits[from];
+			if(!fromCommit)return NullPath;
+	
 			var firstPath = new ImmutablePath(null, from);
 			var furthestPath = 0;
 			bestPathToPoints[fromCommit.orderNr] = firstPath;
