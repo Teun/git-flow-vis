@@ -275,6 +275,10 @@ var memoize = require('lodash/memoize');
 			return result;
 		};
 	
+		function updateLabels(){
+	
+		}
+	
 		var setChildToParent = function (parent, childId) {
 			parent.children = parent.children || [];
 			parent.children.push(childId);
@@ -823,6 +827,17 @@ var memoize = require('lodash/memoize');
 			});
 			if(changes){dirty.labels = true;}
 			return changes;
+		}
+	
+		var drawLight = function(){
+			setTimeout(function () {
+				options.log(LOG.INFO, "Starting mini draw");
+				updateLabels();
+				if (options.drawElem) {
+					self.drawing.drawGraph(options.drawElem);
+					self.drawing.updateHighlight();
+				}
+			});
 		}
 	
 		var drawFromRaw = function () {
@@ -1505,7 +1520,7 @@ var memoize = require('lodash/memoize');
 				// same data as in init structure
 				if(updateBranches(branches)){
 					// maybe here only update changed labels
-					drawFromRaw();
+					drawLight();
 					self.drawing.lazyLoad();
 				}
 			},
