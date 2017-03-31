@@ -784,7 +784,7 @@ var GitFlowVisualize = (function () {
 			options.log(LOG.INFO, "Done cleaning/transforming data");
 			options.hideSpinner();
 			options.dataProcessed(data);
-			if (options.drawElem && !(data.openEnds.asap)) {
+			if (options.drawElem){
 				self.drawing.drawGraph(options.drawElem);
 				self.drawing.updateHighlight();
 			}
