@@ -195,18 +195,7 @@ var memoize = require('lodash/memoize');
 			}
 			result.branches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) === -1;});
 			result.hiddenBranches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) > -1;});
-			for (var i = 0; i < result.branches.length; i++) {
-				var branch = result.branches[i];
-				var commit = result.commits[branch.latestChangeset];
-				if (commit) {
-					commit.labels = (commit.labels || []);
-					commit.labels.push(branch.id);
-					branch.lastActivity = commit.authorTimestamp;
-				}else{
-					result.openEnds["asap"] = result.openEnds["asap"] ||[];
-					result.openEnds["asap"].push(branch.latestChangeset);
-				}
-			}
+			setLabels(result);
 	
 			// fixup orderTimestamp for cases of rebasing and cherrypicking, where the parent can be younger than the child
 			var fixMyTimeRecursive = function (c, after) {
@@ -275,6 +264,25 @@ var memoize = require('lodash/memoize');
 			}
 			return result;
 		};
+		function setLabels(data){
+					for (var i = 0; i < data.branches.length; i++) {
+						var branch = data.branches[i];
+						var commit = data.commits[branch.latestChangeset];
+						if (commit) {
+							commit.labels = (commit.labels || []);
+							commit.labels.push(branch.id);
+							branch.lastActivity = commit.authorTimestamp;
+						}else{
+							data.openEnds["asap"] = data.openEnds["asap"] ||[];
+							data.openEnds["asap"].push(branch.latestChangeset);
+						}
+					}
+		}
+	
+		function updateLabels(){
+			_.each(data.chronoCommits, function(id){delete data.commits[id].labels;});
+			setLabels(data);
+		}
 	
 		var setChildToParent = function (parent, childId) {
 			parent.children = parent.children || [];
@@ -812,6 +820,8 @@ var memoize = require('lodash/memoize');
 			var changes = false;
 			branches.values.forEach(function(b){
 				var ref = b.id;
+				if(!(b.latestChangeset in data.commits)){
+				}
 				if(ref in existingBranches){
 					if(existingBranches[ref].latestChangeset !== b.latestChangeset){
 						changes = true;
@@ -826,6 +836,15 @@ var memoize = require('lodash/memoize');
 			return changes;
 		}
 	
+		var drawLight = function(){
+			options.log(LOG.INFO, "Starting mini draw");
+			updateLabels();
+			if (options.drawElem) {
+				self.drawing.drawGraph(options.drawElem);
+				self.drawing.updateHighlight();
+			}
+		}
+	
 		var drawFromRaw = function () {
 			options.showSpinner();
 			data = setTimeout(function () {
@@ -836,7 +855,7 @@ var memoize = require('lodash/memoize');
 				options.log(LOG.INFO, "Done cleaning/transforming data");
 				options.hideSpinner();
 				options.dataProcessed(data);
-				if (options.drawElem) {
+				if (options.drawElem){
 					self.drawing.drawGraph(options.drawElem);
 					self.drawing.updateHighlight();
 				}
@@ -1348,80 +1367,80 @@ var memoize = require('lodash/memoize');
 						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
 					});
 	
-				function isElementInViewport(el) {
-					var rect = el.getBoundingClientRect();
-					return (
-									rect.top >= 0 &&
-									rect.left >= 0 &&
-									rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
-									rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
-							);
-				}
 	
-				self.lazyLoad = function() {
-					//check for openEnded messages in view
-					var keyInView = null;
-					for (var key in data.openEnds) {
-						if(key === "asap"){
-								keyInView = key;
-								break;
-						}
-						var elementSelection = d3.select('#msg-' + key);
-						if(!elementSelection.empty()) {
-							if (isElementInViewport(elementSelection.node())) {
-								keyInView = key;
-								break;
-							}
-						}
-					}
-					if (keyInView) {
-						var ourOrderNr = keyInView === "asap" ? 0 : data.commits[keyInView].orderNr;
-						for (var key in data.openEnds) {
-							var thatOrderNr = key === "asap" ? 0 : data.commits[key].orderNr;
-							if (thatOrderNr > ourOrderNr + 200) {
-								// to far out, skip
-								continue;
-							}
-							for (var i = 0; i < data.openEnds[key].length; i++) {
-								var parentId = data.openEnds[key][i];
-								if(downloadedStartPoints.indexOf(parentId) === -1){
-									openEndsToBeDownloaded[parentId] = true;
-									options.log(LOG.DEBUG, "scheduled: " + parentId);
-								}
-							}
-							delete data.openEnds[key];
-						}
-						for (var key in openEndsToBeDownloaded) {
-							options.log(LOG.DEBUG, "downloading: " + key);
-							delete openEndsToBeDownloaded[key];
-							openEndsBeingDownloaded[key] = true;
-							options.moreDataCallback(key, function (commits, thisKey) {
-								delete openEndsBeingDownloaded[thisKey];
-								downloadedStartPoints.push(thisKey);
-								if (commits) appendData(commits);
-								if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
-									if(dirty.commits){
-										options.log(LOG.DEBUG, "queues empty, ready to draw");
-										setTimeout(function () {
-											options.log(LOG.DEBUG, "start drawing");
-											drawFromRaw();
-										}, 50);
-									}else{
-										options.log(LOG.DEBUG, "no new commits loaded, no need to redraw");
-									}
-								} else {
-									options.log(LOG.DEBUG, "waiting, still downloads in progress");
-								}
-	
-							});
-						}
-						openEndsToBeDownloaded = {};
-					}
-				};
 			};
 	
+			function isElementInViewport(el) {
+				var rect = el.getBoundingClientRect();
+				return (
+								rect.top >= 0 &&
+								rect.left >= 0 &&
+								rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) && /*or $(window).height() */
+								rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
+						);
+			}
 			var openEndsToBeDownloaded = {};
 			var openEndsBeingDownloaded = {};
+			self.lazyLoad = function() {
+				//check for openEnded messages in view
+				var keyInView = null;
+				for (var key in data.openEnds) {
+					if(key === "asap"){
+							keyInView = key;
+							break;
+					}
+					var elementSelection = d3.select('#msg-' + key);
+					if(!elementSelection.empty()) {
+						if (isElementInViewport(elementSelection.node())) {
+							keyInView = key;
+							break;
+						}
+					}
+				}
+				if (keyInView) {
+					var ourOrderNr = keyInView === "asap" ? 0 : data.commits[keyInView].orderNr;
+					for (var key in data.openEnds) {
+						var thatOrderNr = key === "asap" ? 0 : data.commits[key].orderNr;
+						if (thatOrderNr > ourOrderNr + 200) {
+							// to far out, skip
+							continue;
+						}
+						for (var i = 0; i < data.openEnds[key].length; i++) {
+							var parentId = data.openEnds[key][i];
+							if(downloadedStartPoints.indexOf(parentId) === -1){
+								openEndsToBeDownloaded[parentId] = true;
+								options.log(LOG.DEBUG, "scheduled: " + parentId);
+							}
+						}
+						delete data.openEnds[key];
+					}
+					for (var key in openEndsToBeDownloaded) {
+						options.log(LOG.DEBUG, "downloading: " + key);
+						delete openEndsToBeDownloaded[key];
+						openEndsBeingDownloaded[key] = true;
+						options.moreDataCallback(key, function (commits, thisKey) {
+							delete openEndsBeingDownloaded[thisKey];
+							downloadedStartPoints.push(thisKey);
+							if (commits) appendData(commits);
+							if (Object.keys(openEndsToBeDownloaded).length == 0 && Object.keys(openEndsBeingDownloaded).length == 0) {
+								if(dirty.commits){
+									options.log(LOG.DEBUG, "queues empty, ready to draw");
+									setTimeout(function () {
+										options.log(LOG.DEBUG, "start drawing");
+										drawFromRaw();
+									}, 50);
+								}else{
+									options.log(LOG.DEBUG, "no new commits loaded, no need to redraw");
+								}
+							} else {
+								options.log(LOG.DEBUG, "waiting, still downloads in progress");
+							}
+	
+						});
+					}
+					openEndsToBeDownloaded = {};
+				}
+			};
 			var branchType = function (childId, parentId) {
 				var ct = function (id) {
 					var commit = data.commits[id];
@@ -1489,6 +1508,7 @@ var memoize = require('lodash/memoize');
 	
 				return menu;
 			}();
+			
 	
 			return self;
 		})();
@@ -1506,7 +1526,7 @@ var memoize = require('lodash/memoize');
 				// same data as in init structure
 				if(updateBranches(branches)){
 					// maybe here only update changed labels
-					drawFromRaw();
+					drawLight();
 					self.drawing.lazyLoad();
 				}
 			},
