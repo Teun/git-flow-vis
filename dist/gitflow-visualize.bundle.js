@@ -195,18 +195,7 @@ var memoize = require('lodash/memoize');
 			}
 			result.branches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) === -1;});
 			result.hiddenBranches = _.filter(_data.branches.values, function(b){return options.hiddenBranches.indexOf(b.id) > -1;});
-			for (var i = 0; i < result.branches.length; i++) {
-				var branch = result.branches[i];
-				var commit = result.commits[branch.latestChangeset];
-				if (commit) {
-					commit.labels = (commit.labels || []);
-					commit.labels.push(branch.id);
-					branch.lastActivity = commit.authorTimestamp;
-				}else{
-					result.openEnds["asap"] = result.openEnds["asap"] ||[];
-					result.openEnds["asap"].push(branch.latestChangeset);
-				}
-			}
+			setLabels(result);
 	
 			// fixup orderTimestamp for cases of rebasing and cherrypicking, where the parent can be younger than the child
 			var fixMyTimeRecursive = function (c, after) {
@@ -275,9 +264,24 @@ var memoize = require('lodash/memoize');
 			}
 			return result;
 		};
+		function setLabels(data){
+					for (var i = 0; i < data.branches.length; i++) {
+						var branch = data.branches[i];
+						var commit = data.commits[branch.latestChangeset];
+						if (commit) {
+							commit.labels = (commit.labels || []);
+							commit.labels.push(branch.id);
+							branch.lastActivity = commit.authorTimestamp;
+						}else{
+							data.openEnds["asap"] = data.openEnds["asap"] ||[];
+							data.openEnds["asap"].push(branch.latestChangeset);
+						}
+					}
+		}
 	
 		function updateLabels(){
-	
+			_.each(data.chronoCommits, function(id){delete data.commits[id].labels;});
+			setLabels(data);
 		}
 	
 		var setChildToParent = function (parent, childId) {
@@ -816,6 +820,8 @@ var memoize = require('lodash/memoize');
 			var changes = false;
 			branches.values.forEach(function(b){
 				var ref = b.id;
+				if(!(b.latestChangeset in data.commits)){
+				}
 				if(ref in existingBranches){
 					if(existingBranches[ref].latestChangeset !== b.latestChangeset){
 						changes = true;
@@ -831,14 +837,12 @@ var memoize = require('lodash/memoize');
 		}
 	
 		var drawLight = function(){
-			setTimeout(function () {
-				options.log(LOG.INFO, "Starting mini draw");
-				updateLabels();
-				if (options.drawElem) {
-					self.drawing.drawGraph(options.drawElem);
-					self.drawing.updateHighlight();
-				}
-			});
+			options.log(LOG.INFO, "Starting mini draw");
+			updateLabels();
+			if (options.drawElem) {
+				self.drawing.drawGraph(options.drawElem);
+				self.drawing.updateHighlight();
+			}
 		}
 	
 		var drawFromRaw = function () {

@@ -70,17 +70,10 @@ suite('Data set 0', function () {
 
         assert(commit.orderNr === 0, "latest comit must have orderNr 0");
 
-        var callBackNr = 0;
         eventOfCleaned = function(){
-            callBackNr++;
-            if(callBackNr === 2){
-                // we first change the HEAD pointer. This causes a redraw. Then the async downloading
-                // of more commit starts and causes a second event.
-                commit = data.commits["a71a7a23456f22f7390d547a8a28782530d191367"];
-                assert(commit.orderNr === 1, "latest commit must have orderNr 1");
-                done();
-
-            }
+            commit = data.commits["a71a7a23456f22f7390d547a8a28782530d191367"];
+            assert(commit.orderNr === 1, "latest commit must have orderNr 1");
+            done();
         }
         GitFlowVisualize.branches.setChanged({  "values": [{ "id": "refs/heads/any-branch-that-doesnt-match", "displayId": "any-branch-that-doesnt-match", "latestChangeset": "b71a7a23456f22f7390d547a8a28782530d191367", "isDefault": false }]} );
     });
