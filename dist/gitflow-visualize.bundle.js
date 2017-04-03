@@ -1249,9 +1249,10 @@ var memoize = require('lodash/memoize');
 				msgHeader.select("span.branch-btn").text(branchLabelText);
 	
 				//labels
+				var todayStr = moment().format("YYMMDD");
 				var labelData = messages.selectAll(".commit-msg")
 					.data(d3.values(data.commits).filter(function(c){return c.visible;})
-					, function (c) {return "msg-" + c.id;});
+					, function (c) {return "msg-" + c.id + "-" + todayStr;});
 				var commitMsgEntered = labelData
 					.enter().append("div")
 					.attr("class", "commit-msg")
@@ -1314,7 +1315,7 @@ var memoize = require('lodash/memoize');
 						.attr("title", function(d){
 							if (d.authorTimestamp) {
 								var dt = new Date(d.authorTimestamp);
-								return moment(dt).format("dd YYYY-MM-DD");
+								return moment(dt).format("dd YYYY-MM-DD HH:mm:ss");
 							}
 						})
 						.text(function(d){
