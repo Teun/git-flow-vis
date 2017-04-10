@@ -951,42 +951,32 @@ var GitFlowVisualize = (function () {
 			// Create gutter if not present
 			var gutter = group.select('div.gutter');
 			if(gutter.empty()) {
+				var dragging = false;
+				var mouseEventHandler = function(){
+					if(d3.event.type === 'mousedown') {
+						if(!dragging){
+							dragging = true;
+						}
+					} else {
+						if(dragging){
+							leftItem.style("width", (d3.event.pageX) + "px" );
+							if(d3.event.type === 'mouseup') {
+								dragging = false;
+							}
+						}
+					}
+					d3.event.stopPropagation();
+					d3.event.preventDefault();
+				};
 
 				gutter = group.append('div')
-							  .attr('class', 'gutter');
-
-				var dragging = false;
-				var dragStartTotalWidth = null;
-
-				gutter.style("height", size.height + "px");
-				gutter.append("div").attr("class", "gutterline");
-
-				gutter.on("mousedown", function(){
-					if(!dragging){
-						dragging = true;
-						dragStartTotalWidth = group.style("width");
-						dragStartTotalWidth = parseInt(dragStartTotalWidth.substring(0, dragStartTotalWidth.indexOf("px")));
-						d3.event.stopPropagation();
-						d3.event.preventDefault();
-					}
-				});
-
-				d3.select("body").on("mouseup", function(){
-					if(dragging){
-						leftItem.style("width", (d3.event.pageX) + "px" );
-						//rightItem.style("width", (dragStartTotalWidth - d3.event.pageX) + "px" );
-						d3.event.stopPropagation();
-					}
-					dragging = false;
-				});
-
-				d3.select("body").on("mousemove", function(){
-					if(dragging){
-						leftItem.style("width", (d3.event.pageX) + "px" );
-						//rightItem.style("width", (dragStartTotalWidth - d3.event.pageX) + "px" );
-						d3.event.stopPropagation();
-					}
-				});
+					.attr('class', 'gutter')
+					.style("height", size.height + "px")
+					.on("mousedown", mouseEventHandler)
+					.append("div")
+					.attr("class", "gutterline");
+				d3.select("body").on("mouseup", mouseEventHandler);
+				d3.select("body").on("mousemove", mouseEventHandler);
 			}
 
 			// Create right item if not present
