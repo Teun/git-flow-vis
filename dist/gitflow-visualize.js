@@ -1261,6 +1261,7 @@ var GitFlowVisualize = (function () {
 			trEntered
 				.append("td").attr("class", "sha")
 				.append("a").attr("class", "commit-link")
+					.attr("target", "_blank")
 					.attr("href", function(d){
 						return options.createCommitUrl(d);
 					})
