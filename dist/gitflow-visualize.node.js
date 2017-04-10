@@ -855,8 +855,7 @@ var memoize = require('lodash/memoize');
 				options.hideSpinner();
 				options.dataProcessed(data);
 				if (options.drawElem){
-					self.drawing.drawGraph(options.drawElem);
-					self.drawing.updateHighlight();
+					self.drawing.drawUI(options.drawElem);
 				}
 				options.log(LOG.INFO, "Done drawing (animations still in progress)");
 			}, 10);
@@ -979,6 +978,258 @@ var memoize = require('lodash/memoize');
 				
 			}
 	
+			self.drawUI = function(elem) {
+				// Calculate size
+				var calcHeight = Math.max(800, data.visibleCommits.length * constants.rowHeight);
+				var size = { width: 500, height: calcHeight };
+				var margin = 20;
+	
+				// Create container if not present
+				var container = elem.select(".commits-graph-container");
+				if (container.empty()) {
+	
+					container = elem.append("div")
+									.attr("class", "commits-graph-container");
+					container.append("div")
+							 .attr("class", "scroll-container")
+							 .append("div")
+							 .attr("class", "scrollme");
+	
+					container.select("div.scrollme").style("width", size.width + 2 * margin + "px");
+					var scroll1 = container;
+					var scroll2 = container.select(".scroll-container");
+					scroll1.on("scroll", function(){scroll2.node().scrollLeft = scroll1.node().scrollLeft;});
+					scroll2.on("scroll", function(){scroll1.node().scrollLeft = scroll2.node().scrollLeft;});
+	
+				}
+	
+				// Create item group if not present
+				var group = container.select('div.group');
+				if(group.empty()) {
+					// Create container with gutter
+					group = container.append('div')
+									 .attr('class', 'group');
+				}
+	
+				// Create left item if not present
+				var leftItem = group.select('div.graph-container');
+				if(leftItem.empty()) {
+					leftItem = group.append('div')
+									.attr('class', 'group-item graph-container');
+				}
+	
+				// Create gutter if not present
+				var gutter = group.select('div.gutter');
+				if(gutter.empty()) {
+	
+					gutter = group.append('div')
+								  .attr('class', 'gutter');
+	
+					var dragging = false;
+					var dragStartTotalWidth = null;
+	
+					gutter.style("height", size.height + "px");
+					gutter.append("div").attr("class", "gutterline");
+	
+					gutter.on("mousedown", function(){
+						if(!dragging){
+							dragging = true;
+							dragStartTotalWidth = group.style("width");
+							dragStartTotalWidth = parseInt(dragStartTotalWidth.substring(0, dragStartTotalWidth.indexOf("px")));
+							d3.event.stopPropagation();
+							d3.event.preventDefault();
+						}
+					});
+	
+					d3.select("body").on("mouseup", function(){
+						if(dragging){
+							leftItem.style("width", (d3.event.pageX) + "px" );
+							//rightItem.style("width", (dragStartTotalWidth - d3.event.pageX) + "px" );
+							d3.event.stopPropagation();
+						}
+						dragging = false;
+					});
+	
+					d3.select("body").on("mousemove", function(){
+						if(dragging){
+							leftItem.style("width", (d3.event.pageX) + "px" );
+							//rightItem.style("width", (dragStartTotalWidth - d3.event.pageX) + "px" );
+							d3.event.stopPropagation();
+						}
+					});
+				}
+	
+				// Create right item if not present
+				var rightItem = group.select('div.commits-container');
+				if(rightItem.empty()) {
+					rightItem = group.append('div')
+									 .attr('class', 'group-item commits-container');
+				}
+	
+				// Draw graph & commit table
+				self.drawGraph(leftItem);
+				self.drawTable(rightItem);
+				self.updateHighlight();
+			}
+	
+	
+			self.drawTable = function (elem) {
+	
+				var y = d3.scale.linear()
+							.domain([0, data.visibleCommits.length])
+							.range([60, 60 + data.visibleCommits.length * constants.rowHeight]);
+	
+				var contextMenu = elem.select("div.context-menu");
+				if (contextMenu.empty()) {
+					contextMenu = elem.append("div")
+						.attr("class", "context-menu");
+				}
+	
+				var msgHeader = elem.select("div.msg-header");
+				if(msgHeader.empty()){
+					msgHeader = elem.append("div")
+						.attr("class", "msg-header");
+					msgHeader.append("span").attr("class", "branch-btn label aui-lozenge aui-lozenge-subtle")
+						.on("click", function(){
+							var items = [["Show all", function(){
+								options.hiddenBranches = [];
+								drawFromRaw();
+							}]];
+							if(branchVisibilityHandler !== null){
+								items.push(["Change...", branchVisibilityHandler]);
+							}
+							var pos = d3.mouse(elem.node());
+							menu.show(items, pos[0], pos[1]);
+						});
+				}
+	
+				var branchLabelText = (data.branches.length + data.hiddenBranches.length) + " branches";
+				if(data.hiddenBranches.length > 0) branchLabelText += " (" + data.hiddenBranches.length + " hidden)";
+				msgHeader.select("span.branch-btn").text(branchLabelText);
+	
+				//labels
+				var todayStr = moment().format("YYMMDD");
+				var labelData = elem.selectAll(".commit-msg")
+					.data(
+						d3.values(data.commits).filter(function(c){return c.visible;})
+					, function (c) {return "msg-" + c.id + "-" + todayStr;});
+				var commitMsgEntered = labelData
+					.enter().append("div")
+					.attr("class", "commit-msg")
+					.attr("id", function (c) { return "msg-" + c.id; })
+					.style("top", function (d) {
+						var commit = d;
+						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
+					})
+					.on('click', function (a) {
+					  if(d3.event.target.tagName == 'A')return true;
+					  // will show menu. Collect items
+					  var items = [];
+					  if(d3.event.target.tagName == 'SPAN' && d3.event.target.className.startsWith("label ")){
+						  // on branch label
+						  options.log(LOG.DEBUG, d3.event.target.className);
+						  var clickedBranch = 'refs/heads/' + d3.event.target.innerHTML;
+						  items.push(["Hide branch '" + d3.event.target.innerHTML + "'", function(){
+							options.hiddenBranches.push(clickedBranch);
+							drawFromRaw();
+						  }]);
+					  }
+					  if(displayState.style == "ancestry"){
+						  items.push(["Stop highlighting", function(){
+							displayState.style = "none";
+							displayState.root = null;
+							self.updateHighlight();
+						  }]);
+					  }
+					  if(displayState.style !== "ancestry" ||  a.id !== displayState.root){
+						  items.push(["Highlight ancestry from here", function(){
+							displayState.style = "ancestry";
+							displayState.root = a.id;
+							self.updateHighlight();
+						  }]);
+					  }
+					  var pos = d3.mouse(elem.node());
+					  menu.show(items, pos[0], pos[1]);
+					});
+				var trEntered = commitMsgEntered
+					.append("table").attr("class", "commit-table aui")
+					.append("tr");
+				commitMsgEntered.append("div").attr("class", "bck");
+	
+				var msg = trEntered.append("td").attr("class", "msg");
+				msg.append("span").attr("class", "labels");
+				msg.append("span").attr("class", "txt").text(function(d){return d.message;});
+				var author = trEntered.append("td").attr("class", "author");
+				author
+					.append("span").attr("class", "aui-avatar aui-avatar-xsmall user-avatar").style("display", function(d){return d.author ? "" : "none";})
+					.append("span").attr("class", "aui-avatar-inner")
+					.append("img").attr("width", "48px").attr("height", "48px").attr("src", function(d){
+						if(!d.author) return "";
+						return options.createAuthorAvatarUrl(d.author);
+					});
+				author
+					.append("span").text(function(d){
+						return (d.author.displayName || d.author.name || d.author.emailAddress)});
+				trEntered
+					.append("td").attr("class", "date")
+						.attr("title", function(d){
+							if (d.authorTimestamp) {
+								var dt = new Date(d.authorTimestamp);
+								return moment(dt).format("dd YYYY-MM-DD HH:mm:ss");
+							}
+						})
+						.text(function(d){
+							if (d.authorTimestamp) {
+								var dt = new Date(d.authorTimestamp);
+								var today = (new Date().toDateString() === dt.toDateString());
+								if (today) {
+									return moment(dt).format("HH:mm:ss") + " today";
+								} else {
+									return moment(dt).format("dd YYYY-MM-DD");
+								}
+							}
+						});
+				trEntered
+					.append("td").attr("class", "sha")
+					.append("a").attr("class", "commit-link")
+						.attr("href", function(d){
+							return options.createCommitUrl(d);
+						})
+						.text(function(d){return d.displayId});
+	
+				labelData.exit().remove();
+				var lblContainer = labelData.select("table>tr>td.msg>span.labels");
+				lblContainer.html(function(d){
+					var res = "";
+					_.each(d.labels || [], function (v /*, k*/) {
+						if (v.indexOf('refs/heads/') == 0) {
+							if (v.indexOf(options.masterRef) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-error aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							} else if (v.indexOf(options.developRef) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-success aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							} else if (v.indexOf(options.featurePrefix) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-complete aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							} else if (v.indexOf(options.releasePrefix) == 0 || v.indexOf(options.hotfixPrefix) == 0) {
+								res += "<span class='label aui-lozenge aui-lozenge-current aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							} else {
+								res += "<span class='label aui-lozenge aui-lozenge-subtle'>" + v.substring(11) + "</span>";
+							}
+						} else if (v.indexOf('refs/tags/') == 0) {
+							res += "<span class='label aui-lozenge aui-lozenge-moved aui-lozenge-subtle'>" + v.substring(10) + "</span>";
+						}
+					});
+					return res;
+				});
+					
+				labelData
+					.transition().duration(800)
+					.style("top", function (d) {
+						var commit = d;
+						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
+					});
+	
+			};
+	
 			self.drawGraph = function (elem) {
 				var calcHeight = Math.max(800, data.visibleCommits.length * constants.rowHeight);
 				var size = { width: 500, height: calcHeight };
@@ -986,16 +1237,10 @@ var memoize = require('lodash/memoize');
 	
 				var svg = elem.select("svg>g");
 				if (svg.empty()) {
-					var cont = elem.append("div");
-					cont.attr("class", "commits-graph-container");
-					cont.append("div")
-						.attr("class", "scroll-container")
-						.append("div")
-						.attr("class", "scrollme");
-					var svg = cont.append("svg")
-								.attr("class", "commits-graph")
-								.append("g")
-								.attr("transform", "translate(" + margin + ",0)");
+					var svg = elem.append("svg")
+								  .attr("class", "commits-graph")
+								  .append("g")
+								  .attr("transform", "translate(" + margin + ",0)");
 					var backgroundLayer = svg.append("g").attr("id", "bgLayer");
 					var arrowsLayer = svg.append("g").attr("id", "arrowsLayer");
 					var mainLinesLayer = svg.append("g").attr("id", "mainLinesLayer");
@@ -1005,12 +1250,6 @@ var memoize = require('lodash/memoize');
 				elem.select("svg")
 					.attr("width", size.width + 2 * margin)
 					.attr("height", size.height + 2 * margin);
-				elem.select("div.scrollme").style("width", size.width + 2 * margin + "px");
-				
-				var scroll1 = elem.select(".commits-graph-container");
-				var scroll2 = elem.select(".scroll-container");
-				scroll1.on("scroll", function(){scroll2.node().scrollLeft = scroll1.node().scrollLeft;});
-				scroll2.on("scroll", function(){scroll1.node().scrollLeft = scroll2.node().scrollLeft;});
 	
 				backgroundLayer = svg.select("g#bgLayer");
 				arrowsLayer = svg.select("g#arrowsLayer");
@@ -1176,198 +1415,6 @@ var memoize = require('lodash/memoize');
 							var extraOffset = legendaBlocks[d].first == legendaBlocks[d].last ? -10 : 0;
 							return "translate(" + (x(legendaBlocks[d].first) + extraOffset) + ", " + (y(0) - 20) + ") rotate(-40)";
 						});
-	
-				var messages = elem.select("div.messages");
-				if (messages.empty()) {
-					messages = elem.append("div")
-						.attr("class", "messages");
-					messages
-						.append("div").attr("class", "context-menu");
-				}
-				var gutter = elem.select("div.gutter");
-				if (gutter.empty()) {
-					gutter = elem.append("div")
-						.attr("class", "gutter");
-					gutter.append("div").attr("class", "gutterline");
-	
-					var dragging = false;
-					var dragStart = 0;
-					var dragStartLeft = null;
-					gutter.on("mousedown", function(){
-						if(!dragging){
-							dragging = true;
-							dragStart = d3.event.pageX;
-							dragStartLeft = gutter.style("margin-left");
-							dragStartLeft = parseInt(dragStartLeft.substring(0, dragStartLeft.indexOf("px")));
-							d3.event.stopPropagation();
-							d3.event.preventDefault();
-						}
-					});
-					d3.select("body").on("mouseup", function(){
-						if(dragging){
-							var diff = d3.event.pageX - dragStart;
-							gutter.style("margin-left", (diff + dragStartLeft) + "px");
-							var cont = elem.select(".commits-graph-container");
-							cont.style("width", (diff + dragStartLeft + 2) + "px" );
-							elem.select("div.scroll-container").style("width", diff + dragStartLeft + "px");
-	
-							messages.style("padding-left", (diff + dragStartLeft + 10) + "px" );
-						}
-						dragging = false;
-					});
-					d3.select("body").on("mousemove", function(){
-						if(dragging){
-							var diff = d3.event.pageX - dragStart;
-							gutter.style("margin-left", (diff + dragStartLeft) + "px");
-							d3.event.stopPropagation();
-	
-						}
-					});
-				}
-				gutter.style("height", size.height + "px");
-				var msgHeader = messages.select("div.msg-header");
-				if(msgHeader.empty()){
-					msgHeader = messages.append("div")
-						.attr("class", "msg-header");
-					msgHeader.append("span").attr("class", "branch-btn label aui-lozenge aui-lozenge-subtle")
-						.on("click", function(){
-							var items = [["Show all", function(){
-								options.hiddenBranches = [];
-								drawFromRaw();
-							}]];
-							if(branchVisibilityHandler !== null){
-								items.push(["Change...", branchVisibilityHandler]);
-							}
-							var pos = d3.mouse(messages.node());
-							menu.show(items, pos[0], pos[1]);
-						});
-	
-				}
-				var branchLabelText = (data.branches.length + data.hiddenBranches.length) + " branches";
-				if(data.hiddenBranches.length > 0) branchLabelText += " (" + data.hiddenBranches.length + " hidden)";
-				msgHeader.select("span.branch-btn").text(branchLabelText);
-	
-				//labels
-				var todayStr = moment().format("YYMMDD");
-				var labelData = messages.selectAll(".commit-msg")
-					.data(d3.values(data.commits).filter(function(c){return c.visible;})
-					, function (c) {return "msg-" + c.id + "-" + todayStr;});
-				var commitMsgEntered = labelData
-					.enter().append("div")
-					.attr("class", "commit-msg")
-					.attr("id", function (c) { return "msg-" + c.id; })
-					.style("top", function (d) {
-						var commit = d;
-						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
-					})
-					.on('click', function (a) {
-					  if(d3.event.target.tagName == 'A')return true;
-					  // will show menu. Collect items
-					  var items = [];
-					  if(d3.event.target.tagName == 'SPAN' && d3.event.target.className.startsWith("label ")){
-						  // on branch label
-						  options.log(LOG.DEBUG, d3.event.target.className);
-						  var clickedBranch = 'refs/heads/' + d3.event.target.innerHTML;
-						  items.push(["Hide branch '" + d3.event.target.innerHTML + "'", function(){
-							options.hiddenBranches.push(clickedBranch);
-							drawFromRaw();
-						  }]);
-					  }
-					  if(displayState.style == "ancestry"){
-						  items.push(["Stop highlighting", function(){
-							displayState.style = "none";
-							displayState.root = null;
-							self.updateHighlight();
-						  }]);
-					  }
-					  if(displayState.style !== "ancestry" ||  a.id !== displayState.root){
-						  items.push(["Highlight ancestry from here", function(){
-							displayState.style = "ancestry";
-							displayState.root = a.id;
-							self.updateHighlight();
-						  }]);
-					  }
-					  var pos = d3.mouse(messages.node());
-					  menu.show(items, pos[0], pos[1]);
-					});
-				var trEntered = commitMsgEntered
-					.append("table").attr("class", "commit-table aui")
-					.append("tr");
-				commitMsgEntered.append("div").attr("class", "bck");
-	
-				var msg = trEntered.append("td").attr("class", "msg");
-				msg.append("span").attr("class", "labels");
-				msg.append("span").attr("class", "txt").text(function(d){return d.message;});
-				var author = trEntered.append("td").attr("class", "author");
-				author
-					.append("span").attr("class", "aui-avatar aui-avatar-xsmall user-avatar").style("display", function(d){return d.author ? "" : "none";})
-					.append("span").attr("class", "aui-avatar-inner")
-					.append("img").attr("width", "48px").attr("height", "48px").attr("src", function(d){
-						if(!d.author) return "";
-						return options.createAuthorAvatarUrl(d.author);
-					});
-				author
-					.append("span").text(function(d){
-						return (d.author.displayName || d.author.name || d.author.emailAddress)});
-				trEntered
-					.append("td").attr("class", "date")
-						.attr("title", function(d){
-							if (d.authorTimestamp) {
-								var dt = new Date(d.authorTimestamp);
-								return moment(dt).format("dd YYYY-MM-DD HH:mm:ss");
-							}
-						})
-						.text(function(d){
-							if (d.authorTimestamp) {
-								var dt = new Date(d.authorTimestamp);
-								var today = (new Date().toDateString() === dt.toDateString());
-								if (today) {
-									return moment(dt).format("HH:mm:ss") + " today";
-								} else {
-									return moment(dt).format("dd YYYY-MM-DD");
-								}
-							}
-						});
-				trEntered
-					.append("td").attr("class", "sha")
-					.append("a").attr("class", "commit-link")
-						.attr("href", function(d){
-							return options.createCommitUrl(d);
-						})
-						.text(function(d){return d.displayId});
-	
-				labelData.exit().remove();
-				var lblContainer = labelData.select("table>tr>td.msg>span.labels");
-				lblContainer.html(function(d){
-					var res = "";
-					_.each(d.labels || [], function (v /*, k*/) {
-						if (v.indexOf('refs/heads/') == 0) {
-							if (v.indexOf(options.masterRef) == 0) {
-								res += "<span class='label aui-lozenge aui-lozenge-error aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-							} else if (v.indexOf(options.developRef) == 0) {
-								res += "<span class='label aui-lozenge aui-lozenge-success aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-							} else if (v.indexOf(options.featurePrefix) == 0) {
-								res += "<span class='label aui-lozenge aui-lozenge-complete aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-							} else if (v.indexOf(options.releasePrefix) == 0 || v.indexOf(options.hotfixPrefix) == 0) {
-								res += "<span class='label aui-lozenge aui-lozenge-current aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-							} else {
-								res += "<span class='label aui-lozenge aui-lozenge-subtle'>" + v.substring(11) + "</span>";
-							}
-						} else if (v.indexOf('refs/tags/') == 0) {
-							res += "<span class='label aui-lozenge aui-lozenge-moved aui-lozenge-subtle'>" + v.substring(10) + "</span>";
-						}
-					});
-					return res;
-				});
-					
-				labelData
-					.transition().duration(800)
-					.style("top", function (d) {
-						var commit = d;
-						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
-					});
-	
-	
 			};
 	
 			function isElementInViewport(el) {

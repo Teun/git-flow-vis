@@ -40,38 +40,59 @@ line {
   .arrow path.back {
     opacity: 0.5; }
 
-.commits-graph-container .scroll-container {
-  position: fixed;
-  bottom: 0px;
-  height: 10px;
-  width: 290px;
-  overflow-x: scroll; }
-  .commits-graph-container .scroll-container .scrollme {
-    background-color: transparent;
-    height: 10px; }
+.commits-graph-container {
+  position: relative;
+  overflow-x: scroll;
+  float: left;
+  width: 100%;
+  z-index: 5; }
+  .commits-graph-container .scroll-container {
+    position: fixed;
+    bottom: 0px;
+    height: 10px;
+    width: 290px;
+    overflow-x: scroll; }
+    .commits-graph-container .scroll-container .scrollme {
+      background-color: transparent;
+      height: 10px; }
+  .commits-graph-container .group {
+    display: table;
+    table-layout: fixed;
+    box-sizing: border-box;
+    border-spacing: 0;
+    margin: 10px 0 0;
+    width: 100%; }
+    .commits-graph-container .group:first-child {
+      margin-top: 0; }
+    .commits-graph-container .group > .group-item {
+      display: table-cell;
+      vertical-align: top;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      margin: 0; }
+    .commits-graph-container .group > .group-item + .group-item {
+      padding-left: 20px; }
+    .commits-graph-container .group .gutter {
+      display: table-cell;
+      width: 12px;
+      z-index: 100;
+      cursor: ew-resize; }
+      .commits-graph-container .group .gutter .gutterline {
+        width: 2px;
+        height: 100%;
+        background-color: grey;
+        box-shadow: -5px 0px 5px grey;
+        margin-top: 40px; }
 
 .messages {
   position: relative;
   padding-left: 300px; }
 
-.gutter {
-  width: 12px;
-  position: absolute;
-  margin-left: 290px;
-  z-index: 100;
-  cursor: ew-resize; }
-  .gutter .gutterline {
-    position: absolute;
-    width: 2px;
-    height: 100%;
-    left: 6px;
-    background-color: grey;
-    box-shadow: -5px 0px 5px grey; }
-
 .commit-msg {
   position: absolute;
   white-space: nowrap;
   cursor: pointer;
+  padding-top: 5px;
   padding-left: 10px;
   height: 35px; }
   .commit-msg.selected {
@@ -165,13 +186,6 @@ table.commit-table td {
 .author {
   font-weight: bold;
   width: 120px; }
-
-.commits-graph-container {
-  width: 300px;
-  overflow-x: scroll;
-  float: left;
-  z-index: 5;
-  position: relative; }
 
 #debug-output {
   width: 600px;
