@@ -42,7 +42,6 @@ line {
 
 .commits-graph-container {
   position: relative;
-  overflow-x: scroll;
   float: left;
   width: 100%;
   z-index: 5; }
@@ -83,6 +82,49 @@ line {
         background-color: grey;
         box-shadow: -5px 0px 5px grey;
         margin-top: 40px; }
+  .commits-graph-container .commits-table {
+    margin-top: 10px;
+    font-size: 14px;
+    width: 100%; }
+    .commits-graph-container .commits-table thead th {
+      text-align: left; }
+    .commits-graph-container .commits-table tr {
+      max-height: 33px;
+      height: 33px; }
+      .commits-graph-container .commits-table tr td {
+        padding: 7px 10px;
+        vertical-align: top; }
+        .commits-graph-container .commits-table tr td.hash {
+          width: 80px;
+          min-width: 80px; }
+        .commits-graph-container .commits-table tr td.message {
+          max-width: 1px; }
+        .commits-graph-container .commits-table tr td.author {
+          width: 132px;
+          min-width: 132px; }
+          .commits-graph-container .commits-table tr td.author .thumbnail img {
+            max-height: 16px;
+            max-width: 16px;
+            border-radius: 3px;
+            margin: 0 4px 0 0;
+            vertical-align: top;
+            padding-top: 1px; }
+          .commits-graph-container .commits-table tr td.author span.author {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; }
+        .commits-graph-container .commits-table tr td.date {
+          width: 102px;
+          min-width: 102px; }
+        .commits-graph-container .commits-table tr td .flex-content {
+          display: flex; }
+          .commits-graph-container .commits-table tr td .flex-content .flex-content--primary {
+            flex: 1 1 auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; }
+          .commits-graph-container .commits-table tr td .flex-content .flex-content--secondary {
+            flex: 0 0 auto; }
 
 .messages {
   position: relative;
@@ -119,18 +161,6 @@ line {
 .commit-table {
   width: 100%;
   table-layout: fixed; }
-
-td.msg {
-  min-width: 8em; }
-
-td.author {
-  width: 8em; }
-
-td.sha {
-  width: 5em; }
-
-td.date {
-  width: 7em; }
 
 .label {
   margin-right: 2px; }
@@ -182,10 +212,6 @@ td.date {
 table.commit-table td {
   overflow: hidden;
   margin: 2px; }
-
-.author {
-  font-weight: bold;
-  width: 120px; }
 
 #debug-output {
   width: 600px;

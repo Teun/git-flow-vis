@@ -1024,7 +1024,9 @@ var memoize = require('lodash/memoize');
 				if(gutter.empty()) {
 					var dragging = false;
 					var mouseEventHandler = function(){
-						if(d3.event.type === 'mousedown') {
+						if(d3.event.type === "dblclick") {
+							leftItem.style("width", gutter.style("width"));
+						} else if(d3.event.type === 'mousedown') {
 							if(!dragging){
 								dragging = true;
 							}
@@ -1044,6 +1046,7 @@ var memoize = require('lodash/memoize');
 						.attr('class', 'gutter')
 						.style("height", size.height + "px")
 						.on("mousedown", mouseEventHandler)
+						.on("dblclick", mouseEventHandler)
 						.append("div")
 						.attr("class", "gutterline");
 					d3.select("body").on("mouseup", mouseEventHandler);
@@ -1065,6 +1068,8 @@ var memoize = require('lodash/memoize');
 	
 	
 			self.drawTable = function (elem) {
+	
+				/*
 	
 				var y = d3.scale.linear()
 							.domain([0, data.visibleCommits.length])
@@ -1192,7 +1197,7 @@ var memoize = require('lodash/memoize');
 				var lblContainer = labelData.select("table>tr>td.msg>span.labels");
 				lblContainer.html(function(d){
 					var res = "";
-					_.each(d.labels || [], function (v /*, k*/) {
+					_.each(d.labels || [], function (v /*, k* /) {
 						if (v.indexOf('refs/heads/') == 0) {
 							if (v.indexOf(options.masterRef) == 0) {
 								res += "<span class='label aui-lozenge aui-lozenge-error aui-lozenge-subtle'>" + v.substring(11) + "</span>";
@@ -1218,6 +1223,139 @@ var memoize = require('lodash/memoize');
 						var commit = d;
 						return (y(commit.orderNr) - constants.rowHeight / 2) + "px";
 					});
+				*/
+	
+	
+				var table = elem.select("table");
+				if (table.empty()) {
+					table = elem.append("table")
+								.attr("class", "commits-table");
+				}
+	
+				var header = table.select('thead tr');
+				if(header.empty()) {
+					var header = table.append('thead')
+									  .append('tr');
+					header.append('th').text('commit');
+					header.append('th').text('message');
+					header.append('th').text('author');
+					header.append('th').text('date');
+				}
+	
+				var body = table.select('tbody');
+				if(body.empty()) {
+					body = table.append('tbody');
+				}
+	
+				body.selectAll("tr.commit").remove();
+	
+				var commitData = body.selectAll("tr.commit")
+					.data(
+						d3.values(data.commits).filter(function(c){return c.visible;})
+					, function (c) {return "msg-" + c.id + "-" + moment().format("YYMMDD");});
+	
+				var row = commitData
+					.enter().append("tr")
+					.sort(function(a,b) {
+						return ((a.orderNr == b.orderNr) ? 0 : ((a.orderNr < b.orderNr) ? -1 : 1));
+					})
+					.attr("class", "commit")
+					.attr("id", function (c) { return "msg-" + c.id; })
+					.attr("data-orderNr", function (c) { return c.orderNr; });
+	
+				row.append('td').attr('class', 'hash')
+					.append("a")
+					.attr("class", "commit-link")
+					.attr("href", function(d){
+						return options.createCommitUrl(d);
+					})
+					.text(function(d){return d.displayId});
+	
+				var message = row.append('td').attr('class', 'message')
+					.append("div")
+					.attr("class", "flex-content");
+				message.append("div")
+					.attr("class", "flex-content--primary")
+					.append("span")
+					.attr("class", "body")
+					.text(function(d){return d.message;});
+				message.append("div")
+					.attr("class", "flex-content--secondary")
+					.append(function(d) {
+						var div = document.createElement('div');
+						div.setAttribute('class', 'labels');
+	
+						_.each(d.labels || [], function (v) {
+							var span = document.createElement('span');
+	
+							if (v.indexOf('refs/heads/') == 0) {
+								if (v.indexOf(options.masterRef) == 0) {
+									span.setAttribute('class', 'label aui-lozenge aui-lozenge-error aui-lozenge-subtle');
+									span.appendChild(document.createTextNode(v.substring(11)));
+								} else if (v.indexOf(options.developRef) == 0) {
+									span.setAttribute('class', 'label aui-lozenge aui-lozenge-success aui-lozenge-subtle');
+									span.appendChild(document.createTextNode(v.substring(11)));
+								} else if (v.indexOf(options.featurePrefix) == 0) {
+									span.setAttribute('class', 'label aui-lozenge aui-lozenge-complete aui-lozenge-subtle');
+									span.appendChild(document.createTextNode(v.substring(11)));
+								} else if (v.indexOf(options.releasePrefix) == 0 || v.indexOf(options.hotfixPrefix) == 0) {
+									span.setAttribute('class', 'label aui-lozenge aui-lozenge-current aui-lozenge-subtle');
+									span.appendChild(document.createTextNode(v.substring(11)));
+								} else {
+									span.setAttribute('class', 'label aui-lozenge aui-lozenge-subtle');
+									span.appendChild(document.createTextNode(v.substring(11)));
+								}
+							} else if (v.indexOf('refs/tags/') == 0) {
+								span.setAttribute('class', 'label aui-lozenge aui-lozenge-moved aui-lozenge-subtle');
+								span.appendChild(document.createTextNode(v.substring(10)));
+							}
+	
+							div.appendChild(span);
+						});
+	
+						return div;
+					});
+	
+				var author = row.append('td').attr('class', 'author')
+					.append("span")
+					.attr("class", "author")
+					.style("display", function(d){return d.author ? "" : "none";});
+				author.append('span')
+					.attr('class', 'thumbnail')
+					.append("img")
+					.attr("src", function(d){
+						if(!d.author) return "";
+						return options.createAuthorAvatarUrl(d.author);
+					});
+				author.append("span")
+					.attr('class', 'author')
+					.attr('title', function(d){
+						return (d.author.displayName || d.author.name || d.author.emailAddress)
+					})
+					.text(function(d){
+						return (d.author.displayName || d.author.name || d.author.emailAddress)
+					});
+	
+				row.append("td").attr("class", "date")
+					.attr("title", function(d){
+						if (d.authorTimestamp) {
+							var dt = new Date(d.authorTimestamp);
+							return moment(dt).format("YYYY-MM-DD");
+						}
+					})
+					.text(function(d){
+						if (d.authorTimestamp) {
+							var dt = new Date(d.authorTimestamp);
+							var today = (new Date().toDateString() === dt.toDateString());
+							if (today) {
+								return moment(dt).format("HH:mm:ss") + " today";
+							} else {
+								return moment(dt).format("YYYY-MM-DD");
+							}
+						}
+					});
+	
+				commitData.exit().remove();
 	
 			};
 	
@@ -1372,9 +1510,12 @@ var memoize = require('lodash/memoize');
 				commit
 					.enter().append("g")
 					.attr("class", "commit")
+					.attr("data-orderNr", function(c) { return c.orderNr; })
 					.append("circle")
 					.attr("class", "commit-dot")
-					.attr("r", 5);
+					.attr("r", 5)
+					.append("svg:title")
+					.text(function(c){return c.displayId;})
 				
 				commit.exit().remove();
 				commit
@@ -1422,16 +1563,18 @@ var memoize = require('lodash/memoize');
 			self.lazyLoad = function() {
 				//check for openEnded messages in view
 				var keyInView = null;
-				for (var key in data.openEnds) {
-					if(key === "asap"){
-							keyInView = key;
-							break;
-					}
-					var elementSelection = d3.select('#msg-' + key);
-					if(!elementSelection.empty()) {
-						if (isElementInViewport(elementSelection.node())) {
-							keyInView = key;
-							break;
+				if(data && data.openEnds) {
+					for (var key in data.openEnds) {
+						if(key === "asap"){
+								keyInView = key;
+								break;
+						}
+						var elementSelection = d3.select('#msg-' + key);
+						if(!elementSelection.empty()) {
+							if (isElementInViewport(elementSelection.node())) {
+								keyInView = key;
+								break;
+							}
 						}
 					}
 				}
@@ -1496,6 +1639,7 @@ var memoize = require('lodash/memoize');
 				return cols[0] || "default";
 			};
 	
+			/*
 			var menu = function(){
 				var menu = {};
 				var theMenu = null;
@@ -1546,12 +1690,12 @@ var memoize = require('lodash/memoize');
 	
 				return menu;
 			}();
-			
+			*/
 	
 			return self;
 		})();
 	
-		var branchVisibilityHandler = null;
+		//var branchVisibilityHandler = null;
 		self.branches = {
 			setHidden: function(refs){
 				if(!(refs instanceof Array)){
@@ -1580,7 +1724,7 @@ var memoize = require('lodash/memoize');
 				});
 			}, 
 			registerHandler: function(handler){
-				branchVisibilityHandler = handler;
+				//branchVisibilityHandler = handler;
 			}
 		};
 	

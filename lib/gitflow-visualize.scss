@@ -69,7 +69,6 @@ line {
 
 .commits-graph-container {
 	position:relative;
-	overflow-x:scroll;
 	float:left;
 	width:100%;
 	z-index:5;
@@ -126,6 +125,79 @@ line {
 			}
 		}		
 	}
+
+	.commits-table {
+		margin-top: 10px;
+		font-size: 14px;
+		width: 100%;
+
+		thead {
+			th {
+				text-align: left;
+			}
+		}
+
+		tr {
+			max-height: 33px;
+			height: 33px;
+
+			td {
+				padding: 7px 10px;
+				vertical-align: top;
+
+				&.hash {
+					width: 80px;
+					min-width: 80px;
+				}
+
+				&.message {
+					max-width: 1px;
+				}
+
+				&.author {
+					width: 132px;
+					min-width: 132px;
+
+					.thumbnail {
+						img {
+							max-height: 16px;
+							max-width: 16px;
+							border-radius: 3px;
+							margin: 0 4px 0 0;
+							vertical-align: top;
+							padding-top: 1px;
+						}
+					}
+
+					span.author {
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+					}
+				}
+
+				&.date {
+					width: 102px;
+					min-width: 102px;
+				}
+
+				.flex-content {
+					display: flex;
+
+					.flex-content--primary {
+						flex: 1 1 auto;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;						
+					}
+
+					.flex-content--secondary {
+						flex: 0 0 auto;						
+					}
+				}
+			}
+		}
+	}
 }
 
 .messages {
@@ -172,23 +244,6 @@ line {
 .commit-table {
 	width:100%;
 	table-layout: fixed;
-}
-
-td {
-	&.msg{
-		min-width: 8em;
-	}
-	&.author {
-		width:8em;
-	}
-
-	&.sha {
-		width:5em;
-	}
-
-	&.date {
-		width:7em;
-	}
 }
 
 .label {
@@ -270,11 +325,6 @@ table {
 			margin:2px;
 		}
 	}
-}
-
-.author {
-	font-weight:bold;
-	width:120px;
 }
 
 #debug-output {

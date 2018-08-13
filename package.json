@@ -4,6 +4,7 @@
   "description": "Visualize your commits when using the Git Flow branching strategy",
   "main": "dist/gitflow-visualize.node.js",
   "scripts": {
+    "dev": "gulp clean && gulp dev",
     "test": "gulp clean && gulp test",
     "dist": "gulp clean && gulp dist",
     "prepublish": "npm test",

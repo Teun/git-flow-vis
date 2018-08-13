@@ -36,6 +36,7 @@ const eslint = require('gulp-eslint');
 
 // ------------------------------------------------------------------------------------------ Tasks
 
+gulp.task('dev', ['watch']);
 gulp.task('dist', ['build']);
 gulp.task('build', ['stylesheet', 'standalone', 'commonjs', 'bundle']);
 gulp.task('test', ['lint', 'karma']);
@@ -131,3 +132,6 @@ gulp.task('karma', ['dist'], (done) => {
 	}, done).start();
 })
 
+gulp.task('watch', ['dist'], () => {
+	gulp.watch(['./lib/**/*'], ['dist']);
+});
